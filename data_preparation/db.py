@@ -10,7 +10,7 @@ env = load_env()
 
 # Construct Database URL from environment variables
 # DATABASE_URL = f"postgresql+psycopg2://{env['POSTGRES_USER']}:{env['POSTGRES_PASSWORD']}@{env['POSTGRES_HOST']}:{env['POSTGRES_PORT']}/{env['POSTGRES_DB']}"
-DATABASE_URL = None
+DATABASE_URL = 'postgresql://postgres:postgres@localhost:5432/postgres'
 
 # Create engine
 engine = create_engine(DATABASE_URL)
