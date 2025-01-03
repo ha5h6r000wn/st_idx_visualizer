@@ -10,7 +10,6 @@ wheels/
 .venv
 .env
 .python-version
-uv.lock
 pyproject.toml
 .cz.toml
 .DS_Store
