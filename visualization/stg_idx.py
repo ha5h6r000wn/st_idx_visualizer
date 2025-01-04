@@ -1,5 +1,6 @@
-from datetime import date, timedelta
+from datetime import datetime
 
+import pytz
 import streamlit as st
 
 from config import config, param_cls
@@ -18,11 +19,15 @@ from visualization.data_visualizer import (
     get_custom_dt_with_slider,
 )
 
+# Get current time in China timezone
+china_tz = pytz.timezone('Asia/Shanghai')
+china_now = datetime.now(china_tz)
+formatted_latest_day = china_now.strftime(config.WIND_DT_FORMAT)
+
 
 @msg_printer
 def generate_stg_idx_charts():
-    formatted_latest_day = (date.today() - timedelta(days=1)).strftime(config.WIND_DT_FORMAT)
-
+    # st.write(formatted_latest_day)
     wind_config = param_cls.WindListedSecParam(
         wind_codes=config.STG_IDX_CODES + config.BENCH_IDX_CODES,
         start_date=config.START_DT,
