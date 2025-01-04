@@ -11,11 +11,11 @@ st.set_page_config(
 
 st.title('股票交易咨询权益研究')
 
-# 使用sidebar来选择页面
-page = st.sidebar.radio('请选择', ['策略指数', '风格研判'])
+# 使用tabs来切换页面
+tab1, tab2 = st.tabs(['策略指数', '风格研判'])
 
-# 根据选择显示对应的内容
-if page == '策略指数':
+with tab1:
     generate_stg_idx_charts()
-elif page == '风格研判':
+
+with tab2:
     generate_style_charts()
