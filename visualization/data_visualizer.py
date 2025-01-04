@@ -58,7 +58,12 @@ def draw_grouped_bars(grouped_df, group_name_df, config: param_cls.BaseBarParam)
             color=alt.Color(
                 f'{config.axis_names['LEGEND']}:{config.axis_types['LEGEND']}',
                 sort=order_group,
-                legend=alt.Legend(orient='top'),
+                legend=alt.Legend(
+                    orient='top',
+                    columns=3,
+                    labelLimit=150,
+                    symbolLimit=50,
+                ),
             ),
             opacity=alt.condition(selection, alt.value(1), alt.value(0)),
         )
