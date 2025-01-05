@@ -42,7 +42,11 @@ def draw_grouped_bars(grouped_df, group_name_df, config: param_cls.BaseBarParam)
         alt.Chart(
             reindex_grouped_df,
             height=config.height,
-            title=config.title,
+            title=alt.TitleParams(
+                text=config.title,
+                offset=100,
+            ),
+            # padding={'top': 50},
         )
         .mark_bar()
         .encode(
@@ -59,10 +63,10 @@ def draw_grouped_bars(grouped_df, group_name_df, config: param_cls.BaseBarParam)
                 f'{config.axis_names['LEGEND']}:{config.axis_types['LEGEND']}',
                 sort=order_group,
                 legend=alt.Legend(
-                    orient='top',
-                    columns=3,
-                    labelLimit=150,
-                    symbolLimit=50,
+                    orient='none',
+                    legendX=-80,
+                    legendY=-80,
+                    columns=2,
                 ),
             ),
             opacity=alt.condition(selection, alt.value(1), alt.value(0)),
