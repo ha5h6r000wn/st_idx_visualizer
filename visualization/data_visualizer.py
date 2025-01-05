@@ -96,7 +96,14 @@ def draw_grouped_lines(wide_df, config: param_cls.IdxLineParam):
     long_df.columns = list(config.axis_names.values())
     selection = alt.selection_point(fields=[config.axis_names['LEGEND']], bind='legend')
     lines = (
-        alt.Chart(long_df, height=config.height, title=config.title)
+        alt.Chart(
+            long_df,
+            height=config.height,
+            title=alt.TitleParams(
+                text=config.title,
+                offset=100,
+            ),
+        )
         .mark_line()
         .encode(
             x=alt.X(config.axis_names['X']),
@@ -110,7 +117,16 @@ def draw_grouped_lines(wide_df, config: param_cls.IdxLineParam):
                 ),
                 axis=alt.Axis(format=config.y_axis_format),
             ),
-            color=alt.Color(config.axis_names['LEGEND'], sort=order_group),
+            color=alt.Color(
+                config.axis_names['LEGEND'],
+                sort=order_group,
+                legend=alt.Legend(
+                    orient='none',
+                    legendX=-80,
+                    legendY=-80,
+                    columns=2,
+                ),
+            ),
             strokeDash=alt.StrokeDash(config.axis_names['LEGEND'], sort=order_group, legend=None),
             opacity=alt.condition(selection, alt.value(1), alt.value(0)),
         )
