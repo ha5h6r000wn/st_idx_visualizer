@@ -6,7 +6,7 @@ from visualization.style import generate_style_charts
 st.set_page_config(
     page_title='股票交易咨询权益研究',
     page_icon='📊',
-    # layout='wide',
+    layout='wide',
 )
 
 st.title('股票交易咨询权益研究')
