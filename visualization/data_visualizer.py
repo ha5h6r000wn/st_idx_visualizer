@@ -322,13 +322,13 @@ def draw_bar_line_chart_with_highlighted_signal(dt_indexed_df, config: param_cls
         st.altair_chart(
             (bar + line).resolve_scale(color='independent'),
             theme='streamlit',
-            use_container_width=True,
+            # use_container_width=True,
         )
     else:
         st.altair_chart(
             bar,
             theme='streamlit',
-            use_container_width=True,
+            # use_container_width=True,
         )
 
 
