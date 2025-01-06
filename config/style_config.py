@@ -266,7 +266,8 @@ INDEX_ERP_CONFIG = {
     'TRUE_SIGNAL': param_cls.TradeSignal.LONG_GROWTH.value,
     'FALSE_SIGNAL': param_cls.TradeSignal.LONG_VALUE.value,
     'NO_SIGNAL': param_cls.TradeSignal.NO_SIGNAL.value,
-    'BAR_TITLE': 'ERP股债性价比 —— 万得全A指数市盈率倒数 - 10年期国债到期收益率',
+    'BAR_TITLE': 'ERP股债性价比',
+    # 'BAR_TITLE': 'ERP股债性价比 —— 万得全A指数市盈率倒数 - 10年期国债到期收益率',
     'LINE_STROKE_DASH': (5, 3),
 }
 INDEX_ERP_CONFIG.update(
@@ -340,7 +341,8 @@ CREDIT_EXPANSION_CONFIG = {
     'BASELINE_COL': '比较基准',
     'TRUE_SIGNAL': param_cls.TradeSignal.LONG_GROWTH.value,
     'FALSE_SIGNAL': param_cls.TradeSignal.LONG_VALUE.value,
-    'BAR_TITLE': '信用扩张 —— 中长期贷款余额（中国:金融机构:各项贷款余额:人民币:同比）',
+    # 'BAR_TITLE': '信用扩张 —— 中长期贷款余额（中国:金融机构:各项贷款余额:人民币:同比）',
+    'BAR_TITLE': '信用扩张',
     'LINE_STROKE_DASH': (5, 3),
     'ROLLING_WINDOW': '三月',
     'ROLLING_WINDOW_SIZE': 3,

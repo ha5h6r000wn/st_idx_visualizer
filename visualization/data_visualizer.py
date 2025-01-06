@@ -258,9 +258,9 @@ def add_altair_line_with_stroke_dash(df, config: param_cls.LineParam):
                 # legend=alt.Legend(title='比较基准'),  # 设置图例的标题
                 legend=alt.Legend(
                     orient='none',
-                    legendX=150,
+                    legendX=120,
                     legendY=-80,
-                    columns=2,
+                    columns=1,
                 ),
             ),
             # tooltip=[
