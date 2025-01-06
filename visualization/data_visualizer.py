@@ -175,7 +175,10 @@ def add_altair_bar_with_highlighted_signal(df, config: param_cls.SignalBarParam)
     return (
         alt.Chart(
             df,
-            title=config.title,
+            title=alt.TitleParams(
+                text=config.title,
+                offset=100,
+            ),
             height=config.height,
         )
         .mark_bar(clip=True)
@@ -199,6 +202,12 @@ def add_altair_bar_with_highlighted_signal(df, config: param_cls.SignalBarParam)
                     domain=signal_order,
                     # range=['steelblue', 'skyblue'],
                 ),  # 设置颜色范围
+                legend=alt.Legend(
+                    orient='none',
+                    legendX=-80,
+                    legendY=-80,
+                    columns=2,
+                ),
             ),
         )
     )
@@ -247,6 +256,12 @@ def add_altair_line_with_stroke_dash(df, config: param_cls.LineParam):
                 sort=order_group,
                 # 设置颜色范围
                 # legend=alt.Legend(title='比较基准'),  # 设置图例的标题
+                legend=alt.Legend(
+                    orient='none',
+                    legendX=150,
+                    legendY=-80,
+                    columns=2,
+                ),
             ),
             # tooltip=[
             #     alt.Tooltip('交易日期'),
