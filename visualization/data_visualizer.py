@@ -319,16 +319,25 @@ def draw_bar_line_chart_with_highlighted_signal(dt_indexed_df, config: param_cls
         line = add_altair_line_with_stroke_dash(selected_df, config.line_param)
 
         # 显示图表
+        combined_chart = (
+            (bar + line)
+            .resolve_scale(color='independent')
+            .properties(
+                width='container',  # 使用容器宽度
+                autosize=alt.AutoSizeParams(type='fit', contains='padding'),
+            )
+        )
+
         st.altair_chart(
-            (bar + line).resolve_scale(color='independent'),
+            combined_chart,
             theme='streamlit',
-            # use_container_width=True,
+            use_container_width=True,
         )
     else:
         st.altair_chart(
-            bar,
+            bar.properties(width='container', autosize=alt.AutoSizeParams(type='fit', contains='padding')),
             theme='streamlit',
-            # use_container_width=True,
+            use_container_width=True,
         )
 
 
