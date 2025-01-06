@@ -319,29 +319,17 @@ def draw_bar_line_chart_with_highlighted_signal(dt_indexed_df, config: param_cls
         line = add_altair_line_with_stroke_dash(selected_df, config.line_param)
 
         # 显示图表
-        combined_chart = (
-            alt.layer(bar, line)
-            .resolve_scale(color='independent')
-            .properties(
-                width=600,  # 设置固定宽度
-            )
+        st.altair_chart(
+            (bar + line).resolve_scale(color='independent'),
+            theme='streamlit',
+            use_container_width=True,
         )
-
-        container = st.container()
-        with container:
-            st.altair_chart(
-                combined_chart,
-                theme='streamlit',
-                use_container_width=True,
-            )
     else:
-        container = st.container()
-        with container:
-            st.altair_chart(
-                bar.properties(width=600),  # 设置固定宽度
-                theme='streamlit',
-                use_container_width=True,
-            )
+        st.altair_chart(
+            bar,
+            theme='streamlit',
+            use_container_width=True,
+        )
 
 
 def draw_test(dt_indexed_df, config: param_cls.BarLineWithSignalParam):
