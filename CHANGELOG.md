@@ -1,3 +1,17 @@
+## 0.2.1 (2025-01-06)
+
+### Fix
+
+- find the problem and fix it: title too long
+- still fixing graph size
+- continue refining graph size on cellphone
+- fix graph size on cell phone
+- fix render bug
+
+### Refactor
+
+- refine bar+line legend
+
 ## 0.2.0 (2025-01-06)
 
 ### Feat
