@@ -167,6 +167,7 @@ def generate_style_charts():
         )
 
         # [INFO] 期限利差
+        # 需求：基准线从近一年均值改为近一月均值
 
         wide_raw_cn_bond_yield_df = reshape_long_df_into_wide_form(
             long_df=long_raw_df_collection[param_cls.WindLocal.CN_BOND_YIELD],
