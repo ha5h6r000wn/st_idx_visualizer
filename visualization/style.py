@@ -188,6 +188,7 @@ def generate_style_charts():
             window_size=style_config.TERM_SPREAD_CONFIG['ROLLING_WINDOW_SIZE'],
             rolling_mean_col=style_config.TERM_SPREAD_CONFIG['MEAN_COL'],
         )
+        st.write(term_spread_df)
 
         draw_bar_line_chart_with_highlighted_signal(
             dt_indexed_df=term_spread_df, config=style_config.TERM_SPREAD_CHART_PARAM

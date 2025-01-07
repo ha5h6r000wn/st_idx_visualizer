@@ -111,7 +111,8 @@ TERM_SPREAD_CONFIG = {
     'SQL_NAME': 'query_yield_curve.sql',
     'YIELD_CURVE_NAMES': ('中债国债收益率曲线',),
     'YIELD_CURVE_TERMS': ('1.0', '10.0'),
-    'ROLLING_WINDOW': '一年',
+    # 需求：基准线从近一年均值改为近一月均值
+    'ROLLING_WINDOW': '一月',
     'TERM_SPREAD_COL': '期限利差',
     'SIGNAL_COL': '交易信号',
     'BASELINE_COL': '比较基准',
