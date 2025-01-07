@@ -195,6 +195,33 @@ def generate_style_charts():
             dt_indexed_df=term_spread_df, config=style_config.TERM_SPREAD_CHART_PARAM
         )
 
+        term_spread_line_config = param_cls.IdxLineParam(
+            axis_names=style_config.STYLE_CHART_AXIS_NAMES['LONG_SHORT_TERM_RATE'],
+            title='国债到期收益率',
+            data_col_param=param_cls.WindIdxColParam(
+                dt_col=term_spread_df.index.name,
+            ),
+            y_limit_extra=0.005,
+            y_axis_format=config.CHART_NUM_FORMAT['pct'],
+            dt_slider_param=param_cls.DtSliderParam(
+                start_dt='20200601',
+                default_start_offset=style_config.TERM_SPREAD_CONFIG['SLIDER_DEFAULT_OFFSET_DT_COUNT'],
+                key='long_short_term_SLIDER',
+            ),
+        )
+
+        draw_grouped_lines(
+            term_spread_df[
+                [
+                    '1.0',
+                    '10.0',
+                ]
+            ]
+            .div(100)
+            .dropna(inplace=False),
+            term_spread_line_config,
+        )
+
         # [INFO] 换手率
 
         wide_wind_all_a_turnover_df = reshape_long_df_into_wide_form(
@@ -345,6 +372,7 @@ def generate_style_charts():
             big_small_df[['沪深300/中证2000', '近一年均值']].dropna(inplace=False),
             big_small_line_config,
         )
+        # st.write(big_small_df)
 
         # [INFO] 经济增长: 房地产完成额累计同比
 

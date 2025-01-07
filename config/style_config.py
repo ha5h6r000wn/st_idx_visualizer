@@ -607,6 +607,11 @@ STYLE_CHART_AXIS_NAMES = {
         'LEGEND': '图例',
         'Y': '期限利差(%)',
     },
+    'LONG_SHORT_TERM_RATE': {
+        'X': '交易日期',
+        'LEGEND': '年限',
+        'Y': '到期收益率',
+    },
 }
 
 # https://coolors.co/83c9ff-ffdd4a-0068c9-000103-ff0000
