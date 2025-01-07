@@ -38,6 +38,7 @@ def draw_grouped_bars(grouped_df, group_name_df, config: param_cls.BaseBarParam)
     selection = alt.selection_point(fields=[config.axis_names['LEGEND']], bind='legend')
     order_name = group_name_df.iloc[:, 0].tolist()
     order_group = grouped_df.columns.tolist()
+    # st.subheader(config.title)
     bar = (
         alt.Chart(
             reindex_grouped_df,
@@ -46,7 +47,7 @@ def draw_grouped_bars(grouped_df, group_name_df, config: param_cls.BaseBarParam)
                 text=config.title,
                 offset=100,
             ),
-            # padding={'top': 50},
+            # padding={'top': 80},
         )
         .mark_bar()
         .encode(
@@ -273,7 +274,7 @@ def add_altair_line_with_stroke_dash(df, config: param_cls.LineParam):
 
 def draw_bar_line_chart_with_highlighted_signal(dt_indexed_df, config: param_cls.BarLineWithSignalParam):
     trade_dt = dt_indexed_df.index
-    st.write(trade_dt[-1])
+    # st.write(trade_dt[-1])
     if config.dt_slider_param is not None:
         custom_dt = get_custom_dt_with_slider(trade_dt=trade_dt, config=config.dt_slider_param)
         selected_df = dt_indexed_df.loc[custom_dt[0] : custom_dt[1]].reset_index()
