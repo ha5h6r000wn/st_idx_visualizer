@@ -129,6 +129,10 @@ def append_rolling_quantile_inv_q_column(
         .rolling(window=window_size)
         .apply(lambda x: get_np_quantile_inv_q(quantile=x.iloc[-1], sequence=x, method='median_unbiased'))
     )
+    # print(len(df[target_col]))
+    # print(window_size)
+    # print(window_name)
+    print(df.tail(20))
     if dropna:
         return df.dropna(inplace=False)
     else:
@@ -184,6 +188,7 @@ def append_signal_column(
     bottom_signal,
     middle_signal,
 ):
+    # print(signal_col)
     df[signal_col] = df.apply(
         assign_signal,
         args=(

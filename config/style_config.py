@@ -102,8 +102,8 @@ DATA_QUERY_PARAM = {
         ),
     ),
 }
-## [INFO] 价值成长研判框架
-# [INFO] 期限利差
+## NOTE 价值成长研判框架
+# NOTE 期限利差
 TERM_SPREAD_CONFIG = {
     'DT_TYPE': TradeDtType.FUND_MKT,
     'SLIDER_START_DT': '20200601',
@@ -176,7 +176,7 @@ TERM_SPREAD_CHART_PARAM = param_cls.BarLineWithSignalParam(
     isConvertedToPct=True,
 )
 
-# [INFO] 换手率
+# NOTE 换手率
 INDEX_TURNOVER_CONFIG = {
     'WIND_TABLE': param_cls.WindPortal.A_IDX_VAL,
     'DT_TYPE': TradeDtType.STOCK_MKT,
@@ -252,7 +252,7 @@ INDEX_TURNOVER_CHART_PARAM = param_cls.BarLineWithSignalParam(
     isConvertedToPct=True,
 )
 
-# [INFO] ERP股债性价比
+# NOTE ERP股债性价比
 INDEX_ERP_CONFIG = {
     'WIND_TABLE': param_cls.WindPortal.A_IDX_VAL,
     'DT_TYPE': TradeDtType.STOCK_MKT,  # 采用并集
@@ -331,7 +331,7 @@ INDEX_ERP_CHART_PARAM = param_cls.BarLineWithSignalParam(
 )
 
 
-# [INFO] 信用扩张
+# NOTE 信用扩张
 CREDIT_EXPANSION_CONFIG = {
     'WIND_TABLE': param_cls.WindPortal.EDB,
     'SLIDER_START_DT': '20180101',
@@ -390,8 +390,8 @@ CREDIT_EXPANSION_CHART_PARAM = param_cls.BarLineWithSignalParam(
 )
 
 
-## [INFO] 大小盘研判框架
-# [INFO] 经济增长: 房地产完成额累计同比
+## NOTE 大小盘研判框架
+# NOTE 经济增长: 房地产完成额累计同比
 HOUSING_INVEST_CONFIG = {
     'WIND_TABLE': param_cls.WindPortal.EDB,
     'SLIDER_START_DT': '20180101',
@@ -448,7 +448,7 @@ HOUSING_INVEST_CHART_PARAM = param_cls.BarLineWithSignalParam(
     ),
 )
 
-# [INFO] 期现利差（大小盘）
+# NOTE 期现利差（大小盘）
 TERM_SPREAD_2_CHART_PARAM = param_cls.BarLineWithSignalParam(
     dt_slider_param=param_cls.DtSliderParam(
         start_dt=TERM_SPREAD_CONFIG['SLIDER_START_DT'],
@@ -478,7 +478,7 @@ TERM_SPREAD_2_CHART_PARAM = param_cls.BarLineWithSignalParam(
 )
 
 
-# [INFO] ERP股债性价比（大小盘）
+# NOTE ERP股债性价比（大小盘）
 INDEX_ERP_2_CHART_PARAM = param_cls.BarLineWithSignalParam(
     dt_slider_param=param_cls.DtSliderParam(
         start_dt=INDEX_ERP_CONFIG['SLIDER_START_DT'],
@@ -512,7 +512,7 @@ INDEX_ERP_2_CHART_PARAM = param_cls.BarLineWithSignalParam(
     isSignalAssigned=True,
 )
 
-# [INFO] 风格关注度
+# NOTE 风格关注度
 STYLE_FOCUS_CONFIG = {
     'WIND_TABLE': param_cls.WindPortal.A_IDX_VAL,
     'DT_TYPE': TradeDtType.STOCK_MKT,

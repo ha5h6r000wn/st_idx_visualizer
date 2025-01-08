@@ -13,14 +13,18 @@ from data_preparation.data_processor import (
     append_ratio_column,
     append_rolling_mean_column,
     append_rolling_quantile_column,
+    append_rolling_quantile_inv_q_column,
     append_rolling_sum_column,
+    append_signal_column,
     append_year_on_year_growth_column,
     reshape_long_df_into_wide_form,
 )
 from utils import TradeDtType, get_avg_dt_count_via_dt_type, msg_printer
 from visualization.data_visualizer import (
+    draw_bar_line_chart_with_highlighted_predefined_signal,
     draw_bar_line_chart_with_highlighted_signal,
     draw_grouped_lines,
+    generate_signal,
 )
 
 
@@ -139,7 +143,7 @@ def generate_style_charts():
     # 1. 价值成长研判框架
 
     with tab1:
-        # [INFO] 国证价值/国证成长
+        # NOTE 国证价值/国证成长
 
         value_name_col, growth_name_col = tuple(
             map(
@@ -166,7 +170,7 @@ def generate_style_charts():
             value_growth_line_param,
         )
 
-        # [INFO] 期限利差
+        # NOTE 期限利差
         # 需求：基准线从近一年均值改为近一月均值
 
         wide_raw_cn_bond_yield_df = reshape_long_df_into_wide_form(
@@ -222,7 +226,7 @@ def generate_style_charts():
             term_spread_line_config,
         )
 
-        # [INFO] 换手率
+        # NOTE 换手率
 
         wide_wind_all_a_turnover_df = reshape_long_df_into_wide_form(
             long_df=long_wind_all_a_idx_val_df,
@@ -259,7 +263,8 @@ def generate_style_charts():
             config=style_config.INDEX_TURNOVER_CHART_PARAM,
         )
 
-        # [INFO] ERP股债性价比（价值成长）
+        # NOTE ERP股债性价比（价值成长）
+        # ERP位置和趋势：高位下行时，做多成长；低位上行时，做多价值;以站上过去1个月均线作为趋势的判断
 
         wide_raw_idx_pe_ttm_df = reshape_long_df_into_wide_form(
             long_df=long_wind_all_a_idx_val_df,
@@ -305,12 +310,38 @@ def generate_style_charts():
                 dropna=info['dropna'],
             )
 
-        draw_bar_line_chart_with_highlighted_signal(
+        # draw_bar_line_chart_with_highlighted_signal(
+        #     dt_indexed_df=wide_erp_df,
+        #     config=style_config.INDEX_ERP_CHART_PARAM,
+        # )
+
+        wide_erp_df_new = append_rolling_quantile_inv_q_column(
+            df=merge_pe_yc_df,
+            window_size=style_config.INDEX_ERP_CONFIG['QUANTILE_ROLLING_WINDOW_SIZE'],
+            window_name=style_config.INDEX_ERP_CONFIG['QUANTILE_ROLLING_WINDOW'],
+            target_col=style_config.INDEX_ERP_CONFIG['ERP_COL'],
+            rolling_q_col='股债性价比分位数',
+        )
+        st.write(wide_erp_df_new)
+
+        # wide_erp_df = generate_signal(df=wide_erp_df, config=style_config.INDEX_ERP_CHART_PARAM)
+        wide_erp_df = append_signal_column(
+            df=wide_erp_df,
+            signal_col=style_config.INDEX_ERP_CHART_PARAM.bar_param.axis_names['LEGEND'],
+            target_col=style_config.INDEX_ERP_CHART_PARAM.bar_param.axis_names['Y'],
+            upper_bound_col=style_config.INDEX_ERP_CONFIG['QUANTILE_CEILING_COL'],
+            lower_bound_col=style_config.INDEX_ERP_CONFIG['QUANTILE_FLOOR_COL'],
+            top_signal=style_config.INDEX_ERP_CHART_PARAM.bar_param.true_signal,
+            bottom_signal=style_config.INDEX_ERP_CHART_PARAM.bar_param.false_signal,
+            middle_signal=style_config.INDEX_ERP_CHART_PARAM.bar_param.no_signal,
+        )
+        # st.write(wide_erp_df)
+        draw_bar_line_chart_with_highlighted_predefined_signal(
             dt_indexed_df=wide_erp_df,
             config=style_config.INDEX_ERP_CHART_PARAM,
         )
 
-        # [INFO] 信用扩张：金融机构各项贷款余额同比
+        # NOTE 信用扩张：金融机构各项贷款余额同比
 
         credit_expansion_df = (
             wide_raw_edb_df[[style_config.CREDIT_EXPANSION_CONFIG['CREDIT_EXPANSION_COL']]]
@@ -340,7 +371,7 @@ def generate_style_charts():
 
     # 2. 大小盘研判框架
     with tab2:
-        # [INFO] 大小盘比价 —— 沪深300/中证2000
+        # NOTE 大小盘比价 —— 沪深300/中证2000
 
         big_name_col, small_name_col = tuple(
             map(
@@ -374,7 +405,7 @@ def generate_style_charts():
         )
         # st.write(big_small_df)
 
-        # [INFO] 经济增长: 房地产完成额累计同比
+        # NOTE 经济增长: 房地产完成额累计同比
 
         wide_raw_housing_invest_df = wide_raw_edb_df[[style_config.HOUSING_INVEST_CONFIG['HOUSING_INVEST_COL']]]
         # st.write(wide_raw_housing_invest_df)
@@ -398,13 +429,40 @@ def generate_style_charts():
         #     config=style_config.HOUSING_INVEST_CHART_PARAM,
         # )
 
-        # [INFO] 期现利差
+        # NOTE 期现利差
 
         draw_bar_line_chart_with_highlighted_signal(
             dt_indexed_df=term_spread_df, config=style_config.TERM_SPREAD_2_CHART_PARAM
         )
 
-        # [INFO] ERP股债性价比（大小盘）
+        term_spread_2_line_config = param_cls.IdxLineParam(
+            axis_names=style_config.STYLE_CHART_AXIS_NAMES['LONG_SHORT_TERM_RATE'],
+            title='国债到期收益率',
+            data_col_param=param_cls.WindIdxColParam(
+                dt_col=term_spread_df.index.name,
+            ),
+            y_limit_extra=0.005,
+            y_axis_format=config.CHART_NUM_FORMAT['pct'],
+            dt_slider_param=param_cls.DtSliderParam(
+                start_dt='20200601',
+                default_start_offset=style_config.TERM_SPREAD_CONFIG['SLIDER_DEFAULT_OFFSET_DT_COUNT'],
+                key='long_short_term_2_SLIDER',
+            ),
+        )
+
+        draw_grouped_lines(
+            term_spread_df[
+                [
+                    '1.0',
+                    '10.0',
+                ]
+            ]
+            .div(100)
+            .dropna(inplace=False),
+            term_spread_2_line_config,
+        )
+
+        # NOTE ERP股债性价比（大小盘）
 
         for col, new_col in zip(
             [big_name_col, small_name_col],
@@ -465,7 +523,7 @@ def generate_style_charts():
             config=style_config.INDEX_ERP_2_CHART_PARAM,
         )
 
-        # [INFO] 大小盘近两月收益率
+        # NOTE 大小盘近两月收益率
 
         # st.write(big_small_df)
         big_small_line_config = param_cls.IdxLineParam(
@@ -491,7 +549,7 @@ def generate_style_charts():
             big_small_line_config,
         )
 
-        # [INFO] 风格关注度
+        # NOTE 风格关注度
 
         wide_big_small_turnover_df = reshape_long_df_into_wide_form(
             long_df=long_big_small_idx_val_df,
