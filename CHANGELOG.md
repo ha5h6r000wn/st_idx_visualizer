@@ -1,3 +1,19 @@
+## 0.3.0 (2025-01-10)
+
+### Feat
+
+- add long short term rate line chart
+
+### Fix
+
+- remove unnecessary st.write()
+
+### Refactor
+
+- update erp logic
+- detach signal appending from chart drawing fun
+- change term-spread base line window from 1y to 1m
+
 ## 0.2.1 (2025-01-06)
 
 ### Fix
