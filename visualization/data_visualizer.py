@@ -201,7 +201,9 @@ def add_altair_bar_with_highlighted_signal(df, config: param_cls.SignalBarParam)
                 f'{config.axis_names['LEGEND']}:{config.axis_types['LEGEND']}',  # 使用新的数据列来编码颜色
                 scale=alt.Scale(
                     domain=signal_order,
-                    # range=['steelblue', 'skyblue'],
+                    # range=['steelblue', 'skyblue', 'lightgrey'],
+                    range=['royalblue', 'lightskyblue', 'lightgrey'],
+                    # range=['royalblue', 'lightskyblue', 'lightsteelblue'],
                 ),  # 设置颜色范围
                 legend=alt.Legend(
                     orient='none',
@@ -252,7 +254,8 @@ def add_altair_line_with_stroke_dash(df, config: param_cls.LineParam):
                 f'{config.axis_names['LEGEND']}:{config.axis_types['LEGEND']}',  # 使用新的数据列来编码颜色
                 scale=alt.Scale(
                     # domain=[config.axis_names['Y']],
-                    range=['red', 'black'],
+                    # range=['red', 'black'],
+                    range=['red', 'black', 'black'],
                 ),
                 sort=order_group,
                 # 设置颜色范围
@@ -279,7 +282,9 @@ def draw_bar_line_chart_with_highlighted_signal(dt_indexed_df, config: param_cls
         custom_dt = get_custom_dt_with_slider(trade_dt=trade_dt, config=config.dt_slider_param)
         selected_df = dt_indexed_df.loc[custom_dt[0] : custom_dt[1]].reset_index()
     else:
-        selected_df = dt_indexed_df
+        selected_df = dt_indexed_df.reset_index()
+
+    # st.write(selected_df)
 
     # 创建一个新的数据列，用于编码颜色
     if not config.isSignalAssigned:
@@ -303,6 +308,75 @@ def draw_bar_line_chart_with_highlighted_signal(dt_indexed_df, config: param_cls
                 bottom_signal=config.bar_param.false_signal,
                 middle_signal=config.bar_param.no_signal,
             )
+
+    selected_df[config.line_param.axis_names['LEGEND']] = config.line_param.axis_names['Y']
+    if config.isConvertedToPct:
+        selected_df = selected_df.apply(divide_by_100)
+        config.bar_param.y_axis_format = CHART_NUM_FORMAT['pct']
+        config.line_param.y_axis_format = CHART_NUM_FORMAT['pct']
+
+    # st.write(selected_df)
+
+    # 创建条形图
+    bar = add_altair_bar_with_highlighted_signal(selected_df, config.bar_param)
+
+    if config.isLineDrawn:
+        # 创建线图
+        line = add_altair_line_with_stroke_dash(selected_df, config.line_param)
+
+        # 显示图表
+        st.altair_chart(
+            (bar + line).resolve_scale(color='independent'),
+            theme='streamlit',
+            use_container_width=True,
+        )
+    else:
+        st.altair_chart(
+            bar,
+            theme='streamlit',
+            use_container_width=True,
+        )
+
+
+def generate_signal(df, config: param_cls.BarLineWithSignalParam):
+    # 创建一个新的数据列，用于编码颜色
+
+    if not config.isSignalAssigned:
+        if config.bar_param.no_signal is None:
+            df[config.bar_param.axis_names['LEGEND']] = (
+                df[config.bar_param.axis_names['Y']] >= df[config.line_param.axis_names['Y']]
+            ).replace(
+                {
+                    True: config.bar_param.true_signal,
+                    False: config.bar_param.false_signal,
+                }
+            )
+        else:
+            df = append_signal_column(
+                df=df,
+                signal_col=config.bar_param.axis_names['LEGEND'],
+                target_col=config.bar_param.axis_names['Y'],
+                upper_bound_col=config.line_param.compared_cols[0],
+                lower_bound_col=config.line_param.compared_cols[1],
+                top_signal=config.bar_param.true_signal,
+                bottom_signal=config.bar_param.false_signal,
+                middle_signal=config.bar_param.no_signal,
+            )
+    st.write(df)
+
+    # dt_indexed_df = df.set_index(config.bar_param.axis_names['X'])
+
+    return df
+
+
+def draw_bar_line_chart_with_highlighted_predefined_signal(dt_indexed_df, config: param_cls.BarLineWithSignalParam):
+    trade_dt = dt_indexed_df.index
+    # st.write(trade_dt[-1])
+    if config.dt_slider_param is not None:
+        custom_dt = get_custom_dt_with_slider(trade_dt=trade_dt, config=config.dt_slider_param)
+        selected_df = dt_indexed_df.loc[custom_dt[0] : custom_dt[1]].reset_index()
+    else:
+        selected_df = dt_indexed_df
 
     selected_df[config.line_param.axis_names['LEGEND']] = config.line_param.axis_names['Y']
     if config.isConvertedToPct:
