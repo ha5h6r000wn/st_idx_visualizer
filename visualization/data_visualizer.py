@@ -201,7 +201,9 @@ def add_altair_bar_with_highlighted_signal(df, config: param_cls.SignalBarParam)
                 f'{config.axis_names['LEGEND']}:{config.axis_types['LEGEND']}',  # 使用新的数据列来编码颜色
                 scale=alt.Scale(
                     domain=signal_order,
-                    # range=['steelblue', 'skyblue'],
+                    # range=['steelblue', 'skyblue', 'lightgrey'],
+                    range=['royalblue', 'lightskyblue', 'lightgrey'],
+                    # range=['royalblue', 'lightskyblue', 'lightsteelblue'],
                 ),  # 设置颜色范围
                 legend=alt.Legend(
                     orient='none',
@@ -252,7 +254,8 @@ def add_altair_line_with_stroke_dash(df, config: param_cls.LineParam):
                 f'{config.axis_names['LEGEND']}:{config.axis_types['LEGEND']}',  # 使用新的数据列来编码颜色
                 scale=alt.Scale(
                     # domain=[config.axis_names['Y']],
-                    range=['red', 'black'],
+                    # range=['red', 'black'],
+                    range=['red', 'black', 'black'],
                 ),
                 sort=order_group,
                 # 设置颜色范围

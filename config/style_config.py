@@ -322,8 +322,9 @@ INDEX_ERP_CHART_PARAM = param_cls.BarLineWithSignalParam(
             'LEGEND': INDEX_ERP_CONFIG['BASELINE_COL'],
         },
         stroke_dash=INDEX_ERP_CONFIG['LINE_STROKE_DASH'],
-        color='red',
+        # color='red',
         compared_cols=[
+            '近一月均值',
             INDEX_ERP_CONFIG['QUANTILE_CEILING_COL'],
             INDEX_ERP_CONFIG['QUANTILE_FLOOR_COL'],
         ],
@@ -505,6 +506,7 @@ INDEX_ERP_2_CHART_PARAM = param_cls.BarLineWithSignalParam(
         stroke_dash=INDEX_ERP_CONFIG['LINE_STROKE_DASH'],
         color='red',
         compared_cols=[
+            '近一月均值',
             INDEX_ERP_CONFIG['QUANTILE_CEILING_COL'],
             INDEX_ERP_CONFIG['QUANTILE_FLOOR_COL'],
         ],

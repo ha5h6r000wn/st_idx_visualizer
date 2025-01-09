@@ -1,6 +1,7 @@
 from datetime import date
 
 import numpy as np
+import pandas as pd
 import streamlit as st
 
 from config import config, param_cls, style_config
@@ -296,8 +297,19 @@ def generate_style_charts():
                 'dropna': True,
             },
         ]
+        # st.write(merge_pe_yc_df[style_config.INDEX_ERP_CONFIG['ERP_COL']])
 
-        wide_erp_df = merge_pe_yc_df.copy()
+        # wide_erp_df = merge_pe_yc_df.copy()
+        wide_erp_df = pd.DataFrame(merge_pe_yc_df[style_config.INDEX_ERP_CONFIG['ERP_COL']])
+        wide_erp_df = append_rolling_mean_column(
+            df=wide_erp_df,
+            window_name='一月',
+            window_size=config.TRADE_DT_COUNT['一月'],
+            # rolling_mean_col='近一月均值',
+            dropna=False,
+        )
+        # st.write(wide_erp_df)
+        # print(wide_erp_df)
 
         for info in erp_quantile_info:
             wide_erp_df = append_rolling_quantile_column(
@@ -315,27 +327,52 @@ def generate_style_charts():
         #     config=style_config.INDEX_ERP_CHART_PARAM,
         # )
 
-        wide_erp_df_new = append_rolling_quantile_inv_q_column(
-            df=merge_pe_yc_df,
-            window_size=style_config.INDEX_ERP_CONFIG['QUANTILE_ROLLING_WINDOW_SIZE'],
-            window_name=style_config.INDEX_ERP_CONFIG['QUANTILE_ROLLING_WINDOW'],
-            target_col=style_config.INDEX_ERP_CONFIG['ERP_COL'],
-            rolling_q_col='股债性价比分位数',
-        )
-        st.write(wide_erp_df_new)
+        # wide_erp_df_new = append_rolling_quantile_inv_q_column(
+        #     df=pd.DataFrame(merge_pe_yc_df[style_config.INDEX_ERP_CONFIG['ERP_COL']]),
+        #     window_size=style_config.INDEX_ERP_CONFIG['QUANTILE_ROLLING_WINDOW_SIZE'],
+        #     window_name=style_config.INDEX_ERP_CONFIG['QUANTILE_ROLLING_WINDOW'],
+        #     data_set_col=style_config.INDEX_ERP_CONFIG['ERP_COL'],
+        #     rolling_q_col='近四年分位数',
+        # )
+        # st.write(wide_erp_df_new)
 
         # wide_erp_df = generate_signal(df=wide_erp_df, config=style_config.INDEX_ERP_CHART_PARAM)
-        wide_erp_df = append_signal_column(
-            df=wide_erp_df,
-            signal_col=style_config.INDEX_ERP_CHART_PARAM.bar_param.axis_names['LEGEND'],
-            target_col=style_config.INDEX_ERP_CHART_PARAM.bar_param.axis_names['Y'],
-            upper_bound_col=style_config.INDEX_ERP_CONFIG['QUANTILE_CEILING_COL'],
-            lower_bound_col=style_config.INDEX_ERP_CONFIG['QUANTILE_FLOOR_COL'],
-            top_signal=style_config.INDEX_ERP_CHART_PARAM.bar_param.true_signal,
-            bottom_signal=style_config.INDEX_ERP_CHART_PARAM.bar_param.false_signal,
-            middle_signal=style_config.INDEX_ERP_CHART_PARAM.bar_param.no_signal,
-        )
+
+        # wide_erp_df = append_signal_column(
+        #     df=wide_erp_df,
+        #     signal_col=style_config.INDEX_ERP_CHART_PARAM.bar_param.axis_names['LEGEND'],
+        #     target_col=style_config.INDEX_ERP_CHART_PARAM.bar_param.axis_names['Y'],
+        #     upper_bound_col=style_config.INDEX_ERP_CONFIG['QUANTILE_CEILING_COL'],
+        #     lower_bound_col=style_config.INDEX_ERP_CONFIG['QUANTILE_FLOOR_COL'],
+        #     top_signal=style_config.INDEX_ERP_CHART_PARAM.bar_param.true_signal,
+        #     bottom_signal=style_config.INDEX_ERP_CHART_PARAM.bar_param.false_signal,
+        #     middle_signal=style_config.INDEX_ERP_CHART_PARAM.bar_param.no_signal,
+        # )
         # st.write(wide_erp_df)
+
+        erp_conditions = [
+            (
+                wide_erp_df[style_config.INDEX_ERP_CONFIG['ERP_COL']]
+                >= wide_erp_df[style_config.INDEX_ERP_CONFIG['QUANTILE_CEILING_COL']]
+            )
+            & (wide_erp_df[style_config.INDEX_ERP_CONFIG['ERP_COL']] < wide_erp_df['近一月均值']),
+            (
+                wide_erp_df[style_config.INDEX_ERP_CONFIG['ERP_COL']]
+                <= wide_erp_df[style_config.INDEX_ERP_CONFIG['QUANTILE_FLOOR_COL']]
+            )
+            & (wide_erp_df[style_config.INDEX_ERP_CONFIG['ERP_COL']] > wide_erp_df['近一月均值']),
+        ]
+        erp_choices = [
+            style_config.INDEX_ERP_CHART_PARAM.bar_param.true_signal,
+            style_config.INDEX_ERP_CHART_PARAM.bar_param.false_signal,
+        ]
+        wide_erp_df[style_config.INDEX_ERP_CONFIG['SIGNAL_COL']] = np.select(
+            condlist=erp_conditions,
+            choicelist=erp_choices,
+            default=style_config.INDEX_ERP_CHART_PARAM.bar_param.no_signal,
+        )
+        st.write(wide_erp_df)
+
         draw_bar_line_chart_with_highlighted_predefined_signal(
             dt_indexed_df=wide_erp_df,
             config=style_config.INDEX_ERP_CHART_PARAM,
@@ -488,38 +525,44 @@ def generate_style_charts():
         merged_erp_df = wide_erp_df.join(big_small_df, how='inner', lsuffix='_erp', rsuffix='_big_small')
         merged_erp_df.index.name = wide_erp_df.index.name
         # st.write(merged_erp_df)
-        erp_conditions = [
-            (
-                merged_erp_df[style_config.INDEX_ERP_CONFIG['ERP_COL']]
-                >= merged_erp_df[style_config.INDEX_ERP_CONFIG['QUANTILE_CEILING_COL']]
-            )
-            & (merged_erp_df['沪深300近两月收益率'] < merged_erp_df['中证2000近两月收益率'])
-            & (merged_erp_df['沪深300近两月收益率'] < 0),
-            (
-                merged_erp_df[style_config.INDEX_ERP_CONFIG['ERP_COL']]
-                >= merged_erp_df[style_config.INDEX_ERP_CONFIG['QUANTILE_CEILING_COL']]
-            )
-            & (merged_erp_df['沪深300近两月收益率'] > merged_erp_df['中证2000近两月收益率'])
-            & (merged_erp_df['沪深300近两月收益率'] > 0),
-            (
-                merged_erp_df[style_config.INDEX_ERP_CONFIG['ERP_COL']]
-                < merged_erp_df[style_config.INDEX_ERP_CONFIG['QUANTILE_FLOOR_COL']]
-            ),
-        ]
-        erp_choices = [
-            style_config.INDEX_ERP_2_CHART_PARAM.bar_param.false_signal,
+        # erp_conditions = [
+        #     (
+        #         merged_erp_df[style_config.INDEX_ERP_CONFIG['ERP_COL']]
+        #         >= merged_erp_df[style_config.INDEX_ERP_CONFIG['QUANTILE_CEILING_COL']]
+        #     )
+        #     & (merged_erp_df['沪深300近两月收益率'] < merged_erp_df['中证2000近两月收益率'])
+        #     & (merged_erp_df['沪深300近两月收益率'] < 0),
+        #     (
+        #         merged_erp_df[style_config.INDEX_ERP_CONFIG['ERP_COL']]
+        #         >= merged_erp_df[style_config.INDEX_ERP_CONFIG['QUANTILE_CEILING_COL']]
+        #     )
+        #     & (merged_erp_df['沪深300近两月收益率'] > merged_erp_df['中证2000近两月收益率'])
+        #     & (merged_erp_df['沪深300近两月收益率'] > 0),
+        #     (
+        #         merged_erp_df[style_config.INDEX_ERP_CONFIG['ERP_COL']]
+        #         < merged_erp_df[style_config.INDEX_ERP_CONFIG['QUANTILE_FLOOR_COL']]
+        #     ),
+        # ]
+        # erp_choices = [
+        #     style_config.INDEX_ERP_2_CHART_PARAM.bar_param.false_signal,
+        #     style_config.INDEX_ERP_2_CHART_PARAM.bar_param.true_signal,
+        #     style_config.INDEX_ERP_2_CHART_PARAM.bar_param.false_signal,
+        # ]
+
+        erp_2_choices = [
             style_config.INDEX_ERP_2_CHART_PARAM.bar_param.true_signal,
             style_config.INDEX_ERP_2_CHART_PARAM.bar_param.false_signal,
         ]
-        merged_erp_df[style_config.INDEX_ERP_CONFIG['SIGNAL_COL']] = np.select(
+        wide_erp_2_df = wide_erp_df.copy()
+        wide_erp_2_df[style_config.INDEX_ERP_CONFIG['SIGNAL_COL']] = np.select(
             condlist=erp_conditions,
-            choicelist=erp_choices,
+            choicelist=erp_2_choices,
             default=style_config.INDEX_ERP_2_CHART_PARAM.bar_param.no_signal,
         )
-        # st.write(merged_erp_df)
+        st.write(wide_erp_2_df)
 
         draw_bar_line_chart_with_highlighted_signal(
-            dt_indexed_df=merged_erp_df,
+            dt_indexed_df=wide_erp_2_df,
             config=style_config.INDEX_ERP_2_CHART_PARAM,
         )
 

@@ -57,7 +57,7 @@ def append_rolling_mean_column(
     if target_col is None:
         target_col = df.columns[-1]
     if rolling_mean_col is None:
-        rolling_mean_col = f'{window_name}均值'
+        rolling_mean_col = f'近{window_name}均值'
     df[rolling_mean_col] = df[target_col].rolling(window=window_size).mean()
     if dropna:
         return df.dropna(inplace=False)
@@ -116,23 +116,30 @@ def append_rolling_quantile_inv_q_column(
     df,
     window_size: int,
     window_name: str | None = None,
-    target_col: str | None = None,
+    data_set_col: str | None = None,
+    data_idv_col: str | None = None,
     rolling_q_col: str | None = None,
     dropna: bool = True,
 ):
-    if target_col is None:
-        target_col = df.columns[-1]
+    if data_set_col is None:
+        data_set_col = df.columns[-1]
+    if data_idv_col is None:
+        data_idv_col = data_set_col
     if rolling_q_col is None:
         rolling_q_col = f'{window_name}%分位'
     df[rolling_q_col] = (
-        df[target_col]
+        df[data_set_col]
         .rolling(window=window_size)
-        .apply(lambda x: get_np_quantile_inv_q(quantile=x.iloc[-1], sequence=x, method='median_unbiased'))
+        .apply(
+            lambda x: get_np_quantile_inv_q(
+                quantile=df.loc[x.index[-1], data_idv_col], sequence=x, method='median_unbiased'
+            )
+        )
     )
     # print(len(df[target_col]))
     # print(window_size)
     # print(window_name)
-    print(df.tail(20))
+    # print(df.tail(20))
     if dropna:
         return df.dropna(inplace=False)
     else:
