@@ -371,7 +371,7 @@ def generate_style_charts():
             choicelist=erp_choices,
             default=style_config.INDEX_ERP_CHART_PARAM.bar_param.no_signal,
         )
-        st.write(wide_erp_df)
+        # st.write(wide_erp_df)
 
         draw_bar_line_chart_with_highlighted_predefined_signal(
             dt_indexed_df=wide_erp_df,
@@ -559,7 +559,7 @@ def generate_style_charts():
             choicelist=erp_2_choices,
             default=style_config.INDEX_ERP_2_CHART_PARAM.bar_param.no_signal,
         )
-        st.write(wide_erp_2_df)
+        # st.write(wide_erp_2_df)
 
         draw_bar_line_chart_with_highlighted_signal(
             dt_indexed_df=wide_erp_2_df,
