@@ -14,9 +14,10 @@ from data_preparation.data_processor import (
     append_ratio_column,
     append_rolling_mean_column,
     append_rolling_quantile_column,
-    append_rolling_quantile_inv_q_column,
+    # append_rolling_quantile_inv_q_column,
     append_rolling_sum_column,
-    append_signal_column,
+    append_sum_column,
+    # append_signal_column,
     append_year_on_year_growth_column,
     reshape_long_df_into_wide_form,
 )
@@ -25,7 +26,7 @@ from visualization.data_visualizer import (
     draw_bar_line_chart_with_highlighted_predefined_signal,
     draw_bar_line_chart_with_highlighted_signal,
     draw_grouped_lines,
-    generate_signal,
+    # generate_signal,
 )
 
 
@@ -169,6 +170,98 @@ def generate_style_charts():
         draw_grouped_lines(
             value_growth_df.iloc[:, -2:],
             value_growth_line_param,
+        )
+
+        # NOTE 相对动量(价值/成长)
+        for col, new_col in zip(
+            [value_name_col, growth_name_col],
+            ['国证价值近一月收益率', '国证成长近一月收益率'],
+        ):
+            value_growth_df[new_col] = value_growth_df[col].pct_change(
+                get_avg_dt_count_via_dt_type(
+                    dt_type=TradeDtType.STOCK_MKT,
+                    period='一月',
+                )
+            )
+        for col, new_col in zip(
+            [value_name_col, growth_name_col],
+            ['国证价值近两周收益率', '国证成长近两周收益率'],
+        ):
+            value_growth_df[new_col] = value_growth_df[col].pct_change(
+                get_avg_dt_count_via_dt_type(
+                    dt_type=TradeDtType.STOCK_MKT,
+                    period='两周',
+                )
+            )
+        value_growth_df.dropna(inplace=True)
+        # st.write(value_growth_df)
+
+        value_growth_line_config = param_cls.IdxLineParam(
+            axis_names=style_config.STYLE_CHART_AXIS_NAMES['VALUE_GROWTH_PCT_CHANGE'],
+            title='价值 VS 成长',
+            y_axis_format=config.CHART_NUM_FORMAT['pct'],
+            dt_slider_param=param_cls.DtSliderParam(
+                start_dt='20200603',
+                default_start_offset=style_config.RELATIVE_MOMENTUM_VALUE_GROWTH_CONFIG[
+                    'SLIDER_DEFAULT_OFFSET_DT_COUNT'
+                ],
+                key='VALUE_GROWTH_PCT_CHANGE_SLIDER',
+            ),
+        )
+
+        draw_grouped_lines(
+            value_growth_df[
+                [
+                    '国证价值近一月收益率',
+                    '国证成长近一月收益率',
+                    '国证价值近两周收益率',
+                    '国证成长近两周收益率',
+                ]
+            ].dropna(inplace=False),
+            value_growth_line_config,
+        )
+
+        value_growth_df = append_difference_column(
+            df=value_growth_df,
+            minuend_col='国证价值近一月收益率',
+            subtrahend_col='国证成长近一月收益率',
+            difference_col='价值对成长近一月超额',
+        )
+        value_growth_df = append_difference_column(
+            df=value_growth_df,
+            minuend_col='国证价值近两周收益率',
+            subtrahend_col='国证成长近两周收益率',
+            difference_col='价值对成长近两周超额',
+        )
+        value_growth_df = append_sum_column(
+            df=value_growth_df,
+            sum_1_col='价值对成长近一月超额',
+            sum_2_col='价值对成长近两周超额',
+            sum_col='相对动量',
+            multiplier_1=1,
+            multiplier_2=2,
+            multiplier_sum=0.5,
+        )
+        # st.write(value_growth_df)
+
+        value_growth_conditions = [
+            (value_growth_df['价值对成长近一月超额'] < 0) & (value_growth_df['价值对成长近两周超额'] < 0),
+            (value_growth_df['价值对成长近一月超额'] > 0) & (value_growth_df['价值对成长近两周超额'] > 0),
+        ]
+        value_growth_choices = [
+            param_cls.TradeSignal.LONG_GROWTH.value,
+            param_cls.TradeSignal.LONG_VALUE.value,
+        ]
+        value_growth_df['交易信号'] = np.select(
+            condlist=value_growth_conditions,
+            choicelist=value_growth_choices,
+            default=param_cls.TradeSignal.NO_SIGNAL.value,
+        )
+        # st.write(value_growth_df)
+
+        draw_bar_line_chart_with_highlighted_predefined_signal(
+            dt_indexed_df=value_growth_df,
+            config=style_config.RELATIVE_MOMENTUM_VALUE_GROWTH_CHART_PARAM,
         )
 
         # NOTE 期限利差
@@ -425,9 +518,9 @@ def generate_style_charts():
         )
         big_small_df = append_rolling_mean_column(
             df=big_small_df,
-            window_name='一年',
-            window_size=config.TRADE_DT_COUNT['一年'],
-            rolling_mean_col='近一年均值',
+            window_name='一月',
+            window_size=config.TRADE_DT_COUNT['一月'],
+            # rolling_mean_col='近一年均值',
             dropna=False,
         )
 
@@ -437,7 +530,7 @@ def generate_style_charts():
             y_axis_format=config.CHART_NUM_FORMAT['float'],
         )
         draw_grouped_lines(
-            big_small_df[['沪深300/中证2000', '近一年均值']].dropna(inplace=False),
+            big_small_df[['沪深300/中证2000', '近一月均值']].dropna(inplace=False),
             big_small_line_config,
         )
         # st.write(big_small_df)
