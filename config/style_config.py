@@ -103,11 +103,53 @@ DATA_QUERY_PARAM = {
     ),
 }
 ## NOTE 价值成长研判框架
+# NOTE 相对动量: 价值 VS 成长
+RELATIVE_MOMENTUM_VALUE_GROWTH_CONFIG = {
+    'DT_TYPE': TradeDtType.STOCK_MKT,
+    'SLIDER_START_DT': '20200601',
+    'SLIDER_DEFAULT_OFFSET': '半年',
+    'ROLLING_WINDOW': '一月',
+    'TARGET_COL': '相对动量',
+    'SIGNAL_COL': '交易信号',
+    'TRUE_SIGNAL': param_cls.TradeSignal.LONG_GROWTH.value,
+    'FALSE_SIGNAL': param_cls.TradeSignal.LONG_VALUE.value,
+    'BAR_TITLE': '相对动量: 价值 VS 成长',
+}
+RELATIVE_MOMENTUM_VALUE_GROWTH_CONFIG.update(
+    {
+        'SLIDER_DEFAULT_OFFSET_DT_COUNT': get_avg_dt_count_via_dt_type(
+            dt_type=RELATIVE_MOMENTUM_VALUE_GROWTH_CONFIG['DT_TYPE'],
+            period=RELATIVE_MOMENTUM_VALUE_GROWTH_CONFIG['SLIDER_DEFAULT_OFFSET'],
+        ),
+    }
+)
+RELATIVE_MOMENTUM_VALUE_GROWTH_CHART_PARAM = param_cls.BarLineWithSignalParam(
+    dt_slider_param=param_cls.DtSliderParam(
+        start_dt=RELATIVE_MOMENTUM_VALUE_GROWTH_CONFIG['SLIDER_START_DT'],
+        default_start_offset=RELATIVE_MOMENTUM_VALUE_GROWTH_CONFIG['SLIDER_DEFAULT_OFFSET_DT_COUNT'],
+        key='RELATIVE_MOMENTUM_SLIDER',
+    ),
+    bar_param=param_cls.SignalBarParam(
+        axis_names={
+            'X': 'TRADE_DT',
+            'Y': RELATIVE_MOMENTUM_VALUE_GROWTH_CONFIG['TARGET_COL'],
+            'LEGEND': RELATIVE_MOMENTUM_VALUE_GROWTH_CONFIG['SIGNAL_COL'],
+        },
+        title=RELATIVE_MOMENTUM_VALUE_GROWTH_CONFIG['BAR_TITLE'],
+        y_axis_format=config.CHART_NUM_FORMAT['pct'],
+        true_signal=RELATIVE_MOMENTUM_VALUE_GROWTH_CONFIG['TRUE_SIGNAL'],
+        false_signal=RELATIVE_MOMENTUM_VALUE_GROWTH_CONFIG['FALSE_SIGNAL'],
+        no_signal=param_cls.TradeSignal.NO_SIGNAL.value,
+    ),
+    isConvertedToPct=False,
+)
+
+
 # NOTE 期限利差
 TERM_SPREAD_CONFIG = {
     'DT_TYPE': TradeDtType.FUND_MKT,
     'SLIDER_START_DT': '20200601',
-    'SLIDER_DEFAULT_OFFSET': '三月',
+    'SLIDER_DEFAULT_OFFSET': '半年',
     'SQL_NAME': 'query_yield_curve.sql',
     'YIELD_CURVE_NAMES': ('中债国债收益率曲线',),
     'YIELD_CURVE_TERMS': ('1.0', '10.0'),
@@ -181,7 +223,7 @@ INDEX_TURNOVER_CONFIG = {
     'WIND_TABLE': param_cls.WindPortal.A_IDX_VAL,
     'DT_TYPE': TradeDtType.STOCK_MKT,
     'SLIDER_START_DT': '20200601',
-    'SLIDER_DEFAULT_OFFSET': '三月',
+    'SLIDER_DEFAULT_OFFSET': '半年',
     'DATA_START_DT': '20181101',
     'WIND_CODE': ('881001.WI',),
     'MEAN_ROLLING_WINDOW': '一月',
@@ -360,7 +402,7 @@ CREDIT_EXPANSION_CONFIG.update(
 CREDIT_EXPANSION_CHART_PARAM = param_cls.BarLineWithSignalParam(
     dt_slider_param=param_cls.DtSliderParam(
         start_dt=CREDIT_EXPANSION_CONFIG['SLIDER_START_DT'],
-        # default_start_offset=HOUSING_INVEST_CONFIG['SLIDER_DEFAULT_OFFSET_DT_COUNT'],
+        # default_start_offset=CREDIT_EXPANSION_CONFIG['SLIDER_DEFAULT_OFFSET_DT_COUNT'],
         key='CREDIT_EXPANSION_SLIDER',
     ),
     bar_param=param_cls.SignalBarParam(
@@ -613,6 +655,11 @@ STYLE_CHART_AXIS_NAMES = {
         'X': '交易日期',
         'LEGEND': '年限',
         'Y': '到期收益率',
+    },
+    'VALUE_GROWTH_PCT_CHANGE': {
+        'X': '交易日期',
+        'LEGEND': '价值/成长',
+        'Y': '收益率',
     },
 }
 

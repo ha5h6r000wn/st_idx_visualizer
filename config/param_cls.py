@@ -134,7 +134,7 @@ class LineParam(BaseChartParam):
 class BarLineWithSignalParam(BaseModel):
     dt_slider_param: DtSliderParam | None = None
     bar_param: BaseBarParam
-    line_param: LineParam
+    line_param: LineParam | None = None
     isLineDrawn: bool = True
     isConvertedToPct: bool = False
     isSignalAssigned: bool = False

@@ -46,6 +46,21 @@ def append_difference_column(
     return df
 
 
+def append_sum_column(
+    df,
+    sum_1_col: str,
+    sum_2_col: str,
+    sum_col: str = None,
+    multiplier_1: float = 1,
+    multiplier_2: float = 1,
+    multiplier_sum: float = 1,
+):
+    if sum_col is None:
+        sum_col = f'{sum_1_col}+{sum_2_col}'
+    df[sum_col] = (df[sum_1_col] * multiplier_1 + df[sum_2_col] * multiplier_2) * multiplier_sum
+    return df
+
+
 def append_rolling_mean_column(
     df,
     window_name: str,
