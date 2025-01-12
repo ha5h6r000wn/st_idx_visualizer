@@ -25,7 +25,7 @@ def get_custom_dt_with_select_slider(trade_dt, config: param_cls.SelectSliderPar
     selected_key = st.select_slider(
         config.name,
         options=keys,
-        value=(keys[0]),
+        value=(keys[-1]),
     )
 
     return trade_dt[-config.default_select_offset[selected_key]]
@@ -34,6 +34,7 @@ def get_custom_dt_with_select_slider(trade_dt, config: param_cls.SelectSliderPar
 def draw_grouped_bars(grouped_df, group_name_df, config: param_cls.BaseBarParam):
     reindex_grouped_df = grouped_df.stack().reset_index()
     reindex_grouped_df.columns = list(config.axis_names.values())
+    # st.write(reindex_grouped_df)
 
     selection = alt.selection_point(fields=[config.axis_names['LEGEND']], bind='legend')
     order_name = group_name_df.iloc[:, 0].tolist()
@@ -51,17 +52,17 @@ def draw_grouped_bars(grouped_df, group_name_df, config: param_cls.BaseBarParam)
         )
         .mark_bar()
         .encode(
-            x=alt.X(f'{config.axis_names['X']}:{config.axis_types['X']}', sort=order_name),
+            x=alt.X(f'{config.axis_names["X"]}:{config.axis_types["X"]}', sort=order_name),
             xOffset=alt.X(
-                f'{config.axis_names['LEGEND']}:{config.axis_types['LEGEND']}',
+                f'{config.axis_names["LEGEND"]}:{config.axis_types["LEGEND"]}',
                 sort=order_group,
             ),
             y=alt.Y(
-                f'{config.axis_names['Y']}:{config.axis_types['Y']}',
+                f'{config.axis_names["Y"]}:{config.axis_types["Y"]}',
                 axis=alt.Axis(format=config.y_axis_format),
             ),
             color=alt.Color(
-                f'{config.axis_names['LEGEND']}:{config.axis_types['LEGEND']}',
+                f'{config.axis_names["LEGEND"]}:{config.axis_types["LEGEND"]}',
                 sort=order_group,
                 legend=alt.Legend(
                     orient='none',
@@ -149,15 +150,15 @@ def draw_heatmap(wide_df, config: param_cls.HeatmapParam):
         .mark_rect()
         .encode(
             x=alt.X(
-                f'{config.axis_names['X']}:{config.col_types['X']}',
+                f'{config.axis_names["X"]}:{config.col_types["X"]}',
                 sort=long_df.columns.tolist(),
             ),
             y=alt.Y(
-                f'{config.axis_names['Y']}:{config.col_types['Y']}',
+                f'{config.axis_names["Y"]}:{config.col_types["Y"]}',
                 sort=long_df.columns.tolist(),
             ),
             color=alt.Color(
-                f'{config.axis_names['LEGEND']}:{config.col_types['LEGEND']}',
+                f'{config.axis_names["LEGEND"]}:{config.col_types["LEGEND"]}',
                 legend=alt.Legend(format=config.legend_format),
             ),
         )
@@ -185,11 +186,11 @@ def add_altair_bar_with_highlighted_signal(df, config: param_cls.SignalBarParam)
         .mark_bar(clip=True)
         .encode(
             x=alt.X(
-                f'{config.axis_names['X']}:{config.axis_types['X']}',
+                f'{config.axis_names["X"]}:{config.axis_types["X"]}',
                 axis=alt.Axis(labelAngle=-45),
             ),
             y=alt.Y(
-                f'{config.axis_names['Y']}:{config.axis_types['Y']}',
+                f'{config.axis_names["Y"]}:{config.axis_types["Y"]}',
                 axis=alt.Axis(format=config.y_axis_format),
             ).scale(
                 domain=(
@@ -198,7 +199,7 @@ def add_altair_bar_with_highlighted_signal(df, config: param_cls.SignalBarParam)
                 )
             ),
             color=alt.Color(
-                f'{config.axis_names['LEGEND']}:{config.axis_types['LEGEND']}',  # 使用新的数据列来编码颜色
+                f'{config.axis_names["LEGEND"]}:{config.axis_types["LEGEND"]}',  # 使用新的数据列来编码颜色
                 scale=alt.Scale(
                     domain=signal_order,
                     # range=['steelblue', 'skyblue', 'lightgrey'],
@@ -232,11 +233,11 @@ def add_altair_line_with_stroke_dash(df, config: param_cls.LineParam):
         .mark_line(strokeDash=config.stroke_dash)
         .encode(
             x=alt.X(
-                f'{config.axis_names['X']}:{config.axis_types['X']}',
+                f'{config.axis_names["X"]}:{config.axis_types["X"]}',
                 axis=alt.Axis(labelAngle=-45),
             ),
             y=alt.Y(
-                f'{config.axis_names['Y']}:{config.axis_types['Y']}',
+                f'{config.axis_names["Y"]}:{config.axis_types["Y"]}',
                 axis=alt.Axis(format=config.y_axis_format),
                 # scale=alt.Scale(
                 #     domain=(
@@ -251,7 +252,7 @@ def add_altair_line_with_stroke_dash(df, config: param_cls.LineParam):
                 )
             ),
             color=alt.Color(
-                f'{config.axis_names['LEGEND']}:{config.axis_types['LEGEND']}',  # 使用新的数据列来编码颜色
+                f'{config.axis_names["LEGEND"]}:{config.axis_types["LEGEND"]}',  # 使用新的数据列来编码颜色
                 scale=alt.Scale(
                     # domain=[config.axis_names['Y']],
                     # range=['red', 'black'],

@@ -3,6 +3,7 @@ from datetime import datetime
 import pytz
 import streamlit as st
 
+import utils
 from config import config, param_cls
 from data_preparation.data_analyzer import calculate_grouped_return
 from data_preparation.data_fetcher import fetch_index_data_from_local
@@ -40,7 +41,7 @@ def generate_stg_idx_charts():
     stg_idx_grouped_ret_slider_config = param_cls.DtSliderParam(
         name=config.CUSTOM_PERIOD_SLIDER_NAME,
         start_dt=config.STG_IDX_SLIDER_START_DT['RET_BAR'],
-        default_start_offset=config.TRADE_DT_COUNT['两周'],
+        default_start_offset=utils.get_avg_dt_count_via_dt_type(dt_type=utils.TradeDtType.STOCK_MKT, period='一月'),
     )
     grouped_ret_bar_config = param_cls.BaseBarParam(
         axis_names=config.STG_IDX_CHART_AXIS_NAMES['RET_BAR'],
@@ -50,7 +51,7 @@ def generate_stg_idx_charts():
     stg_idx_bench_nav_slider_config = param_cls.DtSliderParam(
         name=config.CUSTOM_PERIOD_SLIDER_NAME,
         start_dt=config.START_DT,
-        default_start_offset=config.TRADE_DT_COUNT['一年'],
+        default_start_offset=utils.get_avg_dt_count_via_dt_type(dt_type=utils.TradeDtType.STOCK_MKT, period='一年'),
     )
     line_config = param_cls.IdxLineParam(
         axis_names=config.STG_IDX_CHART_AXIS_NAMES['NAV_LINE'],
@@ -102,6 +103,8 @@ def generate_stg_idx_charts():
         trade_dt,
         data_col_config,
     )
+    # st.write(raw_long_df)
+    # st.write(raw_grouped_ret_df)
 
     draw_grouped_bars(raw_grouped_ret_df, raw_name_df, grouped_ret_bar_config)
 

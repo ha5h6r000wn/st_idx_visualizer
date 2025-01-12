@@ -221,6 +221,11 @@ def generate_style_charts():
             value_growth_line_config,
         )
 
+        # value_growth_pct_change_slider_dt = st.select_slider(
+        #     '自选日期',
+        #     options=value_growth_df.index.tolist(),
+        # )
+
         value_growth_df = append_difference_column(
             df=value_growth_df,
             minuend_col='国证价值近一月收益率',
@@ -258,6 +263,7 @@ def generate_style_charts():
             default=param_cls.TradeSignal.NO_SIGNAL.value,
         )
         # st.write(value_growth_df)
+        # print(value_growth_df.head())
 
         draw_bar_line_chart_with_highlighted_predefined_signal(
             dt_indexed_df=value_growth_df,
