@@ -3,18 +3,21 @@ git stash save "WIP: feature development"  # WIP = Work In Progress
 
 # 2. 更新CSV
 git checkout csv-updates    # 基于main的csv-updates分支
-git reset --hard main    # 将csv-updates重置到main的最新状态
+<!-- git reset --hard main    # 将csv-updates重置到main的最新状态 -->
+git rebase origin/main
 
 git add data/csv/
 git commit -m "chore: update csv" # CSV更新
 
 git checkout main
-git merge csv-updates      # 合并CSV更新到main
+git fetch origin
+git rebase csv-updates      # 合并CSV更新到main
 git push origin main            # 只推送main分支
 
 # 3. 返回dev分支，进行代码更新
 git checkout dev          # 开发分支
-git merge main  # 获取最新的CSV更新
+git fetch origin
+git rebase origin/main
 git stash pop   # 恢复之前的开发更改
 
 git commit -m "feat: xxx" # 代码更新
