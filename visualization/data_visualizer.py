@@ -102,6 +102,7 @@ def draw_grouped_lines(wide_df, config: param_cls.IdxLineParam):
         fields=[config.axis_names['X']],
         nearest=True,
         on='mouseover',
+        empty='none',
     )
 
     selection = alt.selection_point(fields=[config.axis_names['LEGEND']], bind='legend')
@@ -148,7 +149,14 @@ def draw_grouped_lines(wide_df, config: param_cls.IdxLineParam):
     # Add interactive point layer
     points = (
         lines.mark_point(size=100)
-        .encode(opacity=alt.condition(hover & selection, alt.value(1), alt.value(0)))
+        .encode(
+            opacity=alt.condition(
+                hover,  # Only show points when hovering
+                alt.value(1),
+                alt.value(0),
+            )
+        )
+        .transform_filter(selection)  # Filter out points for hidden lines
         .add_params(hover)
     )
 
