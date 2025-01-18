@@ -99,7 +99,7 @@ def draw_grouped_lines(wide_df, config: param_cls.IdxLineParam):
 
     # Add hover selection
     hover = alt.selection_point(
-        fields=[config.axis_names['X']],
+        fields=[config.axis_names['X'], config.axis_names['Y']],
         nearest=True,
         on='mouseover',
         empty='none',
