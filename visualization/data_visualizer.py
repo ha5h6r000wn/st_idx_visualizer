@@ -152,6 +152,7 @@ def draw_heatmap(wide_df, config: param_cls.HeatmapParam):
     base = alt.Chart(long_df, height=config.height, title=config.title)
 
     # Create the heatmap using rect marks
+    # heatmap = base.mark_rect(stroke='black', strokeWidth=1).encode(
     heatmap = base.mark_rect().encode(
         x=alt.X(
             f'{config.axis_names["X"]}:{config.col_types["X"]}',
