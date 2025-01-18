@@ -135,4 +135,4 @@ def generate_stg_idx_charts():
     corr_wide_df = excess_ret_wide_df.corr()
 
     draw_heatmap(corr_wide_df, heatmap_config)
-    st.write(corr_wide_df.rename_axis('策略指数'))
+    # st.write(corr_wide_df.rename_axis('策略指数'))

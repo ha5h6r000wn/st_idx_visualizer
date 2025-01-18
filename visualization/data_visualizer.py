@@ -126,7 +126,7 @@ def draw_grouped_lines(wide_df, config: param_cls.IdxLineParam):
                 sort=order_group,
                 legend=alt.Legend(
                     orient='none',
-                    legendX=-80,
+                    legendX=-70,
                     legendY=-80,
                     columns=2,
                 ),
@@ -147,26 +147,53 @@ def draw_heatmap(wide_df, config: param_cls.HeatmapParam):
         config.axis_names['Y'],
         config.axis_names['LEGEND'],
     )
-    heatmap = (
-        alt.Chart(long_df, height=config.height, title=config.title)
-        .mark_rect()
-        .encode(
-            x=alt.X(
-                f'{config.axis_names["X"]}:{config.col_types["X"]}',
-                sort=long_df.columns.tolist(),
-                axis=alt.Axis(labelAngle=-45),
-            ),
-            y=alt.Y(
-                f'{config.axis_names["Y"]}:{config.col_types["Y"]}',
-                sort=long_df.columns.tolist(),
-            ),
-            color=alt.Color(
-                f'{config.axis_names["LEGEND"]}:{config.col_types["LEGEND"]}',
-                legend=alt.Legend(format=config.legend_format),
-            ),
-        )
+
+    # Base heatmap with rectangles
+    base = alt.Chart(long_df, height=config.height, title=config.title)
+
+    # Create the heatmap using rect marks
+    heatmap = base.mark_rect().encode(
+        x=alt.X(
+            f'{config.axis_names["X"]}:{config.col_types["X"]}',
+            sort=long_df.columns.tolist(),
+            axis=alt.Axis(labelAngle=-45),
+        ),
+        y=alt.Y(
+            f'{config.axis_names["Y"]}:{config.col_types["Y"]}',
+            sort=long_df.columns.tolist(),
+        ),
+        color=alt.Color(
+            f'{config.axis_names["LEGEND"]}:{config.col_types["LEGEND"]}',
+            scale=alt.Scale(domain=[-1, 1]),
+            legend=alt.Legend(format=config.legend_format),
+        ),
     )
-    st.altair_chart(heatmap, theme='streamlit', use_container_width=True)
+
+    # Add text layer
+    text = base.mark_text(baseline='middle').encode(
+        x=alt.X(
+            f'{config.axis_names["X"]}:{config.col_types["X"]}',
+            sort=long_df.columns.tolist(),
+        ),
+        y=alt.Y(
+            f'{config.axis_names["Y"]}:{config.col_types["Y"]}',
+            sort=long_df.columns.tolist(),
+        ),
+        text=alt.Text(
+            f'{config.axis_names["LEGEND"]}:{config.col_types["LEGEND"]}',
+            format='.2f',  # Format to 2 decimal places
+        ),
+        color=alt.condition(
+            alt.datum[config.axis_names['LEGEND']] > 0,  # Adjust threshold as needed
+            alt.value('white'),  # Color for dark backgrounds
+            alt.value('black'),  # Color for light backgrounds
+        ),
+    )
+
+    # Combine the layers
+    final_chart = heatmap + text
+
+    st.altair_chart(final_chart, theme='streamlit', use_container_width=True)
 
 
 def add_altair_bar_with_highlighted_signal(df, config: param_cls.SignalBarParam):
