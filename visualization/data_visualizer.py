@@ -25,7 +25,7 @@ def get_custom_dt_with_select_slider(trade_dt, config: param_cls.SelectSliderPar
     selected_key = st.select_slider(
         config.name,
         options=keys,
-        value=(keys[-1]),
+        value=(keys[0]),
     )
 
     return trade_dt[-config.default_select_offset[selected_key]]
