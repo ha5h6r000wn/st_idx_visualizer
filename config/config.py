@@ -64,7 +64,7 @@ IDX_PRICE_SQL_NAME = 'query_idx_price.sql'
 
 CHART_HEIGHT = 500
 CHART_Y_LIMIT_EXTRA = 0.05
-CHART_NUM_FORMAT = {'pct': '.2%', 'float': '.3f'}
+CHART_NUM_FORMAT = {'pct': '.2%', 'float': '.2f'}
 
 STG_IDX_SLIDER_START_DT = {
     'RET_BAR': '20240101',
