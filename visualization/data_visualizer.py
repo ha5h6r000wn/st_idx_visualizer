@@ -175,7 +175,13 @@ def draw_heatmap(wide_df, config: param_cls.HeatmapParam):
     )
 
     # Base heatmap with rectangles
-    base = alt.Chart(long_df, height=config.height, title=config.title)
+    base = alt.Chart(
+        long_df,
+        height=config.height,
+        title=alt.TitleParams(
+            text=config.title,
+        ),
+    )
 
     # Create the heatmap using rect marks
     # heatmap = base.mark_rect(stroke='black', strokeWidth=1).encode(
@@ -192,7 +198,7 @@ def draw_heatmap(wide_df, config: param_cls.HeatmapParam):
         color=alt.Color(
             f'{config.axis_names["LEGEND"]}:{config.col_types["LEGEND"]}',
             scale=alt.Scale(domain=[-1, 1]),
-            legend=alt.Legend(format=config.legend_format),
+            legend=alt.Legend(orient='top', format=config.legend_format),
         ),
     )
 
