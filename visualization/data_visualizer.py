@@ -52,7 +52,9 @@ def draw_grouped_bars(grouped_df, group_name_df, config: param_cls.BaseBarParam)
         )
         .mark_bar()
         .encode(
-            x=alt.X(f'{config.axis_names["X"]}:{config.axis_types["X"]}', sort=order_name),
+            x=alt.X(
+                f'{config.axis_names["X"]}:{config.axis_types["X"]}', sort=order_name, axis=alt.Axis(labelAngle=-45)
+            ),
             xOffset=alt.X(
                 f'{config.axis_names["LEGEND"]}:{config.axis_types["LEGEND"]}',
                 sort=order_group,
@@ -108,7 +110,7 @@ def draw_grouped_lines(wide_df, config: param_cls.IdxLineParam):
         )
         .mark_line()
         .encode(
-            x=alt.X(config.axis_names['X']),
+            x=alt.X(config.axis_names['X'], axis=alt.Axis(labelAngle=-45)),
             y=alt.Y(
                 config.axis_names['Y'],
                 scale=alt.Scale(
@@ -152,6 +154,7 @@ def draw_heatmap(wide_df, config: param_cls.HeatmapParam):
             x=alt.X(
                 f'{config.axis_names["X"]}:{config.col_types["X"]}',
                 sort=long_df.columns.tolist(),
+                axis=alt.Axis(labelAngle=-45),
             ),
             y=alt.Y(
                 f'{config.axis_names["Y"]}:{config.col_types["Y"]}',
