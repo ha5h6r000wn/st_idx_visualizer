@@ -87,7 +87,6 @@ def draw_grouped_lines(wide_df, config: param_cls.IdxLineParam):
         selected_df = wide_df.loc[custom_dt[0] : custom_dt[1]]
     else:
         selected_df = wide_df
-    # st.write(selected_df)
 
     order_group = selected_df.columns.tolist()
     long_df = reshape_wide_df_into_long_form(
@@ -96,9 +95,19 @@ def draw_grouped_lines(wide_df, config: param_cls.IdxLineParam):
         config.data_col_param.name_col,
         config.data_col_param.price_col,
     )
-    # st.write(long_df)
     long_df.columns = list(config.axis_names.values())
+
+    # Add hover selection
+    hover = alt.selection_point(
+        fields=[config.axis_names['X'], config.axis_names['Y']],
+        nearest=True,
+        on='mouseover',
+        empty='none',
+    )
+
     selection = alt.selection_point(fields=[config.axis_names['LEGEND']], bind='legend')
+
+    # Base line chart
     lines = (
         alt.Chart(
             long_df,
@@ -137,7 +146,24 @@ def draw_grouped_lines(wide_df, config: param_cls.IdxLineParam):
         .add_params(selection)
     )
 
-    st.altair_chart(lines, theme='streamlit', use_container_width=True)
+    # Add interactive point layer
+    points = (
+        lines.mark_point(size=100)
+        .encode(
+            opacity=alt.condition(
+                hover,  # Only show points when hovering
+                alt.value(1),
+                alt.value(0),
+            )
+        )
+        .transform_filter(selection)  # Filter out points for hidden lines
+        .add_params(hover)
+    )
+
+    # Combine layers
+    final_chart = lines + points
+
+    st.altair_chart(final_chart, theme='streamlit', use_container_width=True)
 
 
 def draw_heatmap(wide_df, config: param_cls.HeatmapParam):
@@ -152,6 +178,7 @@ def draw_heatmap(wide_df, config: param_cls.HeatmapParam):
     base = alt.Chart(long_df, height=config.height, title=config.title)
 
     # Create the heatmap using rect marks
+    # heatmap = base.mark_rect(stroke='black', strokeWidth=1).encode(
     heatmap = base.mark_rect().encode(
         x=alt.X(
             f'{config.axis_names["X"]}:{config.col_types["X"]}',
