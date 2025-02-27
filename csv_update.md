@@ -24,3 +24,4 @@ git commit -m "feat: xxx" # 代码更新
 git checkout main
 git merge --no-ff dev    # 合并代码更新到main
 
+# FIXME 更新index_prices时出现了指数中文简称变化的情况，导致数据库内数据出现了不一致，如何修复？增加检测机制，触发数据重跑更新？
