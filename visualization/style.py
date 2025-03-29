@@ -801,3 +801,5 @@ def generate_style_charts():
             dt_indexed_df=merged_style_focus_df,
             config=style_config.STYLE_FOCUS_CHART_PARAM,
         )
+
+        # TODO 对于通过个人api获取的数据和图，需要添加一个按钮，用于切换是否显示
