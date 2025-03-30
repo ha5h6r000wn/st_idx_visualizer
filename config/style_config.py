@@ -239,7 +239,7 @@ INDEX_TURNOVER_CONFIG = {
     'BASELINE_COL': '比较基准',
     'TRUE_SIGNAL': param_cls.TradeSignal.LONG_GROWTH.value,
     'FALSE_SIGNAL': param_cls.TradeSignal.LONG_VALUE.value,
-    'BAR_TITLE': '换手率 —— 万得全A指数日换手率',
+    'BAR_TITLE': '市场情绪 —— 万得全A指数近一月换手率水平',
     'LINE_STROKE_DASH': (5, 3),
 }
 INDEX_TURNOVER_CONFIG.update(
@@ -252,18 +252,31 @@ INDEX_TURNOVER_CONFIG.update(
             dt_type=INDEX_TURNOVER_CONFIG['DT_TYPE'],
             period=INDEX_TURNOVER_CONFIG['MEAN_ROLLING_WINDOW'],
         ),
-        'MEAN_COL': get_rolling_window_col(
-            window_name=INDEX_TURNOVER_CONFIG['MEAN_ROLLING_WINDOW'],
-            window_type='均值',
-        ),
-        'MEDIAN_ROLLING_WINDOW_SIZE': get_avg_dt_count_via_dt_type(
+        'MEAN_COL': '近一月换手率水平',
+        # 'MEAN_COL': get_rolling_window_col(
+        #     window_name=INDEX_TURNOVER_CONFIG['MEAN_ROLLING_WINDOW'],
+        #     window_type='均值',
+        # ),
+        # 'MEDIAN_ROLLING_WINDOW_SIZE': get_avg_dt_count_via_dt_type(
+        #     dt_type=INDEX_TURNOVER_CONFIG['DT_TYPE'],
+        #     period=INDEX_TURNOVER_CONFIG['MEDIAN_ROLLING_WINDOW'],
+        # ),
+        # 'MEDIAN_COL': get_rolling_window_col(
+        #     window_name=INDEX_TURNOVER_CONFIG['MEDIAN_ROLLING_WINDOW'],
+        #     window_type='中位数',
+        # ),
+        'MEAN_1M_ROLLING_WINDOW': '一月',
+        'MEAN_1M_ROLLING_WINDOW_SIZE': get_avg_dt_count_via_dt_type(
             dt_type=INDEX_TURNOVER_CONFIG['DT_TYPE'],
-            period=INDEX_TURNOVER_CONFIG['MEDIAN_ROLLING_WINDOW'],
+            period='一月',
         ),
-        'MEDIAN_COL': get_rolling_window_col(
-            window_name=INDEX_TURNOVER_CONFIG['MEDIAN_ROLLING_WINDOW'],
-            window_type='中位数',
+        'MEAN_1M_COL': '近一月均值',
+        'MEAN_2Y_ROLLING_WINDOW': '两年',
+        'MEAN_2Y_ROLLING_WINDOW_SIZE': get_avg_dt_count_via_dt_type(
+            dt_type=INDEX_TURNOVER_CONFIG['DT_TYPE'],
+            period='两年',
         ),
+        'MEAN_2Y_COL': '近两年均值',
     }
 )
 INDEX_TURNOVER_COL_PARAM = param_cls.WindAIndexValueColParam(
@@ -291,11 +304,15 @@ INDEX_TURNOVER_CHART_PARAM = param_cls.BarLineWithSignalParam(
     line_param=param_cls.LineParam(
         axis_names={
             'X': INDEX_TURNOVER_COL_PARAM.dt_col,
-            'Y': INDEX_TURNOVER_CONFIG['MEDIAN_COL'],
+            'Y': '均线',
             'LEGEND': INDEX_TURNOVER_CONFIG['BASELINE_COL'],
         },
         stroke_dash=INDEX_TURNOVER_CONFIG['LINE_STROKE_DASH'],
         color='red',
+        compared_cols=[
+            INDEX_TURNOVER_CONFIG['MEAN_1M_COL'],
+            INDEX_TURNOVER_CONFIG['MEAN_2Y_COL'],
+        ],
     ),
     isConvertedToPct=True,
 )

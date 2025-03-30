@@ -272,6 +272,84 @@ def generate_style_charts():
             config=style_config.RELATIVE_MOMENTUM_VALUE_GROWTH_CHART_PARAM,
         )
 
+        # NOTE 市场情绪
+
+        wide_wind_all_a_turnover_df = reshape_long_df_into_wide_form(
+            long_df=long_wind_all_a_idx_val_df,
+            index_col=style_config.DATA_COL_PARAM[param_cls.WindPortal.A_IDX_VAL].dt_col,
+            name_col=style_config.DATA_COL_PARAM[param_cls.WindPortal.A_IDX_VAL].name_col,
+            value_col=style_config.DATA_COL_PARAM[param_cls.WindPortal.A_IDX_VAL].turnover_col,
+            add_suffix=True,
+        )
+        # wide_raw_idx_turnover_df = reshape_long_df_into_wide_form(
+        #     long_df=long_wind_all_a_idx_val_df,
+        #     index_col=style_config.INDEX_TURNOVER_COL_PARAM.dt_col,
+        #     name_col=style_config.INDEX_TURNOVER_COL_PARAM.name_col,
+        #     value_col=style_config.INDEX_TURNOVER_COL_PARAM.turnover_col,
+        # )
+        # st.write(wide_wind_all_a_turnover_df)
+
+        wide_wind_all_a_turnover_df = append_rolling_mean_column(
+            df=wide_wind_all_a_turnover_df,
+            window_name=style_config.INDEX_TURNOVER_CONFIG['MEAN_ROLLING_WINDOW'],
+            window_size=style_config.INDEX_TURNOVER_CONFIG['MEAN_ROLLING_WINDOW_SIZE'],
+            rolling_mean_col=style_config.INDEX_TURNOVER_CONFIG['MEAN_COL'],
+        )
+        wide_wind_all_a_turnover_df = append_rolling_mean_column(
+            df=wide_wind_all_a_turnover_df,
+            window_name=style_config.INDEX_TURNOVER_CONFIG['MEAN_1M_ROLLING_WINDOW'],
+            window_size=style_config.INDEX_TURNOVER_CONFIG['MEAN_1M_ROLLING_WINDOW_SIZE'],
+            target_col=style_config.INDEX_TURNOVER_CONFIG['MEAN_COL'],
+            rolling_mean_col=style_config.INDEX_TURNOVER_CONFIG['MEAN_1M_COL'],
+        )
+        wide_wind_all_a_turnover_df = append_rolling_mean_column(
+            df=wide_wind_all_a_turnover_df,
+            window_name=style_config.INDEX_TURNOVER_CONFIG['MEAN_2Y_ROLLING_WINDOW'],
+            window_size=style_config.INDEX_TURNOVER_CONFIG['MEAN_2Y_ROLLING_WINDOW_SIZE'],
+            target_col=style_config.INDEX_TURNOVER_CONFIG['MEAN_COL'],
+            rolling_mean_col=style_config.INDEX_TURNOVER_CONFIG['MEAN_2Y_COL'],
+        )
+
+        # wide_wind_all_a_turnover_df = append_rolling_quantile_column(
+        #     df=wide_wind_all_a_turnover_df,
+        #     window_name=style_config.INDEX_TURNOVER_CONFIG['MEDIAN_ROLLING_WINDOW'],
+        #     window_size=style_config.INDEX_TURNOVER_CONFIG['MEDIAN_ROLLING_WINDOW_SIZE'],
+        #     target_col=style_config.INDEX_TURNOVER_CONFIG['MEAN_COL'],
+        #     rolling_quantile_col=style_config.INDEX_TURNOVER_CONFIG['MEDIAN_COL'],
+        #     quantile=style_config.INDEX_TURNOVER_CONFIG['QUANTILE_MEDIAN'],
+        # )
+
+        # draw_bar_line_chart_with_highlighted_signal(
+        #     dt_indexed_df=wide_wind_all_a_turnover_df,
+        #     config=style_config.INDEX_TURNOVER_CHART_PARAM,
+        # )
+
+        turnover_conditions = [
+            (
+                wide_wind_all_a_turnover_df[style_config.INDEX_TURNOVER_CONFIG['MEAN_COL']]
+                > wide_wind_all_a_turnover_df[style_config.INDEX_TURNOVER_CONFIG['MEAN_1M_COL']]
+            )
+            & (
+                wide_wind_all_a_turnover_df[style_config.INDEX_TURNOVER_CONFIG['MEAN_COL']]
+                > wide_wind_all_a_turnover_df[style_config.INDEX_TURNOVER_CONFIG['MEAN_2Y_COL']]
+            ),
+        ]
+        turnover_choices = [
+            param_cls.TradeSignal.LONG_GROWTH.value,
+        ]
+        wide_wind_all_a_turnover_df['交易信号'] = np.select(
+            condlist=turnover_conditions,
+            choicelist=turnover_choices,
+            default=param_cls.TradeSignal.LONG_VALUE.value,
+        )
+        # st.write(value_growth_df)
+        # print(value_growth_df.head())
+
+        draw_bar_line_chart_with_highlighted_predefined_signal(
+            dt_indexed_df=wide_wind_all_a_turnover_df,
+            config=style_config.INDEX_TURNOVER_CHART_PARAM,
+        )
+
         # NOTE 期限利差
         # 需求：基准线从近一年均值改为近一月均值
 
@@ -326,43 +404,6 @@ def generate_style_charts():
             .div(100)
             .dropna(inplace=False),
             term_spread_line_config,
-        )
-
-        # NOTE 换手率
-
-        wide_wind_all_a_turnover_df = reshape_long_df_into_wide_form(
-            long_df=long_wind_all_a_idx_val_df,
-            index_col=style_config.DATA_COL_PARAM[param_cls.WindPortal.A_IDX_VAL].dt_col,
-            name_col=style_config.DATA_COL_PARAM[param_cls.WindPortal.A_IDX_VAL].name_col,
-            value_col=style_config.DATA_COL_PARAM[param_cls.WindPortal.A_IDX_VAL].turnover_col,
-            add_suffix=True,
-        )
-        # wide_raw_idx_turnover_df = reshape_long_df_into_wide_form(
-        #     long_df=long_wind_all_a_idx_val_df,
-        #     index_col=style_config.INDEX_TURNOVER_COL_PARAM.dt_col,
-        #     name_col=style_config.INDEX_TURNOVER_COL_PARAM.name_col,
-        #     value_col=style_config.INDEX_TURNOVER_COL_PARAM.turnover_col,
-        # )
-        # st.write(wide_wind_all_a_turnover_df)
-
-        wide_wind_all_a_turnover_df = append_rolling_mean_column(
-            df=wide_wind_all_a_turnover_df,
-            window_name=style_config.INDEX_TURNOVER_CONFIG['MEAN_ROLLING_WINDOW'],
-            window_size=style_config.INDEX_TURNOVER_CONFIG['MEAN_ROLLING_WINDOW_SIZE'],
-            rolling_mean_col=style_config.INDEX_TURNOVER_CONFIG['MEAN_COL'],
-        )
-        wide_wind_all_a_turnover_df = append_rolling_quantile_column(
-            df=wide_wind_all_a_turnover_df,
-            window_name=style_config.INDEX_TURNOVER_CONFIG['MEDIAN_ROLLING_WINDOW'],
-            window_size=style_config.INDEX_TURNOVER_CONFIG['MEDIAN_ROLLING_WINDOW_SIZE'],
-            target_col=style_config.INDEX_TURNOVER_CONFIG['MEAN_COL'],
-            rolling_quantile_col=style_config.INDEX_TURNOVER_CONFIG['MEDIAN_COL'],
-            quantile=style_config.INDEX_TURNOVER_CONFIG['QUANTILE_MEDIAN'],
-        )
-
-        draw_bar_line_chart_with_highlighted_signal(
-            dt_indexed_df=wide_wind_all_a_turnover_df,
-            config=style_config.INDEX_TURNOVER_CHART_PARAM,
         )
 
         # NOTE ERP股债性价比（价值成长）
