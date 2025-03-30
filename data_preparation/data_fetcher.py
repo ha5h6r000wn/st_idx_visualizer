@@ -106,6 +106,8 @@ def fetch_data_from_local(latest_date: str, table_name: str) -> pd.DataFrame:
                 df = df[df['证券代码'].isin(style_config.DATA_CONFIG[param_cls.WindPortal.A_IDX_VAL]['WIND_CODE'])]
             elif table_name == 'EDB':
                 df = df[df['指标代码'].isin(style_config.DATA_CONFIG[param_cls.WindPortal.EDB]['WIND_CODE'])]
+            elif table_name == 'SHIBOR_PRICES':
+                df = df[df['期限'].isin(style_config.DATA_CONFIG[param_cls.WindPortal.SHIBOR_PRICES]['B_INFO_TERM'])]
     else:
         with get_or_create_session() as session:
             if table_name == 'CN_BOND_YIELD':

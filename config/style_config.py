@@ -44,11 +44,17 @@ DATA_CONFIG = {
             'M0009970',  # 中国:金融机构:各项贷款余额:人民币:同比
         ),
     },
+    param_cls.WindPortal.SHIBOR_PRICES: {
+        'SQL_NAME': 'query_shibor_prices.sql',
+        'DATA_START_DT': '20200101',
+        'B_INFO_TERM': ('3M',),
+    },
 }
 DATA_CONFIG_KEYS = [
     param_cls.WindPortal.CN_BOND_YIELD,
     param_cls.WindPortal.A_IDX_VAL,
     param_cls.WindPortal.EDB,
+    param_cls.WindPortal.SHIBOR_PRICES,
 ]
 
 for key in DATA_CONFIG_KEYS:

@@ -43,7 +43,7 @@ def generate_style_charts():
         'CN_BOND_YIELD',
         'A_IDX_VAL',
         'EDB',
-        'SHIBOR_PRICE',
+        'SHIBOR_PRICES',
     ]
 
     # long_raw_df_collection = {
@@ -64,7 +64,7 @@ def generate_style_charts():
         for key in wind_local_keys
     }
     # st.write(long_raw_df_collection["CN_BOND_YIELD"])
-    st.write(long_raw_df_collection['SHIBOR_PRICE'])
+    st.write(long_raw_df_collection['SHIBOR_PRICES'])
     # long_raw_edb_df = fetch_data_with_wind_portal(
     #     latest_date=formatted_latest_day,
     #     config=style_config.DATA_QUERY_PARAM[param_cls.WindPortal.EDB],
