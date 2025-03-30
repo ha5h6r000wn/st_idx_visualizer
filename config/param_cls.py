@@ -19,6 +19,7 @@ class WindPortal(Enum):
     A_IDX_PRICE = 'AIndexEODPrices'
     A_IDX_DESC = 'AIndexDescription'
     EDB = 'GFZQEDB'
+    SHIBOR_PRICES = 'ShiborPrices'
 
 
 class WindLocal(Enum):
@@ -27,6 +28,7 @@ class WindLocal(Enum):
     A_IDX_PRICE = 'index_prices'
     A_IDX_DESC = 'a_idx_desc'
     EDB = 'economic_data'
+    SHIBOR_PRICES = 'shibor_prices'
 
 
 # WIND

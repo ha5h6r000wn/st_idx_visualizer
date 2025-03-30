@@ -40,9 +40,10 @@ def generate_style_charts():
     #     param_cls.WindPortal.EDB,
     # ]
     wind_local_keys = [
-        param_cls.WindLocal.CN_BOND_YIELD,
-        param_cls.WindLocal.A_IDX_VAL,
-        param_cls.WindLocal.EDB,
+        'CN_BOND_YIELD',
+        'A_IDX_VAL',
+        'EDB',
+        'SHIBOR_PRICES',
     ]
 
     # long_raw_df_collection = {
@@ -62,7 +63,8 @@ def generate_style_charts():
         )
         for key in wind_local_keys
     }
-    # st.write(long_raw_df_collection[param_cls.WindLocal.CN_BOND_YIELD])
+    # st.write(long_raw_df_collection["CN_BOND_YIELD"])
+    # st.write(long_raw_df_collection['SHIBOR_PRICES'])
     # long_raw_edb_df = fetch_data_with_wind_portal(
     #     latest_date=formatted_latest_day,
     #     config=style_config.DATA_QUERY_PARAM[param_cls.WindPortal.EDB],
@@ -83,16 +85,16 @@ def generate_style_charts():
     # # st.write(long_raw_cn_bond_yield_df)
 
     wide_raw_edb_df = reshape_long_df_into_wide_form(
-        long_df=long_raw_df_collection[param_cls.WindLocal.EDB],
+        long_df=long_raw_df_collection['EDB'],
         index_col=style_config.DATA_COL_PARAM[param_cls.WindPortal.EDB].dt_col,
         name_col=style_config.DATA_COL_PARAM[param_cls.WindPortal.EDB].name_col,
         value_col=style_config.DATA_COL_PARAM[param_cls.WindPortal.EDB].value_col,
     )
     # st.write(long_raw_df_collection[param_cls.WindPortal.A_IDX_VAL])
-    long_wind_all_a_idx_val_df = long_raw_df_collection[param_cls.WindLocal.A_IDX_VAL].query(
+    long_wind_all_a_idx_val_df = long_raw_df_collection['A_IDX_VAL'].query(
         f'{style_config.DATA_COL_PARAM[param_cls.WindPortal.A_IDX_VAL].name_col} == "万得全A"'
     )
-    long_big_small_idx_val_df = long_raw_df_collection[param_cls.WindLocal.A_IDX_VAL].query(
+    long_big_small_idx_val_df = long_raw_df_collection['A_IDX_VAL'].query(
         f'{style_config.DATA_COL_PARAM[param_cls.WindPortal.A_IDX_VAL].name_col} in ("沪深300", "中证1000")'
     )
     # st.write(long_big_small_idx_val_df)
@@ -274,7 +276,7 @@ def generate_style_charts():
         # 需求：基准线从近一年均值改为近一月均值
 
         wide_raw_cn_bond_yield_df = reshape_long_df_into_wide_form(
-            long_df=long_raw_df_collection[param_cls.WindLocal.CN_BOND_YIELD],
+            long_df=long_raw_df_collection['CN_BOND_YIELD'],
             index_col=style_config.YIELD_CURVE_COL_PARAM.dt_col,
             name_col=style_config.YIELD_CURVE_COL_PARAM.term_col,
             value_col=style_config.YIELD_CURVE_COL_PARAM.ytm_col,
@@ -540,6 +542,29 @@ def generate_style_charts():
             big_small_line_config,
         )
         # st.write(big_small_df)
+
+        # NOTE 货币周期：Shibor3M
+
+        wide_raw_shibor_prices_df = reshape_long_df_into_wide_form(
+            long_df=long_raw_df_collection['SHIBOR_PRICES'],
+            index_col=style_config.SHIBOR_PRICES_COL_PARAM.dt_col,
+            name_col=style_config.SHIBOR_PRICES_COL_PARAM.term_col,
+            value_col=style_config.SHIBOR_PRICES_COL_PARAM.ytm_col,
+        )
+
+        # st.write(wide_raw_shibor_prices_df)
+
+        shibor_prices_df = append_rolling_mean_column(
+            df=wide_raw_shibor_prices_df,
+            window_name=style_config.SHIBOR_PRICES_CONFIG['ROLLING_WINDOW'],
+            window_size=style_config.SHIBOR_PRICES_CONFIG['ROLLING_WINDOW_SIZE'],
+            rolling_mean_col=style_config.SHIBOR_PRICES_CONFIG['MEAN_COL'],
+        )
+        # st.write(shibor_prices_df)
+
+        draw_bar_line_chart_with_highlighted_signal(
+            dt_indexed_df=shibor_prices_df, config=style_config.SHIBOR_PRICES_CHART_PARAM
+        )
 
         # NOTE 经济增长: 房地产完成额累计同比
 

@@ -20,6 +20,7 @@ CSV_FILE_MAPPING = {
     'CN_BOND_YIELD': 'bond_yields.csv',
     'A_IDX_VAL': 'index_valuations.csv',
     'EDB': 'economic_data.csv',
+    'SHIBOR_PRICES': 'shibor_prices.csv',
 }
 
 
@@ -138,5 +139,11 @@ CSV_DTYPE_MAPPING = {
         '指标单位': str,
         '指标频率': str,
         '指标数值': float,
+    },
+    'SHIBOR_PRICES': {
+        '交易日期': str,
+        '证券代码': str,
+        '利率': float,
+        '期限': str,
     },
 }

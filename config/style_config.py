@@ -44,11 +44,17 @@ DATA_CONFIG = {
             'M0009970',  # 中国:金融机构:各项贷款余额:人民币:同比
         ),
     },
+    param_cls.WindPortal.SHIBOR_PRICES: {
+        'SQL_NAME': 'query_shibor_prices.sql',
+        'DATA_START_DT': '20200101',
+        'B_INFO_TERM': ('3M',),
+    },
 }
 DATA_CONFIG_KEYS = [
     param_cls.WindPortal.CN_BOND_YIELD,
     param_cls.WindPortal.A_IDX_VAL,
     param_cls.WindPortal.EDB,
+    param_cls.WindPortal.SHIBOR_PRICES,
 ]
 
 for key in DATA_CONFIG_KEYS:
@@ -434,6 +440,83 @@ CREDIT_EXPANSION_CHART_PARAM = param_cls.BarLineWithSignalParam(
 
 
 ## NOTE 大小盘研判框架
+
+# NOTE 货币周期：Shibor3M
+SHIBOR_PRICES_CONFIG = {
+    'DT_TYPE': TradeDtType.FUND_MKT,
+    'SLIDER_START_DT': '20200101',
+    'SLIDER_DEFAULT_OFFSET': '半年',
+    'SQL_NAME': 'query_shibor_prices.sql',
+    'B_INFO_TERM': ('3M',),
+    'ROLLING_WINDOW': '三月',
+    'SHIBOR_PRICE_COL': '3M',
+    'SIGNAL_COL': '交易信号',
+    'BASELINE_COL': '比较基准',
+    'TRUE_SIGNAL': param_cls.TradeSignal.LONG_BIG.value,
+    'FALSE_SIGNAL': param_cls.TradeSignal.LONG_SMALL.value,
+    'BAR_TITLE': '货币周期 —— Shibor3M',
+    'LINE_STROKE_DASH': (5, 3),
+}
+SHIBOR_PRICES_CONFIG.update(
+    {
+        'SLIDER_DEFAULT_OFFSET_DT_COUNT': get_avg_dt_count_via_dt_type(
+            dt_type=SHIBOR_PRICES_CONFIG['DT_TYPE'],
+            period=SHIBOR_PRICES_CONFIG['SLIDER_DEFAULT_OFFSET'],
+        ),
+        # 'WIND_COL_ALIAS': get_wind_col_alias_with_sql_parser(
+        #     get_cwd_file_path(SQL_DIR, SHIBOR_PRICES_CONFIG['SQL_NAME'])
+        # ),
+        'ROLLING_WINDOW_SIZE': get_avg_dt_count_via_dt_type(
+            dt_type=SHIBOR_PRICES_CONFIG['DT_TYPE'],
+            period=SHIBOR_PRICES_CONFIG['ROLLING_WINDOW'],
+        ),
+        'MEAN_COL': get_rolling_window_col(
+            window_name=SHIBOR_PRICES_CONFIG['ROLLING_WINDOW'],
+            window_type='均值',
+        ),
+    }
+)
+
+SHIBOR_PRICES_COL_PARAM = param_cls.WindYieldCurveColParam(
+    dt_col='交易日期',
+    name_col='证券代码',
+    term_col='期限',
+    ytm_col='利率',
+)
+
+SHIBOR_PRICES_CHART_PARAM = param_cls.BarLineWithSignalParam(
+    dt_slider_param=param_cls.DtSliderParam(
+        start_dt=SHIBOR_PRICES_CONFIG['SLIDER_START_DT'],
+        default_start_offset=SHIBOR_PRICES_CONFIG['SLIDER_DEFAULT_OFFSET_DT_COUNT'],
+        key='SHIBOR_PRICES_SLIDER',
+    ),
+    bar_param=param_cls.SignalBarParam(
+        axis_names={
+            'X': SHIBOR_PRICES_COL_PARAM.dt_col,
+            'Y': SHIBOR_PRICES_CONFIG['SHIBOR_PRICE_COL'],
+            'LEGEND': SHIBOR_PRICES_CONFIG['SIGNAL_COL'],
+        },
+        title=SHIBOR_PRICES_CONFIG['BAR_TITLE'],
+        true_signal=SHIBOR_PRICES_CONFIG['TRUE_SIGNAL'],
+        false_signal=SHIBOR_PRICES_CONFIG['FALSE_SIGNAL'],
+        signal_order=[
+            SHIBOR_PRICES_CONFIG['TRUE_SIGNAL'],
+            SHIBOR_PRICES_CONFIG['FALSE_SIGNAL'],
+        ],
+    ),
+    line_param=param_cls.LineParam(
+        axis_names={
+            'X': SHIBOR_PRICES_COL_PARAM.dt_col,
+            'Y': SHIBOR_PRICES_CONFIG['MEAN_COL'],
+            'LEGEND': SHIBOR_PRICES_CONFIG['BASELINE_COL'],
+        },
+        stroke_dash=SHIBOR_PRICES_CONFIG['LINE_STROKE_DASH'],
+        color='red',
+    ),
+    isConvertedToPct=True,
+)
+
+
 # NOTE 经济增长: 房地产完成额累计同比
 HOUSING_INVEST_CONFIG = {
     'WIND_TABLE': param_cls.WindPortal.EDB,

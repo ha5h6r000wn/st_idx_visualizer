@@ -1,6 +1,7 @@
 """SQLAlchemy models for database tables."""
 
 import uuid
+from datetime import datetime
 
 from sqlalchemy import Column, DateTime, Float, String, UniqueConstraint
 from sqlalchemy.dialects.postgresql import UUID
@@ -82,3 +83,21 @@ class IndexPrice(Base):
 
     def __repr__(self):
         return f'<IndexPrice(TRADE_DT={self.TRADE_DT}, S_INFO_WINDCODE={self.S_INFO_WINDCODE})>'
+
+
+class ShiborPrice(Base):
+    """Shibor price data model."""
+
+    __tablename__ = 'shibor_prices'
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    交易日期 = Column(String, nullable=False)
+    证券代码 = Column(String, nullable=False)
+    利率 = Column(Float, nullable=False)
+    期限 = Column(String, nullable=False)
+    更新时间 = Column(DateTime, nullable=False)
+
+    __table_args__ = (UniqueConstraint('交易日期', '证券代码', '期限', name='uix_shibor_prices'),)
+
+    def __repr__(self):
+        return f'<ShiborPrice(交易日期={self.交易日期}, 证券代码={self.证券代码}, 期限={self.期限})>'
