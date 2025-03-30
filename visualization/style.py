@@ -64,7 +64,7 @@ def generate_style_charts():
         for key in wind_local_keys
     }
     # st.write(long_raw_df_collection["CN_BOND_YIELD"])
-    st.write(long_raw_df_collection['SHIBOR_PRICES'])
+    # st.write(long_raw_df_collection['SHIBOR_PRICES'])
     # long_raw_edb_df = fetch_data_with_wind_portal(
     #     latest_date=formatted_latest_day,
     #     config=style_config.DATA_QUERY_PARAM[param_cls.WindPortal.EDB],
@@ -542,6 +542,29 @@ def generate_style_charts():
             big_small_line_config,
         )
         # st.write(big_small_df)
+
+        # NOTE 货币周期：Shibor3M
+
+        wide_raw_shibor_prices_df = reshape_long_df_into_wide_form(
+            long_df=long_raw_df_collection['SHIBOR_PRICES'],
+            index_col=style_config.SHIBOR_PRICES_COL_PARAM.dt_col,
+            name_col=style_config.SHIBOR_PRICES_COL_PARAM.term_col,
+            value_col=style_config.SHIBOR_PRICES_COL_PARAM.ytm_col,
+        )
+
+        # st.write(wide_raw_shibor_prices_df)
+
+        shibor_prices_df = append_rolling_mean_column(
+            df=wide_raw_shibor_prices_df,
+            window_name=style_config.SHIBOR_PRICES_CONFIG['ROLLING_WINDOW'],
+            window_size=style_config.SHIBOR_PRICES_CONFIG['ROLLING_WINDOW_SIZE'],
+            rolling_mean_col=style_config.SHIBOR_PRICES_CONFIG['MEAN_COL'],
+        )
+        # st.write(shibor_prices_df)
+
+        draw_bar_line_chart_with_highlighted_signal(
+            dt_indexed_df=shibor_prices_df, config=style_config.SHIBOR_PRICES_CHART_PARAM
+        )
 
         # NOTE 经济增长: 房地产完成额累计同比
 

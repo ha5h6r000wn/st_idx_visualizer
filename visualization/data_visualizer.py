@@ -373,6 +373,8 @@ def draw_bar_line_chart_with_highlighted_signal(dt_indexed_df, config: param_cls
                 middle_signal=config.bar_param.no_signal,
             )
 
+    # st.write(selected_df)
+
     selected_df[config.line_param.axis_names['LEGEND']] = config.line_param.axis_names['Y']
     if config.isConvertedToPct:
         selected_df = selected_df.apply(divide_by_100)
