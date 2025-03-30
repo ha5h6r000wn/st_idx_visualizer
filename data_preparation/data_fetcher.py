@@ -82,18 +82,18 @@ def fetch_index_data_from_local(latest_date: str, _config: param_cls.WindListedS
 def fetch_data_from_local(latest_date: str, table_name: str) -> pd.DataFrame:
     """Fetch data from local database or CSV file"""
     start_time = time.time()
-    print(f' - Fetching data from local {config.CURRENT_DATA_SOURCE}: {table_name.value}')
+    print(f' - Fetching data from local {config.CURRENT_DATA_SOURCE}: {table_name}')
 
     if config.CURRENT_DATA_SOURCE == config.DataSource.CSV:
-        df = read_csv_data(table_name.name)
+        df = read_csv_data(table_name)
         if not df.empty:
             # Filter data based on date range
             date_col = 'TRADE_DT' if table_name == param_cls.WindLocal.A_IDX_PRICE else '交易日期'
-            start_date = style_config.DATA_CONFIG[getattr(param_cls.WindPortal, table_name.name)]['DATA_START_DT']
+            start_date = style_config.DATA_CONFIG[getattr(param_cls.WindPortal, table_name)]['DATA_START_DT']
             df = df[(df[date_col] >= start_date) & (df[date_col] <= latest_date)]
 
             # Additional filters based on table type
-            if table_name == param_cls.WindLocal.CN_BOND_YIELD:
+            if table_name == 'CN_BOND_YIELD':
                 df = df[
                     df['曲线名称'].isin(
                         style_config.DATA_CONFIG[param_cls.WindPortal.CN_BOND_YIELD]['YIELD_CURVE_NAMES']
@@ -102,13 +102,13 @@ def fetch_data_from_local(latest_date: str, table_name: str) -> pd.DataFrame:
                         style_config.DATA_CONFIG[param_cls.WindPortal.CN_BOND_YIELD]['YIELD_CURVE_TERMS']
                     )
                 ]
-            elif table_name == param_cls.WindLocal.A_IDX_VAL:
+            elif table_name == 'A_IDX_VAL':
                 df = df[df['证券代码'].isin(style_config.DATA_CONFIG[param_cls.WindPortal.A_IDX_VAL]['WIND_CODE'])]
-            elif table_name == param_cls.WindLocal.EDB:
+            elif table_name == 'EDB':
                 df = df[df['指标代码'].isin(style_config.DATA_CONFIG[param_cls.WindPortal.EDB]['WIND_CODE'])]
     else:
         with get_or_create_session() as session:
-            if table_name == param_cls.WindLocal.CN_BOND_YIELD:
+            if table_name == 'CN_BOND_YIELD':
                 df = get_bond_yields(
                     session=session,
                     start_date=style_config.DATA_CONFIG[param_cls.WindPortal.CN_BOND_YIELD]['DATA_START_DT'],
@@ -116,14 +116,14 @@ def fetch_data_from_local(latest_date: str, table_name: str) -> pd.DataFrame:
                     curve_names=style_config.DATA_CONFIG[param_cls.WindPortal.CN_BOND_YIELD]['YIELD_CURVE_NAMES'],
                     curve_terms=style_config.DATA_CONFIG[param_cls.WindPortal.CN_BOND_YIELD]['YIELD_CURVE_TERMS'],
                 )
-            elif table_name == param_cls.WindLocal.A_IDX_VAL:
+            elif table_name == 'A_IDX_VAL':
                 df = get_index_valuations(
                     session=session,
                     start_date=style_config.DATA_CONFIG[param_cls.WindPortal.A_IDX_VAL]['DATA_START_DT'],
                     end_date=latest_date,
                     wind_codes=style_config.DATA_CONFIG[param_cls.WindPortal.A_IDX_VAL]['WIND_CODE'],
                 )
-            elif table_name == param_cls.WindLocal.EDB:
+            elif table_name == 'EDB':
                 df = get_economic_data(
                     session=session,
                     start_date=style_config.DATA_CONFIG[param_cls.WindPortal.EDB]['DATA_START_DT'],
