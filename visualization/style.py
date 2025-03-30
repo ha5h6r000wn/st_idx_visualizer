@@ -543,6 +543,102 @@ def generate_style_charts():
         )
         # st.write(big_small_df)
 
+        # NOTE 相对动量(大盘/小盘)
+        for col, new_col in zip(
+            [big_name_col, small_name_col],
+            ['沪深300近一月收益率', '中证2000近一月收益率'],
+        ):
+            big_small_df[new_col] = big_small_df[col].pct_change(
+                get_avg_dt_count_via_dt_type(
+                    dt_type=TradeDtType.STOCK_MKT,
+                    period='一月',
+                )
+            )
+        for col, new_col in zip(
+            [big_name_col, small_name_col],
+            ['沪深300近两周收益率', '中证2000近两周收益率'],
+        ):
+            big_small_df[new_col] = big_small_df[col].pct_change(
+                get_avg_dt_count_via_dt_type(
+                    dt_type=TradeDtType.STOCK_MKT,
+                    period='两周',
+                )
+            )
+        big_small_df.dropna(inplace=True)
+        # st.write(big_small_df)
+
+        big_small_line_config = param_cls.IdxLineParam(
+            axis_names=style_config.STYLE_CHART_AXIS_NAMES['VALUE_GROWTH_PCT_CHANGE'],
+            title='大盘 VS 小盘',
+            y_axis_format=config.CHART_NUM_FORMAT['pct'],
+            dt_slider_param=param_cls.DtSliderParam(
+                start_dt='20200603',
+                default_start_offset=style_config.RELATIVE_MOMENTUM_BIG_SMALL_CONFIG['SLIDER_DEFAULT_OFFSET_DT_COUNT'],
+                key='BIG_SMALL_PCT_CHANGE_SLIDER',
+            ),
+        )
+
+        draw_grouped_lines(
+            big_small_df[
+                [
+                    '沪深300近一月收益率',
+                    '中证2000近一月收益率',
+                    '沪深300近两周收益率',
+                    '中证2000近两周收益率',
+                ]
+            ].dropna(inplace=False),
+            big_small_line_config,
+        )
+
+        # value_growth_pct_change_slider_dt = st.select_slider(
+        #     '自选日期',
+        #     options=value_growth_df.index.tolist(),
+        # )
+
+        big_small_df = append_difference_column(
+            df=big_small_df,
+            minuend_col='沪深300近一月收益率',
+            subtrahend_col='中证2000近一月收益率',
+            difference_col='大盘对小盘近一月超额',
+        )
+        big_small_df = append_difference_column(
+            df=big_small_df,
+            minuend_col='沪深300近两周收益率',
+            subtrahend_col='中证2000近两周收益率',
+            difference_col='大盘对小盘近两周超额',
+        )
+        big_small_df = append_sum_column(
+            df=big_small_df,
+            sum_1_col='大盘对小盘近一月超额',
+            sum_2_col='大盘对小盘近两周超额',
+            sum_col='相对动量',
+            multiplier_1=1,
+            multiplier_2=2,
+            multiplier_sum=0.5,
+        )
+        # st.write(value_growth_df)
+
+        big_small_conditions = [
+            (big_small_df['大盘对小盘近一月超额'] < 0) & (big_small_df['大盘对小盘近两周超额'] < 0),
+            (big_small_df['大盘对小盘近一月超额'] > 0) & (big_small_df['大盘对小盘近两周超额'] > 0),
+        ]
+        big_small_choices = [
+            param_cls.TradeSignal.LONG_SMALL.value,
+            param_cls.TradeSignal.LONG_BIG.value,
+        ]
+        big_small_df['交易信号'] = np.select(
+            condlist=big_small_conditions,
+            choicelist=big_small_choices,
+            default=param_cls.TradeSignal.NO_SIGNAL.value,
+        )
+        # st.write(big_small_df)
+        # print(big_small_df.head())
+
+        draw_bar_line_chart_with_highlighted_predefined_signal(
+            dt_indexed_df=big_small_df,
+            config=style_config.RELATIVE_MOMENTUM_BIG_SMALL_CHART_PARAM,
+        )
+
         # NOTE 货币周期：Shibor3M
 
         wide_raw_shibor_prices_df = reshape_long_df_into_wide_form(
@@ -690,31 +786,31 @@ def generate_style_charts():
             config=style_config.INDEX_ERP_2_CHART_PARAM,
         )
 
-        # NOTE 大小盘近两月收益率
+        # # NOTE 大小盘近两月收益率
 
-        # st.write(big_small_df)
-        big_small_line_config = param_cls.IdxLineParam(
-            axis_names=style_config.STYLE_CHART_AXIS_NAMES['近两月收益率'],
-            title=f'{big_name_col}/{small_name_col}',
-            y_axis_format=config.CHART_NUM_FORMAT['pct'],
-            dt_slider_param=param_cls.DtSliderParam(
-                start_dt='20200603',
-                default_start_offset=style_config.INDEX_ERP_CONFIG['SLIDER_DEFAULT_OFFSET_DT_COUNT'],
-                key='BIG_SMALL_2M_SLIDER',
-            ),
-        )
+        # # st.write(big_small_df)
+        # big_small_line_config = param_cls.IdxLineParam(
+        #     axis_names=style_config.STYLE_CHART_AXIS_NAMES['近两月收益率'],
+        #     title=f'{big_name_col}/{small_name_col}',
+        #     y_axis_format=config.CHART_NUM_FORMAT['pct'],
+        #     dt_slider_param=param_cls.DtSliderParam(
+        #         start_dt='20200603',
+        #         default_start_offset=style_config.INDEX_ERP_CONFIG['SLIDER_DEFAULT_OFFSET_DT_COUNT'],
+        #         key='BIG_SMALL_2M_SLIDER',
+        #     ),
+        # )
 
-        draw_grouped_lines(
-            big_small_df[
-                [
-                    '沪深300近两月收益率',
-                    '中证2000近两月收益率',
-                    '沪深300近两周收益率',
-                    '中证2000近两周收益率',
-                ]
-            ].dropna(inplace=False),
-            big_small_line_config,
-        )
+        # draw_grouped_lines(
+        #     big_small_df[
+        #         [
+        #             '沪深300近两月收益率',
+        #             '中证2000近两月收益率',
+        #             '沪深300近两周收益率',
+        #             '中证2000近两周收益率',
+        #         ]
+        #     ].dropna(inplace=False),
+        #     big_small_line_config,
+        # )
 
         # NOTE 风格关注度
 
