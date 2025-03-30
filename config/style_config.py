@@ -133,7 +133,7 @@ RELATIVE_MOMENTUM_VALUE_GROWTH_CHART_PARAM = param_cls.BarLineWithSignalParam(
     dt_slider_param=param_cls.DtSliderParam(
         start_dt=RELATIVE_MOMENTUM_VALUE_GROWTH_CONFIG['SLIDER_START_DT'],
         default_start_offset=RELATIVE_MOMENTUM_VALUE_GROWTH_CONFIG['SLIDER_DEFAULT_OFFSET_DT_COUNT'],
-        key='RELATIVE_MOMENTUM_SLIDER',
+        key='RELATIVE_MOMENTUM_VALUE_GROWTH_SLIDER',
     ),
     bar_param=param_cls.SignalBarParam(
         axis_names={
@@ -440,6 +440,52 @@ CREDIT_EXPANSION_CHART_PARAM = param_cls.BarLineWithSignalParam(
 
 
 ## NOTE 大小盘研判框架
+
+# NOTE 相对动量: 大盘 VS 小盘
+RELATIVE_MOMENTUM_BIG_SMALL_CONFIG = {
+    'DT_TYPE': TradeDtType.STOCK_MKT,
+    'SLIDER_START_DT': '20200601',
+    'SLIDER_DEFAULT_OFFSET': '半年',
+    'ROLLING_WINDOW': '一月',
+    'TARGET_COL': '相对动量',
+    'SIGNAL_COL': '交易信号',
+    'TRUE_SIGNAL': param_cls.TradeSignal.LONG_BIG.value,
+    'FALSE_SIGNAL': param_cls.TradeSignal.LONG_SMALL.value,
+    'BAR_TITLE': '相对动量: 大盘 VS 小盘',
+}
+RELATIVE_MOMENTUM_BIG_SMALL_CONFIG.update(
+    {
+        'SLIDER_DEFAULT_OFFSET_DT_COUNT': get_avg_dt_count_via_dt_type(
+            dt_type=RELATIVE_MOMENTUM_BIG_SMALL_CONFIG['DT_TYPE'],
+            period=RELATIVE_MOMENTUM_BIG_SMALL_CONFIG['SLIDER_DEFAULT_OFFSET'],
+        ),
+    }
+)
+RELATIVE_MOMENTUM_BIG_SMALL_CHART_PARAM = param_cls.BarLineWithSignalParam(
+    dt_slider_param=param_cls.DtSliderParam(
+        start_dt=RELATIVE_MOMENTUM_BIG_SMALL_CONFIG['SLIDER_START_DT'],
+        default_start_offset=RELATIVE_MOMENTUM_BIG_SMALL_CONFIG['SLIDER_DEFAULT_OFFSET_DT_COUNT'],
+        key='RELATIVE_MOMENTUM_BIG_SMALL_SLIDER',
+    ),
+    bar_param=param_cls.SignalBarParam(
+        axis_names={
+            'X': 'TRADE_DT',
+            'Y': RELATIVE_MOMENTUM_BIG_SMALL_CONFIG['TARGET_COL'],
+            'LEGEND': RELATIVE_MOMENTUM_BIG_SMALL_CONFIG['SIGNAL_COL'],
+        },
+        title=RELATIVE_MOMENTUM_BIG_SMALL_CONFIG['BAR_TITLE'],
+        y_axis_format=config.CHART_NUM_FORMAT['pct'],
+        true_signal=RELATIVE_MOMENTUM_BIG_SMALL_CONFIG['TRUE_SIGNAL'],
+        false_signal=RELATIVE_MOMENTUM_BIG_SMALL_CONFIG['FALSE_SIGNAL'],
+        no_signal=param_cls.TradeSignal.NO_SIGNAL.value,
+        signal_order=[
+            RELATIVE_MOMENTUM_BIG_SMALL_CONFIG['TRUE_SIGNAL'],
+            RELATIVE_MOMENTUM_BIG_SMALL_CONFIG['FALSE_SIGNAL'],
+            param_cls.TradeSignal.NO_SIGNAL.value,
+        ],
+    ),
+    isConvertedToPct=False,
+)
 
 # NOTE 货币周期：Shibor3M
 SHIBOR_PRICES_CONFIG = {
