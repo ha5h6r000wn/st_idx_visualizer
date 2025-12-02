@@ -90,44 +90,30 @@ def read_csv_data(table_name: str) -> pd.DataFrame:
         return pd.DataFrame()
 
 
-# Functions to fetch data from local database
-# @st.cache_data(ttl=config.ST_CACHE_TTL)
-def fetch_index_data_from_local(latest_date: str, _config: param_cls.WindListedSecParam):
-    """Fetch index data from local CSV file"""
-    start_time = time.time()
-    print(f' - Fetching data from CSV: {param_cls.WindLocal.A_IDX_PRICE.value}')
+class CSVDataSource:
+    """CSV-backed data access with normalized schemas."""
 
-    df = read_csv_data('A_IDX_PRICE')
-    if not df.empty:
-        # Filter data based on date range and wind codes
-        df = df[
-            (df['TRADE_DT'] >= _config.start_date)
-            & (df['TRADE_DT'] <= latest_date)
-            & (df['S_INFO_WINDCODE'].isin(_config.wind_codes))
-        ]
-        df = add_canonical_columns(df, 'A_IDX_PRICE')
+    def fetch_index_data(self, latest_date: str, _config: param_cls.WindListedSecParam) -> pd.DataFrame:
+        df = read_csv_data('A_IDX_PRICE')
+        if not df.empty:
+            df = df[
+                (df['TRADE_DT'] >= _config.start_date)
+                & (df['TRADE_DT'] <= latest_date)
+                & (df['S_INFO_WINDCODE'].isin(_config.wind_codes))
+            ]
+            df = add_canonical_columns(df, 'A_IDX_PRICE')
+            df = df.sort_values(by='TRADE_DT', ascending=False)
+        return df
 
-    if df is not None and not df.empty:
-        df = df.sort_values(by='TRADE_DT', ascending=False)
+    def fetch_table(self, latest_date: str, table_name: str) -> pd.DataFrame:
+        df = read_csv_data(table_name)
+        if df.empty:
+            return df
 
-    print(f' - [IDX] {time.time() - start_time:.2f}s')
-    return df
-
-
-# @st.cache_data(ttl=config.ST_CACHE_TTL)
-def fetch_data_from_local(latest_date: str, table_name: str) -> pd.DataFrame:
-    """Fetch data from local CSV file"""
-    start_time = time.time()
-    print(f' - Fetching data from CSV: {table_name}')
-
-    df = read_csv_data(table_name)
-    if not df.empty:
-        # Filter data based on date range
         date_col = 'TRADE_DT' if table_name == param_cls.WindLocal.A_IDX_PRICE else '交易日期'
         start_date = style_config.DATA_CONFIG[getattr(param_cls.WindPortal, table_name)]['DATA_START_DT']
         df = df[(df[date_col] >= start_date) & (df[date_col] <= latest_date)]
 
-        # Additional filters based on table type
         if table_name == 'CN_BOND_YIELD':
             df = df[
                 df['曲线名称'].isin(style_config.DATA_CONFIG[param_cls.WindPortal.CN_BOND_YIELD]['YIELD_CURVE_NAMES'])
@@ -139,12 +125,37 @@ def fetch_data_from_local(latest_date: str, table_name: str) -> pd.DataFrame:
             df = df[df['指标代码'].isin(style_config.DATA_CONFIG[param_cls.WindPortal.EDB]['WIND_CODE'])]
         elif table_name == 'SHIBOR_PRICES':
             df = df[df['期限'].isin(style_config.DATA_CONFIG[param_cls.WindPortal.SHIBOR_PRICES]['B_INFO_TERM'])]
-        df = add_canonical_columns(df, table_name)
 
-    if df is not None and not df.empty:
-        # Sort by trade date in descending order
-        date_col = 'TRADE_DT' if table_name == param_cls.WindLocal.A_IDX_PRICE else '交易日期'
+        df = add_canonical_columns(df, table_name)
         df = df.sort_values(by=date_col, ascending=False)
+        return df
+
+
+_CSV_DATASOURCE = CSVDataSource()
+
+
+def get_data_source() -> CSVDataSource:
+    return _CSV_DATASOURCE
+
+
+# Functions to fetch data from local CSVs (thin wrappers over CSVDataSource)
+def fetch_index_data_from_local(latest_date: str, _config: param_cls.WindListedSecParam):
+    """Fetch index data from local CSV file"""
+    start_time = time.time()
+    print(f' - Fetching data from CSV: {param_cls.WindLocal.A_IDX_PRICE.value}')
+
+    df = get_data_source().fetch_index_data(latest_date=latest_date, _config=_config)
+
+    print(f' - [IDX] {time.time() - start_time:.2f}s')
+    return df
+
+
+def fetch_data_from_local(latest_date: str, table_name: str) -> pd.DataFrame:
+    """Fetch data from local CSV file"""
+    start_time = time.time()
+    print(f' - Fetching data from CSV: {table_name}')
+
+    df = get_data_source().fetch_table(latest_date=latest_date, table_name=table_name)
 
     print(f' - [GEN] {time.time() - start_time:.2f}s')
     return df

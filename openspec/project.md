@@ -7,8 +7,7 @@ Interactive Streamlit dashboard for Chinese equity research. Visualizes strategy
 - Python 3.12
 - Streamlit + Altair for UI and charting
 - pandas/NumPy for data prep; pydantic for typed config objects
-- SQLAlchemy + psycopg2 + python-dotenv for Postgres access to Wind-style data (optional)
-- CSV-backed offline mode with data under `data/`
+- CSV-backed mode with data under `data/`
 - Tooling: ruff linting; `pyproject.toml` + `uv.lock` for packaging
 
 ## Project Conventions
@@ -22,8 +21,8 @@ Interactive Streamlit dashboard for Chinese equity research. Visualizes strategy
 
 ### Architecture Patterns
 - Entry point `app.py` sets Streamlit layout and tabs
-- `data_preparation/` handles IO (CSV/Postgres), reshaping, and signal calculations; `visualization/` renders charts; `config/` holds constants/query params; `utils.py` has shared helpers (env loading, date windows, SQL parsing)
-- Data source toggled via `config.CURRENT_DATA_SOURCE` (CSV by default for offline use); database sessions managed with SQLAlchemy context manager
+- `data_preparation/` handles CSV IO, reshaping, and signal calculations; `visualization/` renders charts; `config/` holds constants/query params; `utils.py` has shared helpers (env loading, date windows, SQL parsing)
+- Data source is CSV-only; consumers call fetch helpers without toggles or database branches
 - Data flow: fetch raw data → process to wide/long frames → render via Altair; chart configuration driven by parameter objects for consistent axes/legends
 
 ### Testing Strategy
@@ -48,5 +47,4 @@ Interactive Streamlit dashboard for Chinese equity research. Visualizes strategy
 
 ## External Dependencies
 - Wind data schemas via SQL templates in `sql_template/` (requires credentials to query)
-- Postgres database connectivity via SQLAlchemy/psycopg2 (`data_preparation/db.py`) with `.env` support
 - Streamlit runtime and Altair for visualization; pandas/NumPy for analytics; openpyxl for Excel ingestion when needed
