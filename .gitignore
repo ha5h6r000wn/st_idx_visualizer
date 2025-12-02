@@ -10,7 +10,15 @@ wheels/
 .venv
 .env
 .python-version
-# pyproject.toml
+uv.lock
+pyproject.toml
 .cz.toml
 .DS_Store
+*.csv
 .vscode/
+
+*.log
+.history
+.coverage
+AGENTS.md
+CLAUDE.md
