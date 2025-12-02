@@ -4,16 +4,6 @@ import os
 DATA_ROOT_DIR = 'data'
 CSV_DATA_DIR = os.path.join(DATA_ROOT_DIR, 'csv')
 
-
-# Data source configuration
-class DataSource:
-    DB = 'database'
-    CSV = 'csv'
-
-
-# Current data source setting
-CURRENT_DATA_SOURCE = DataSource.CSV
-
 # CSV file configuration
 CSV_FILE_MAPPING = {
     'A_IDX_PRICE': 'index_prices.csv',
