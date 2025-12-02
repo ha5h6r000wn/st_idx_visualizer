@@ -339,18 +339,19 @@ def add_altair_line_with_stroke_dash(df, config: param_cls.LineParam):
     )
 
 
-def draw_bar_line_chart_with_highlighted_signal(dt_indexed_df, config: param_cls.BarLineWithSignalParam):
+def prepare_bar_line_with_signal_data(
+    dt_indexed_df, config: param_cls.BarLineWithSignalParam, custom_dt: tuple | None = None
+):
+    """Prepare data for bar+line+signal chart; uses custom_dt if provided to avoid Streamlit state."""
     trade_dt = dt_indexed_df.index
-    # st.write(trade_dt[-1])
-    if config.dt_slider_param is not None:
+    if custom_dt is None and config.dt_slider_param is not None:
         custom_dt = get_custom_dt_with_slider(trade_dt=trade_dt, config=config.dt_slider_param)
+
+    if custom_dt is not None:
         selected_df = dt_indexed_df.loc[custom_dt[0] : custom_dt[1]].reset_index()
     else:
         selected_df = dt_indexed_df.reset_index()
 
-    # st.write(selected_df)
-
-    # 创建一个新的数据列，用于编码颜色
     if not config.isSignalAssigned:
         if config.bar_param.no_signal is None:
             selected_df[config.bar_param.axis_names['LEGEND']] = (
@@ -373,15 +374,17 @@ def draw_bar_line_chart_with_highlighted_signal(dt_indexed_df, config: param_cls
                 middle_signal=config.bar_param.no_signal,
             )
 
-    # st.write(selected_df)
-
     selected_df[config.line_param.axis_names['LEGEND']] = config.line_param.axis_names['Y']
     if config.isConvertedToPct:
         selected_df = selected_df.apply(divide_by_100)
         config.bar_param.y_axis_format = CHART_NUM_FORMAT['pct']
         config.line_param.y_axis_format = CHART_NUM_FORMAT['pct']
 
-    # st.write(selected_df)
+    return selected_df
+
+
+def draw_bar_line_chart_with_highlighted_signal(dt_indexed_df, config: param_cls.BarLineWithSignalParam):
+    selected_df = prepare_bar_line_with_signal_data(dt_indexed_df, config)
 
     # 创建条形图
     bar = add_altair_bar_with_highlighted_signal(selected_df, config.bar_param)

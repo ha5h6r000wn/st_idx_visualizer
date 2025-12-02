@@ -6,6 +6,52 @@ import pandas as pd
 from config import config, param_cls, style_config
 
 
+CANONICAL_COL_MAPPINGS = {
+    'A_IDX_PRICE': {
+        'trade_date': 'TRADE_DT',
+        'wind_code': 'S_INFO_WINDCODE',
+        'wind_name': 'S_INFO_NAME',
+        'close': 'S_DQ_CLOSE',
+    },
+    'CN_BOND_YIELD': {
+        'trade_date': '交易日期',
+        'curve_name': '曲线名称',
+        'curve_term': '交易期限',
+        'ytm': '到期收益率',
+    },
+    'A_IDX_VAL': {
+        'trade_date': '交易日期',
+        'wind_code': '证券代码',
+        'wind_name': '证券简称',
+        'turnover': '日换手率',
+        'pe_ttm': '市盈率',
+    },
+    'EDB': {
+        'trade_date': '交易日期',
+        'indicator_code': '指标代码',
+        'indicator_name': '指标名称',
+        'indicator_unit': '指标单位',
+        'indicator_freq': '指标频率',
+        'indicator_value': '指标数值',
+    },
+    'SHIBOR_PRICES': {
+        'trade_date': '交易日期',
+        'wind_code': '证券代码',
+        'rate': '利率',
+        'term': '期限',
+    },
+}
+
+
+def add_canonical_columns(df: pd.DataFrame, table_name: str) -> pd.DataFrame:
+    """Add normalized English column aliases while retaining original columns."""
+    mapping = CANONICAL_COL_MAPPINGS.get(table_name, {})
+    for canonical, source in mapping.items():
+        if source in df.columns:
+            df[canonical] = df[source]
+    return df
+
+
 def read_csv_data(table_name: str) -> pd.DataFrame:
     """Read data from CSV file based on table name"""
     csv_path = os.path.join(config.CSV_DATA_DIR, config.CSV_FILE_MAPPING[table_name])
@@ -59,6 +105,7 @@ def fetch_index_data_from_local(latest_date: str, _config: param_cls.WindListedS
             & (df['TRADE_DT'] <= latest_date)
             & (df['S_INFO_WINDCODE'].isin(_config.wind_codes))
         ]
+        df = add_canonical_columns(df, 'A_IDX_PRICE')
 
     if df is not None and not df.empty:
         df = df.sort_values(by='TRADE_DT', ascending=False)
@@ -92,6 +139,7 @@ def fetch_data_from_local(latest_date: str, table_name: str) -> pd.DataFrame:
             df = df[df['指标代码'].isin(style_config.DATA_CONFIG[param_cls.WindPortal.EDB]['WIND_CODE'])]
         elif table_name == 'SHIBOR_PRICES':
             df = df[df['期限'].isin(style_config.DATA_CONFIG[param_cls.WindPortal.SHIBOR_PRICES]['B_INFO_TERM'])]
+        df = add_canonical_columns(df, table_name)
 
     if df is not None and not df.empty:
         # Sort by trade date in descending order
