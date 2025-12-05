@@ -8,7 +8,7 @@
   - [ ] Document which configurations in `config/style_config.py` and `config/param_cls.py` are used by each chart.
 
 - [ ] Refine data-access behavior for CSV-only paths
-  - [ ] Fix the `CSVDataSource.fetch_table` date-column selection bug for `A_IDX_PRICE` while keeping behavior for other tables unchanged.
+  - [x] Fix the `CSVDataSource.fetch_table` date-column selection bug for `A_IDX_PRICE` while keeping behavior for other tables unchanged.
   - [ ] Confirm that `Streamlit` UI modules (`visualization/*.py`) do not rely on `data_preparation/data_access.py` or database sessions.
   - [ ] If `data_preparation/data_access.py` is unused by the app, either:
     - [ ] Move it under an ETL-specific namespace, or
@@ -26,13 +26,13 @@
 
 - [ ] Separate data preparation from rendering for style charts
   - [ ] Extract pure data-preparation helpers for each major style component:
-    - 价值成长比价与相对动量
-    - 市场情绪（换手率）
-    - 期限利差与期现利差
-    - ERP 股债性价比
-    - 风格关注度
-    - 货币周期（Shibor）
-    - 经济增长（地产投资）
+    - [x] 价值成长比价与相对动量
+    - [x] 市场情绪（换手率）
+    - [ ] 期限利差与期现利差
+    - [ ] ERP 股债性价比
+    - [ ] 风格关注度
+    - [ ] 货币周期（Shibor）
+    - [ ] 经济增长（地产投资）
   - [ ] Ensure these helpers:
     - [ ] accept well-typed inputs (canonical DataFrames and parameter objects),
     - [ ] return fully prepared frames ready for charting,
@@ -66,4 +66,3 @@
   - [ ] Manually run `streamlit run app.py` and verify:
     - [ ] all charts render without errors,
     - [ ] chart values and signals visually match pre-change behavior for a fixed snapshot of CSV data.
-
