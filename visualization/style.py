@@ -290,6 +290,89 @@ def prepare_index_erp_data(
     return wide_erp_df, erp_conditions
 
 
+def prepare_style_focus_data(
+    long_big_small_idx_val_df: pd.DataFrame,
+    big_small_df: pd.DataFrame,
+) -> pd.DataFrame:
+    """Prepare data for style focus block (small vs big cap attention)."""
+    wide_big_small_turnover_df = reshape_long_df_into_wide_form(
+        long_df=long_big_small_idx_val_df,
+        index_col=style_config.DATA_COL_PARAM[param_cls.WindPortal.A_IDX_VAL].dt_col,
+        name_col=style_config.DATA_COL_PARAM[param_cls.WindPortal.A_IDX_VAL].name_col,
+        value_col=style_config.DATA_COL_PARAM[param_cls.WindPortal.A_IDX_VAL].turnover_col,
+        add_suffix=True,
+    )
+
+    wide_big_small_turnover_df = append_ratio_column(
+        df=wide_big_small_turnover_df,
+        numerator_col='中证1000_日换手率',
+        denominator_col='沪深300_日换手率',
+        ratio_col='中证1000/沪深300_日换手率',
+    )
+
+    style_focus_df = append_rolling_sum_column(
+        df=wide_big_small_turnover_df,
+        window_size=get_avg_dt_count_via_dt_type(
+            dt_type=TradeDtType.STOCK_MKT,
+            period='三月',
+        ),
+        rolling_sum_col='风格关注度',
+    )
+
+    merged_style_focus_df = style_focus_df.join(
+        big_small_df[['沪深300近两周收益率', '中证2000近两周收益率']], how='inner'
+    )
+    merged_style_focus_df.index.name = style_focus_df.index.name
+
+    style_focus_quantile_info = [
+        {
+            'quantile': style_config.STYLE_FOCUS_CONFIG['QUANTILE_CEILING'],
+            'col': style_config.STYLE_FOCUS_CONFIG['QUANTILE_CEILING_COL'],
+            'dropna': False,
+        },
+        {
+            'quantile': style_config.STYLE_FOCUS_CONFIG['QUANTILE_FLOOR'],
+            'col': style_config.STYLE_FOCUS_CONFIG['QUANTILE_FLOOR_COL'],
+            'dropna': True,
+        },
+    ]
+
+    for info in style_focus_quantile_info:
+        merged_style_focus_df = append_rolling_quantile_column(
+            df=merged_style_focus_df,
+            window_name=style_config.STYLE_FOCUS_CONFIG['QUANTILE_ROLLING_WINDOW'],
+            window_size=style_config.STYLE_FOCUS_CONFIG['QUANTILE_ROLLING_WINDOW_SIZE'],
+            target_col=style_config.STYLE_FOCUS_CONFIG['STYLE_FOCUS_COL'],
+            rolling_quantile_col=info['col'],
+            quantile=info['quantile'],
+            dropna=info['dropna'],
+        )
+
+    style_focus_conditions = [
+        (
+            merged_style_focus_df[style_config.STYLE_FOCUS_CONFIG['STYLE_FOCUS_COL']]
+            >= merged_style_focus_df[style_config.STYLE_FOCUS_CONFIG['QUANTILE_CEILING_COL']]
+        )
+        & (merged_style_focus_df['沪深300近两周收益率'] >= merged_style_focus_df['中证2000近两周收益率']),
+        (
+            merged_style_focus_df[style_config.STYLE_FOCUS_CONFIG['STYLE_FOCUS_COL']]
+            <= merged_style_focus_df[style_config.STYLE_FOCUS_CONFIG['QUANTILE_FLOOR_COL']]
+        )
+        & (merged_style_focus_df['沪深300近两周收益率'] <= merged_style_focus_df['中证2000近两周收益率']),
+    ]
+    style_focus_choices = [
+        style_config.STYLE_FOCUS_CHART_PARAM.bar_param.false_signal,
+        style_config.STYLE_FOCUS_CHART_PARAM.bar_param.true_signal,
+    ]
+    merged_style_focus_df[style_config.STYLE_FOCUS_CONFIG['SIGNAL_COL']] = np.select(
+        condlist=style_focus_conditions,
+        choicelist=style_focus_choices,
+        default=style_config.STYLE_FOCUS_CHART_PARAM.bar_param.no_signal,
+    )
+
+    return merged_style_focus_df
+
+
 @msg_printer
 def generate_style_charts():
     formatted_latest_day = date.today().strftime(config.WIND_DT_FORMAT)
@@ -682,113 +765,10 @@ def generate_style_charts():
 
         # NOTE 风格关注度
 
-        wide_big_small_turnover_df = reshape_long_df_into_wide_form(
-            long_df=long_big_small_idx_val_df,
-            index_col=style_config.DATA_COL_PARAM[param_cls.WindPortal.A_IDX_VAL].dt_col,
-            name_col=style_config.DATA_COL_PARAM[param_cls.WindPortal.A_IDX_VAL].name_col,
-            value_col=style_config.DATA_COL_PARAM[param_cls.WindPortal.A_IDX_VAL].turnover_col,
-            add_suffix=True,
+        merged_style_focus_df = prepare_style_focus_data(
+            long_big_small_idx_val_df=long_big_small_idx_val_df,
+            big_small_df=big_small_df,
         )
-        # st.write(long_big_small_idx_val_df)
-
-        wide_big_small_turnover_df = append_ratio_column(
-            df=wide_big_small_turnover_df,
-            numerator_col='中证1000_日换手率',
-            denominator_col='沪深300_日换手率',
-            ratio_col='中证1000/沪深300_日换手率',
-        )
-
-        style_focus_df = append_rolling_sum_column(
-            df=wide_big_small_turnover_df,
-            window_size=get_avg_dt_count_via_dt_type(
-                dt_type=TradeDtType.STOCK_MKT,
-                period='三月',
-            ),
-            rolling_sum_col='风格关注度',
-        )
-        # st.write(style_focus_df)
-        # style_focus_df = append_rolling_quantile_inv_q_column(
-        #     df=style_focus_df,
-        #     window_size=get_avg_dt_count_via_dt_type(
-        #         dt_type=TradeDtType.STOCK_MKT,
-        #         period='两年',
-        #     ),
-        #     target_col='风格关注度',
-        #     rolling_q_col='风格关注度近两年分位',
-        # )
-
-        # st.write(style_focus_df)
-
-        # TODO 目前计算风格关注度用的是中证1000，但是计算动量时用的是中证2000
-
-        # st.write(big_small_df)
-        merged_style_focus_df = style_focus_df.join(
-            big_small_df[['沪深300近两周收益率', '中证2000近两周收益率']], how='inner'
-        )
-        merged_style_focus_df.index.name = style_focus_df.index.name
-        style_focus_quantile_info = [
-            {
-                'quantile': style_config.STYLE_FOCUS_CONFIG['QUANTILE_CEILING'],
-                'col': style_config.STYLE_FOCUS_CONFIG['QUANTILE_CEILING_COL'],
-                'dropna': False,
-            },
-            {
-                'quantile': style_config.STYLE_FOCUS_CONFIG['QUANTILE_FLOOR'],
-                'col': style_config.STYLE_FOCUS_CONFIG['QUANTILE_FLOOR_COL'],
-                'dropna': True,
-            },
-        ]
-
-        for info in style_focus_quantile_info:
-            merged_style_focus_df = append_rolling_quantile_column(
-                df=merged_style_focus_df,
-                window_name=style_config.STYLE_FOCUS_CONFIG['QUANTILE_ROLLING_WINDOW'],
-                window_size=style_config.STYLE_FOCUS_CONFIG['QUANTILE_ROLLING_WINDOW_SIZE'],
-                target_col=style_config.STYLE_FOCUS_CONFIG['STYLE_FOCUS_COL'],
-                rolling_quantile_col=info['col'],
-                quantile=info['quantile'],
-                dropna=info['dropna'],
-            )
-        # merged_style_focus_df[
-        #     style_config.STYLE_FOCUS_CONFIG['QUANTILE_CEILING_COL']
-        # ] = style_config.STYLE_FOCUS_CONFIG['QUANTILE_CEILING'] / 100
-        # merged_style_focus_df[style_config.STYLE_FOCUS_CONFIG['QUANTILE_FLOOR_COL']] = (
-        #     style_config.STYLE_FOCUS_CONFIG['QUANTILE_FLOOR'] / 100
-        # )
-        # st.write(merged_style_focus_df)
-
-        style_focus_conditions = [
-            (
-                merged_style_focus_df[style_config.STYLE_FOCUS_CONFIG['STYLE_FOCUS_COL']]
-                >= merged_style_focus_df[style_config.STYLE_FOCUS_CONFIG['QUANTILE_CEILING_COL']]
-            )
-            & (merged_style_focus_df['沪深300近两周收益率'] >= merged_style_focus_df['中证2000近两周收益率']),
-            (
-                merged_style_focus_df[style_config.STYLE_FOCUS_CONFIG['STYLE_FOCUS_COL']]
-                <= merged_style_focus_df[style_config.STYLE_FOCUS_CONFIG['QUANTILE_FLOOR_COL']]
-            )
-            & (merged_style_focus_df['沪深300近两周收益率'] <= merged_style_focus_df['中证2000近两周收益率']),
-        ]
-        style_focus_choices = [
-            style_config.STYLE_FOCUS_CHART_PARAM.bar_param.false_signal,
-            style_config.STYLE_FOCUS_CHART_PARAM.bar_param.true_signal,
-        ]
-        merged_style_focus_df[style_config.STYLE_FOCUS_CONFIG['SIGNAL_COL']] = np.select(
-            condlist=style_focus_conditions,
-            choicelist=style_focus_choices,
-            default=style_config.STYLE_FOCUS_CHART_PARAM.bar_param.no_signal,
-        )
-        # st.write(merged_style_focus_df)
-        # st.write(
-        #     merged_style_focus_df[
-        #         [
-        #             '风格关注度',
-        #             '交易信号',
-        #             '近两年95%分位',
-        #             '近两年5%分位',
-        #         ]
-        #     ]
-        # )
         draw_bar_line_chart_with_highlighted_signal(
             dt_indexed_df=merged_style_focus_df,
             config=style_config.STYLE_FOCUS_CHART_PARAM,
