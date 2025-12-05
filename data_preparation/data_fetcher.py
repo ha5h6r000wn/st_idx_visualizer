@@ -110,7 +110,7 @@ class CSVDataSource:
         if df.empty:
             return df
 
-        date_col = 'TRADE_DT' if table_name == param_cls.WindLocal.A_IDX_PRICE else '交易日期'
+        date_col = 'TRADE_DT' if table_name == 'A_IDX_PRICE' else '交易日期'
         start_date = style_config.DATA_CONFIG[getattr(param_cls.WindPortal, table_name)]['DATA_START_DT']
         df = df[(df[date_col] >= start_date) & (df[date_col] <= latest_date)]
 
