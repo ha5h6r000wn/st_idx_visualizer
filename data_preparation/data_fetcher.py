@@ -6,13 +6,21 @@ import pandas as pd
 from config import config, param_cls, style_config
 
 
-CANONICAL_COL_MAPPINGS = {
-    'A_IDX_PRICE': {
+# Canonical schema definitions (incrementally introduced; index prices first)
+INDEX_PRICE_SCHEMA = {
+    'table_name': 'A_IDX_PRICE',
+    'date_col': 'TRADE_DT',
+    'canonical_cols': {
         'trade_date': 'TRADE_DT',
         'wind_code': 'S_INFO_WINDCODE',
         'wind_name': 'S_INFO_NAME',
         'close': 'S_DQ_CLOSE',
     },
+}
+
+
+CANONICAL_COL_MAPPINGS = {
+    'A_IDX_PRICE': INDEX_PRICE_SCHEMA['canonical_cols'],
     'CN_BOND_YIELD': {
         'trade_date': '交易日期',
         'curve_name': '曲线名称',
@@ -96,13 +104,14 @@ class CSVDataSource:
     def fetch_index_data(self, latest_date: str, _config: param_cls.WindListedSecParam) -> pd.DataFrame:
         df = read_csv_data('A_IDX_PRICE')
         if not df.empty:
+            date_col = INDEX_PRICE_SCHEMA['date_col']
             df = df[
-                (df['TRADE_DT'] >= _config.start_date)
-                & (df['TRADE_DT'] <= latest_date)
+                (df[date_col] >= _config.start_date)
+                & (df[date_col] <= latest_date)
                 & (df['S_INFO_WINDCODE'].isin(_config.wind_codes))
             ]
             df = add_canonical_columns(df, 'A_IDX_PRICE')
-            df = df.sort_values(by='TRADE_DT', ascending=False)
+            df = df.sort_values(by=date_col, ascending=False)
         return df
 
     def fetch_table(self, latest_date: str, table_name: str) -> pd.DataFrame:
@@ -110,7 +119,10 @@ class CSVDataSource:
         if df.empty:
             return df
 
-        date_col = 'TRADE_DT' if table_name == 'A_IDX_PRICE' else '交易日期'
+        if table_name == INDEX_PRICE_SCHEMA['table_name']:
+            date_col = INDEX_PRICE_SCHEMA['date_col']
+        else:
+            date_col = '交易日期'
         start_date = style_config.DATA_CONFIG[getattr(param_cls.WindPortal, table_name)]['DATA_START_DT']
         df = df[(df[date_col] >= start_date) & (df[date_col] <= latest_date)]
 
