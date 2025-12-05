@@ -30,6 +30,104 @@ from visualization.data_visualizer import (
 )
 
 
+def prepare_value_growth_data(raw_wide_idx_df: pd.DataFrame, idx_name_df: pd.DataFrame):
+    """Prepare data for value vs growth style block.
+
+    Returns:
+        ratio_mean_df: wide DataFrame with ratio and its rolling mean for the first line chart.
+        pct_change_df: wide DataFrame with recent period returns for the second line chart.
+        signal_df: full DataFrame including relative momentum and trading signal for bar chart.
+    """
+    value_name_col, growth_name_col = tuple(
+        map(
+            lambda x: idx_name_df.loc[style_config.STYLE_IDX_CODES[x]].values[0],
+            ['价值', '成长'],
+        )
+    )
+
+    value_growth_df = raw_wide_idx_df[[value_name_col, growth_name_col]].copy()
+    value_growth_df = append_ratio_column(value_growth_df, value_name_col, growth_name_col)
+    value_growth_df = append_rolling_mean_column(
+        df=value_growth_df,
+        window_name='一年',
+        window_size=config.TRADE_DT_COUNT['一年'],
+        rolling_mean_col='近一年均值',
+    )
+
+    ratio_mean_df = value_growth_df.iloc[:, -2:].copy()
+
+    for col, new_col in zip(
+        [value_name_col, growth_name_col],
+        ['国证价值近一月收益率', '国证成长近一月收益率'],
+    ):
+        value_growth_df[new_col] = value_growth_df[col].pct_change(
+            get_avg_dt_count_via_dt_type(
+                dt_type=TradeDtType.STOCK_MKT,
+                period='一月',
+            )
+        )
+    for col, new_col in zip(
+        [value_name_col, growth_name_col],
+        ['国证价值近两周收益率', '国证成长近两周收益率'],
+    ):
+        value_growth_df[new_col] = value_growth_df[col].pct_change(
+            get_avg_dt_count_via_dt_type(
+                dt_type=TradeDtType.STOCK_MKT,
+                period='两周',
+            )
+        )
+    value_growth_df.dropna(inplace=True)
+
+    pct_change_df = value_growth_df[
+        [
+            '国证价值近一月收益率',
+            '国证成长近一月收益率',
+            '国证价值近两周收益率',
+            '国证成长近两周收益率',
+        ]
+    ].dropna(inplace=False)
+
+    value_growth_df = append_difference_column(
+        df=value_growth_df,
+        minuend_col='国证价值近一月收益率',
+        subtrahend_col='国证成长近一月收益率',
+        difference_col='价值对成长近一月超额',
+    )
+    value_growth_df = append_difference_column(
+        df=value_growth_df,
+        minuend_col='国证价值近两周收益率',
+        subtrahend_col='国证成长近两周收益率',
+        difference_col='价值对成长近两周超额',
+    )
+    value_growth_df = append_sum_column(
+        df=value_growth_df,
+        sum_1_col='价值对成长近一月超额',
+        sum_2_col='价值对成长近两周超额',
+        sum_col='相对动量',
+        multiplier_1=1,
+        multiplier_2=2,
+        multiplier_sum=0.5,
+    )
+
+    value_growth_conditions = [
+        (value_growth_df['价值对成长近一月超额'] < 0) & (value_growth_df['价值对成长近两周超额'] < 0),
+        (value_growth_df['价值对成长近一月超额'] > 0) & (value_growth_df['价值对成长近两周超额'] > 0),
+    ]
+    value_growth_choices = [
+        param_cls.TradeSignal.LONG_GROWTH.value,
+        param_cls.TradeSignal.LONG_VALUE.value,
+    ]
+    value_growth_df['交易信号'] = np.select(
+        condlist=value_growth_conditions,
+        choicelist=value_growth_choices,
+        default=param_cls.TradeSignal.NO_SIGNAL.value,
+    )
+
+    signal_df = value_growth_df
+
+    return ratio_mean_df, pct_change_df, signal_df
+
+
 @msg_printer
 def generate_style_charts():
     formatted_latest_day = date.today().strftime(config.WIND_DT_FORMAT)
@@ -149,19 +247,16 @@ def generate_style_charts():
     with tab1:
         # NOTE 国证价值/国证成长
 
+        ratio_mean_df, value_growth_pct_change_df, value_growth_signal_df = prepare_value_growth_data(
+            raw_wide_idx_df=raw_wide_idx_df,
+            idx_name_df=idx_name_df,
+        )
+
         value_name_col, growth_name_col = tuple(
             map(
                 lambda x: idx_name_df.loc[style_config.STYLE_IDX_CODES[x]].values[0],
                 ['价值', '成长'],
             )
-        )
-        value_growth_df = raw_wide_idx_df[[value_name_col, growth_name_col]].copy()
-        value_growth_df = append_ratio_column(value_growth_df, value_name_col, growth_name_col)
-        value_growth_df = append_rolling_mean_column(
-            df=value_growth_df,
-            window_name='一年',
-            window_size=config.TRADE_DT_COUNT['一年'],
-            rolling_mean_col='近一年均值',
         )
 
         value_growth_line_param = param_cls.IdxLineParam(
@@ -169,35 +264,9 @@ def generate_style_charts():
             title=f'{value_name_col}/{growth_name_col}',
             y_axis_format=config.CHART_NUM_FORMAT['float'],
         )
-        draw_grouped_lines(
-            value_growth_df.iloc[:, -2:],
-            value_growth_line_param,
-        )
+        draw_grouped_lines(ratio_mean_df, value_growth_line_param)
 
         # NOTE 相对动量(价值/成长)
-        for col, new_col in zip(
-            [value_name_col, growth_name_col],
-            ['国证价值近一月收益率', '国证成长近一月收益率'],
-        ):
-            value_growth_df[new_col] = value_growth_df[col].pct_change(
-                get_avg_dt_count_via_dt_type(
-                    dt_type=TradeDtType.STOCK_MKT,
-                    period='一月',
-                )
-            )
-        for col, new_col in zip(
-            [value_name_col, growth_name_col],
-            ['国证价值近两周收益率', '国证成长近两周收益率'],
-        ):
-            value_growth_df[new_col] = value_growth_df[col].pct_change(
-                get_avg_dt_count_via_dt_type(
-                    dt_type=TradeDtType.STOCK_MKT,
-                    period='两周',
-                )
-            )
-        value_growth_df.dropna(inplace=True)
-        # st.write(value_growth_df)
-
         value_growth_line_config = param_cls.IdxLineParam(
             axis_names=style_config.STYLE_CHART_AXIS_NAMES['VALUE_GROWTH_PCT_CHANGE'],
             title='价值 VS 成长',
@@ -212,14 +281,7 @@ def generate_style_charts():
         )
 
         draw_grouped_lines(
-            value_growth_df[
-                [
-                    '国证价值近一月收益率',
-                    '国证成长近一月收益率',
-                    '国证价值近两周收益率',
-                    '国证成长近两周收益率',
-                ]
-            ].dropna(inplace=False),
+            value_growth_pct_change_df,
             value_growth_line_config,
         )
 
@@ -228,47 +290,8 @@ def generate_style_charts():
         #     options=value_growth_df.index.tolist(),
         # )
 
-        value_growth_df = append_difference_column(
-            df=value_growth_df,
-            minuend_col='国证价值近一月收益率',
-            subtrahend_col='国证成长近一月收益率',
-            difference_col='价值对成长近一月超额',
-        )
-        value_growth_df = append_difference_column(
-            df=value_growth_df,
-            minuend_col='国证价值近两周收益率',
-            subtrahend_col='国证成长近两周收益率',
-            difference_col='价值对成长近两周超额',
-        )
-        value_growth_df = append_sum_column(
-            df=value_growth_df,
-            sum_1_col='价值对成长近一月超额',
-            sum_2_col='价值对成长近两周超额',
-            sum_col='相对动量',
-            multiplier_1=1,
-            multiplier_2=2,
-            multiplier_sum=0.5,
-        )
-        # st.write(value_growth_df)
-
-        value_growth_conditions = [
-            (value_growth_df['价值对成长近一月超额'] < 0) & (value_growth_df['价值对成长近两周超额'] < 0),
-            (value_growth_df['价值对成长近一月超额'] > 0) & (value_growth_df['价值对成长近两周超额'] > 0),
-        ]
-        value_growth_choices = [
-            param_cls.TradeSignal.LONG_GROWTH.value,
-            param_cls.TradeSignal.LONG_VALUE.value,
-        ]
-        value_growth_df['交易信号'] = np.select(
-            condlist=value_growth_conditions,
-            choicelist=value_growth_choices,
-            default=param_cls.TradeSignal.NO_SIGNAL.value,
-        )
-        # st.write(value_growth_df)
-        # print(value_growth_df.head())
-
         draw_bar_line_chart_with_highlighted_predefined_signal(
-            dt_indexed_df=value_growth_df,
+            dt_indexed_df=value_growth_signal_df,
             config=style_config.RELATIVE_MOMENTUM_VALUE_GROWTH_CHART_PARAM,
         )
 
