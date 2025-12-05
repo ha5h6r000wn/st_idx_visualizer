@@ -392,6 +392,23 @@ def prepare_shibor_prices_data(long_raw_shibor_df: pd.DataFrame) -> pd.DataFrame
     return shibor_prices_df
 
 
+def prepare_housing_invest_data(wide_raw_edb_df: pd.DataFrame) -> pd.DataFrame:
+    """Prepare data for housing investment YoY growth block."""
+    wide_raw_housing_invest_df = wide_raw_edb_df[[style_config.HOUSING_INVEST_CONFIG['HOUSING_INVEST_COL']]]
+
+    wide_raw_housing_invest_df = append_year_on_year_growth_column(
+        indexed_df=wide_raw_housing_invest_df,
+        yoy_col=style_config.HOUSING_INVEST_CONFIG['YOY_COL'],
+    )
+
+    wide_raw_housing_invest_df[style_config.HOUSING_INVEST_CONFIG['PRE_YOY_COL']] = wide_raw_housing_invest_df[
+        style_config.HOUSING_INVEST_CONFIG['YOY_COL']
+    ].shift(periods=1)
+    wide_raw_housing_invest_df.dropna(inplace=True)
+
+    return wide_raw_housing_invest_df
+
+
 @msg_printer
 def generate_style_charts():
     formatted_latest_day = date.today().strftime(config.WIND_DT_FORMAT)
@@ -805,19 +822,8 @@ def generate_style_charts():
 
         # NOTE 经济增长: 房地产完成额累计同比
 
-        wide_raw_housing_invest_df = wide_raw_edb_df[[style_config.HOUSING_INVEST_CONFIG['HOUSING_INVEST_COL']]]
-        # st.write(wide_raw_housing_invest_df)
+        wide_raw_housing_invest_df = prepare_housing_invest_data(wide_raw_edb_df)
 
-        wide_raw_housing_invest_df = append_year_on_year_growth_column(
-            indexed_df=wide_raw_housing_invest_df,
-            yoy_col=style_config.HOUSING_INVEST_CONFIG['YOY_COL'],
-        )
-
-        wide_raw_housing_invest_df[style_config.HOUSING_INVEST_CONFIG['PRE_YOY_COL']] = wide_raw_housing_invest_df[
-            style_config.HOUSING_INVEST_CONFIG['YOY_COL']
-        ].shift(periods=1)
-        wide_raw_housing_invest_df.dropna(inplace=True)
-        # st.write(wide_raw_housing_invest_df)
         draw_bar_line_chart_with_highlighted_signal(
             dt_indexed_df=wide_raw_housing_invest_df,
             config=style_config.HOUSING_INVEST_CHART_PARAM,

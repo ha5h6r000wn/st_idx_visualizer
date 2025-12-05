@@ -32,7 +32,7 @@
     - [x] ERP 股债性价比
     - [x] 风格关注度
     - [x] 货币周期（Shibor）
-    - [ ] 经济增长（地产投资）
+    - [x] 经济增长（地产投资）
   - [ ] Ensure these helpers:
     - [ ] accept well-typed inputs (canonical DataFrames and parameter objects),
     - [ ] return fully prepared frames ready for charting,
