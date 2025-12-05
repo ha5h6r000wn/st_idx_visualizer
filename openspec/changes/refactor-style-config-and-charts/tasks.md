@@ -9,7 +9,7 @@
 
 - [ ] Refine data-access behavior for CSV-only paths
   - [x] Fix the `CSVDataSource.fetch_table` date-column selection bug for `A_IDX_PRICE` while keeping behavior for other tables unchanged.
-  - [ ] Confirm that `Streamlit` UI modules (`visualization/*.py`) do not rely on `data_preparation/data_access.py` or database sessions.
+  - [x] Confirm that `Streamlit` UI modules (`visualization/*.py`) do not rely on `data_preparation/data_access.py` or database sessions.
   - [ ] If `data_preparation/data_access.py` is unused by the app, either:
     - [ ] Move it under an ETL-specific namespace, or
     - [ ] Remove it in a separate, clearly documented step consistent with the `data-access` spec.
@@ -28,7 +28,7 @@
   - [ ] Extract pure data-preparation helpers for each major style component:
     - [x] 价值成长比价与相对动量
     - [x] 市场情绪（换手率）
-    - [ ] 期限利差与期现利差
+    - [x] 期限利差与期现利差
     - [ ] ERP 股债性价比
     - [ ] 风格关注度
     - [ ] 货币周期（Shibor）

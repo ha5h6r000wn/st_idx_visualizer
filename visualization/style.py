@@ -181,6 +181,39 @@ def prepare_index_turnover_data(long_wind_all_a_idx_val_df: pd.DataFrame) -> pd.
     return wide_wind_all_a_turnover_df
 
 
+def prepare_term_spread_data(long_raw_cn_bond_yield_df: pd.DataFrame):
+    """Prepare data for term spread block (bar+line+signal and yield curves)."""
+    wide_raw_cn_bond_yield_df = reshape_long_df_into_wide_form(
+        long_df=long_raw_cn_bond_yield_df,
+        index_col=style_config.YIELD_CURVE_COL_PARAM.dt_col,
+        name_col=style_config.YIELD_CURVE_COL_PARAM.term_col,
+        value_col=style_config.YIELD_CURVE_COL_PARAM.ytm_col,
+    )
+
+    short_term_col, long_term_col = sorted(style_config.TERM_SPREAD_CONFIG['YIELD_CURVE_TERMS'])
+    term_spread_df = append_difference_column(
+        df=wide_raw_cn_bond_yield_df,
+        minuend_col=long_term_col,
+        subtrahend_col=short_term_col,
+        difference_col=style_config.TERM_SPREAD_CONFIG['TERM_SPREAD_COL'],
+    )
+    term_spread_df = append_rolling_mean_column(
+        df=term_spread_df,
+        window_name=style_config.TERM_SPREAD_CONFIG['ROLLING_WINDOW'],
+        window_size=style_config.TERM_SPREAD_CONFIG['ROLLING_WINDOW_SIZE'],
+        rolling_mean_col=style_config.TERM_SPREAD_CONFIG['MEAN_COL'],
+    )
+
+    yield_curve_df = term_spread_df[
+        [
+            short_term_col,
+            long_term_col,
+        ]
+    ]
+
+    return term_spread_df, yield_curve_df, wide_raw_cn_bond_yield_df
+
+
 @msg_printer
 def generate_style_charts():
     formatted_latest_day = date.today().strftime(config.WIND_DT_FORMAT)
@@ -360,27 +393,9 @@ def generate_style_charts():
         # NOTE 期限利差
         # 需求：基准线从近一年均值改为近一月均值
 
-        wide_raw_cn_bond_yield_df = reshape_long_df_into_wide_form(
-            long_df=long_raw_df_collection['CN_BOND_YIELD'],
-            index_col=style_config.YIELD_CURVE_COL_PARAM.dt_col,
-            name_col=style_config.YIELD_CURVE_COL_PARAM.term_col,
-            value_col=style_config.YIELD_CURVE_COL_PARAM.ytm_col,
+        term_spread_df, yield_curve_df, wide_raw_cn_bond_yield_df = prepare_term_spread_data(
+            long_raw_cn_bond_yield_df=long_raw_df_collection['CN_BOND_YIELD'],
         )
-
-        short_term_col, long_term_col = sorted(style_config.TERM_SPREAD_CONFIG['YIELD_CURVE_TERMS'])
-        term_spread_df = append_difference_column(
-            df=wide_raw_cn_bond_yield_df,
-            minuend_col=long_term_col,
-            subtrahend_col=short_term_col,
-            difference_col=style_config.TERM_SPREAD_CONFIG['TERM_SPREAD_COL'],
-        )
-        term_spread_df = append_rolling_mean_column(
-            df=term_spread_df,
-            window_name=style_config.TERM_SPREAD_CONFIG['ROLLING_WINDOW'],
-            window_size=style_config.TERM_SPREAD_CONFIG['ROLLING_WINDOW_SIZE'],
-            rolling_mean_col=style_config.TERM_SPREAD_CONFIG['MEAN_COL'],
-        )
-        # st.write(term_spread_df)
 
         draw_bar_line_chart_with_highlighted_signal(
             dt_indexed_df=term_spread_df, config=style_config.TERM_SPREAD_CHART_PARAM
@@ -402,14 +417,7 @@ def generate_style_charts():
         )
 
         draw_grouped_lines(
-            term_spread_df[
-                [
-                    '1.0',
-                    '10.0',
-                ]
-            ]
-            .div(100)
-            .dropna(inplace=False),
+            yield_curve_df.div(100).dropna(inplace=False),
             term_spread_line_config,
         )
 
