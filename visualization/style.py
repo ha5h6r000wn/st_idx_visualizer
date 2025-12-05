@@ -214,6 +214,82 @@ def prepare_term_spread_data(long_raw_cn_bond_yield_df: pd.DataFrame):
     return term_spread_df, yield_curve_df, wide_raw_cn_bond_yield_df
 
 
+def prepare_index_erp_data(
+    long_wind_all_a_idx_val_df: pd.DataFrame,
+    wide_raw_cn_bond_yield_df: pd.DataFrame,
+) -> tuple[pd.DataFrame, list]:
+    """Prepare data for ERP (equity risk premium) style block (value vs growth).
+
+    Returns:
+        wide_erp_df: DataFrame with ERP value, rolling mean, and quantile bands.
+        erp_conditions: list of boolean Series used for signal assignment.
+    """
+    wide_raw_idx_pe_ttm_df = reshape_long_df_into_wide_form(
+        long_df=long_wind_all_a_idx_val_df,
+        index_col=style_config.INDEX_ERP_COL_PARAM.dt_col,
+        name_col=style_config.INDEX_ERP_COL_PARAM.code_col,
+        value_col=style_config.INDEX_ERP_COL_PARAM.pe_ttm_col,
+    )
+    wide_raw_idx_pe_ttm_df.columns = [style_config.INDEX_ERP_COL_PARAM.pe_ttm_col]
+
+    merge_pe_yc_df = wide_raw_cn_bond_yield_df.merge(
+        wide_raw_idx_pe_ttm_df, left_index=True, right_index=True, how='inner'
+    )
+    merge_pe_yc_df = merge_pe_yc_df.assign(
+        市盈率倒数=1 / merge_pe_yc_df['市盈率'],
+        十年期国债到期收益率=merge_pe_yc_df['10.0'] / 100,
+    )
+    merge_pe_yc_df[style_config.INDEX_ERP_CONFIG['ERP_COL']] = (
+        merge_pe_yc_df['市盈率倒数'] - merge_pe_yc_df['十年期国债到期收益率']
+    )
+
+    erp_quantile_info = [
+        {
+            'quantile': style_config.INDEX_ERP_CONFIG['QUANTILE_CEILING'],
+            'col': style_config.INDEX_ERP_CONFIG['QUANTILE_CEILING_COL'],
+            'dropna': False,
+        },
+        {
+            'quantile': style_config.INDEX_ERP_CONFIG['QUANTILE_FLOOR'],
+            'col': style_config.INDEX_ERP_CONFIG['QUANTILE_FLOOR_COL'],
+            'dropna': True,
+        },
+    ]
+
+    wide_erp_df = pd.DataFrame(merge_pe_yc_df[style_config.INDEX_ERP_CONFIG['ERP_COL']])
+    wide_erp_df = append_rolling_mean_column(
+        df=wide_erp_df,
+        window_name='一月',
+        window_size=config.TRADE_DT_COUNT['一月'],
+        dropna=False,
+    )
+
+    for info in erp_quantile_info:
+        wide_erp_df = append_rolling_quantile_column(
+            df=wide_erp_df,
+            window_name=style_config.INDEX_ERP_CONFIG['QUANTILE_ROLLING_WINDOW'],
+            window_size=style_config.INDEX_ERP_CONFIG['QUANTILE_ROLLING_WINDOW_SIZE'],
+            target_col=style_config.INDEX_ERP_CONFIG['ERP_COL'],
+            rolling_quantile_col=info['col'],
+            quantile=info['quantile'],
+            dropna=info['dropna'],
+        )
+
+    erp_conditions = [
+        (
+            wide_erp_df[style_config.INDEX_ERP_CONFIG['ERP_COL']]
+            >= wide_erp_df[style_config.INDEX_ERP_CONFIG['QUANTILE_CEILING_COL']]
+        )
+        & (wide_erp_df[style_config.INDEX_ERP_CONFIG['ERP_COL']] < wide_erp_df['近一月均值']),
+        (
+            wide_erp_df[style_config.INDEX_ERP_CONFIG['ERP_COL']]
+            <= wide_erp_df[style_config.INDEX_ERP_CONFIG['QUANTILE_FLOOR_COL']]
+        )
+        & (wide_erp_df[style_config.INDEX_ERP_CONFIG['ERP_COL']] > wide_erp_df['近一月均值']),
+    ]
+    return wide_erp_df, erp_conditions
+
+
 @msg_printer
 def generate_style_charts():
     formatted_latest_day = date.today().strftime(config.WIND_DT_FORMAT)
@@ -424,101 +500,11 @@ def generate_style_charts():
         # NOTE ERP股债性价比（价值成长）
         # ERP位置和趋势：高位下行时，做多成长；低位上行时，做多价值;以站上过去1个月均线作为趋势的判断
 
-        wide_raw_idx_pe_ttm_df = reshape_long_df_into_wide_form(
-            long_df=long_wind_all_a_idx_val_df,
-            index_col=style_config.INDEX_ERP_COL_PARAM.dt_col,
-            name_col=style_config.INDEX_ERP_COL_PARAM.code_col,
-            value_col=style_config.INDEX_ERP_COL_PARAM.pe_ttm_col,
-        )
-        wide_raw_idx_pe_ttm_df.columns = [style_config.INDEX_ERP_COL_PARAM.pe_ttm_col]
-        merge_pe_yc_df = wide_raw_cn_bond_yield_df.merge(
-            wide_raw_idx_pe_ttm_df, left_index=True, right_index=True, how='inner'
-        )
-        merge_pe_yc_df = merge_pe_yc_df.assign(
-            市盈率倒数=1 / merge_pe_yc_df['市盈率'],
-            十年期国债到期收益率=merge_pe_yc_df['10.0'] / 100,
-        )
-        merge_pe_yc_df[style_config.INDEX_ERP_CONFIG['ERP_COL']] = (
-            merge_pe_yc_df['市盈率倒数'] - merge_pe_yc_df['十年期国债到期收益率']
+        wide_erp_df, erp_conditions = prepare_index_erp_data(
+            long_wind_all_a_idx_val_df=long_wind_all_a_idx_val_df,
+            wide_raw_cn_bond_yield_df=wide_raw_cn_bond_yield_df,
         )
 
-        erp_quantile_info = [
-            {
-                'quantile': style_config.INDEX_ERP_CONFIG['QUANTILE_CEILING'],
-                'col': style_config.INDEX_ERP_CONFIG['QUANTILE_CEILING_COL'],
-                'dropna': False,
-            },
-            {
-                'quantile': style_config.INDEX_ERP_CONFIG['QUANTILE_FLOOR'],
-                'col': style_config.INDEX_ERP_CONFIG['QUANTILE_FLOOR_COL'],
-                'dropna': True,
-            },
-        ]
-        # st.write(merge_pe_yc_df[style_config.INDEX_ERP_CONFIG['ERP_COL']])
-
-        # wide_erp_df = merge_pe_yc_df.copy()
-        wide_erp_df = pd.DataFrame(merge_pe_yc_df[style_config.INDEX_ERP_CONFIG['ERP_COL']])
-        wide_erp_df = append_rolling_mean_column(
-            df=wide_erp_df,
-            window_name='一月',
-            window_size=config.TRADE_DT_COUNT['一月'],
-            # rolling_mean_col='近一月均值',
-            dropna=False,
-        )
-        # st.write(wide_erp_df)
-        # print(wide_erp_df)
-
-        for info in erp_quantile_info:
-            wide_erp_df = append_rolling_quantile_column(
-                df=wide_erp_df,
-                window_name=style_config.INDEX_ERP_CONFIG['QUANTILE_ROLLING_WINDOW'],
-                window_size=style_config.INDEX_ERP_CONFIG['QUANTILE_ROLLING_WINDOW_SIZE'],
-                target_col=style_config.INDEX_ERP_CONFIG['ERP_COL'],
-                rolling_quantile_col=info['col'],
-                quantile=info['quantile'],
-                dropna=info['dropna'],
-            )
-
-        # draw_bar_line_chart_with_highlighted_signal(
-        #     dt_indexed_df=wide_erp_df,
-        #     config=style_config.INDEX_ERP_CHART_PARAM,
-        # )
-
-        # wide_erp_df_new = append_rolling_quantile_inv_q_column(
-        #     df=pd.DataFrame(merge_pe_yc_df[style_config.INDEX_ERP_CONFIG['ERP_COL']]),
-        #     window_size=style_config.INDEX_ERP_CONFIG['QUANTILE_ROLLING_WINDOW_SIZE'],
-        #     window_name=style_config.INDEX_ERP_CONFIG['QUANTILE_ROLLING_WINDOW'],
-        #     data_set_col=style_config.INDEX_ERP_CONFIG['ERP_COL'],
-        #     rolling_q_col='近四年分位数',
-        # )
-        # st.write(wide_erp_df_new)
-
-        # wide_erp_df = generate_signal(df=wide_erp_df, config=style_config.INDEX_ERP_CHART_PARAM)
-
-        # wide_erp_df = append_signal_column(
-        #     df=wide_erp_df,
-        #     signal_col=style_config.INDEX_ERP_CHART_PARAM.bar_param.axis_names['LEGEND'],
-        #     target_col=style_config.INDEX_ERP_CHART_PARAM.bar_param.axis_names['Y'],
-        #     upper_bound_col=style_config.INDEX_ERP_CONFIG['QUANTILE_CEILING_COL'],
-        #     lower_bound_col=style_config.INDEX_ERP_CONFIG['QUANTILE_FLOOR_COL'],
-        #     top_signal=style_config.INDEX_ERP_CHART_PARAM.bar_param.true_signal,
-        #     bottom_signal=style_config.INDEX_ERP_CHART_PARAM.bar_param.false_signal,
-        #     middle_signal=style_config.INDEX_ERP_CHART_PARAM.bar_param.no_signal,
-        # )
-        # st.write(wide_erp_df)
-
-        erp_conditions = [
-            (
-                wide_erp_df[style_config.INDEX_ERP_CONFIG['ERP_COL']]
-                >= wide_erp_df[style_config.INDEX_ERP_CONFIG['QUANTILE_CEILING_COL']]
-            )
-            & (wide_erp_df[style_config.INDEX_ERP_CONFIG['ERP_COL']] < wide_erp_df['近一月均值']),
-            (
-                wide_erp_df[style_config.INDEX_ERP_CONFIG['ERP_COL']]
-                <= wide_erp_df[style_config.INDEX_ERP_CONFIG['QUANTILE_FLOOR_COL']]
-            )
-            & (wide_erp_df[style_config.INDEX_ERP_CONFIG['ERP_COL']] > wide_erp_df['近一月均值']),
-        ]
         erp_choices = [
             style_config.INDEX_ERP_CHART_PARAM.bar_param.true_signal,
             style_config.INDEX_ERP_CHART_PARAM.bar_param.false_signal,
@@ -528,7 +514,6 @@ def generate_style_charts():
             choicelist=erp_choices,
             default=style_config.INDEX_ERP_CHART_PARAM.bar_param.no_signal,
         )
-        # st.write(wide_erp_df)
 
         draw_bar_line_chart_with_highlighted_predefined_signal(
             dt_indexed_df=wide_erp_df,
