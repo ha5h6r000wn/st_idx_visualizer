@@ -31,7 +31,7 @@
     - [x] 期限利差与期现利差
     - [x] ERP 股债性价比
     - [x] 风格关注度
-    - [ ] 货币周期（Shibor）
+    - [x] 货币周期（Shibor）
     - [ ] 经济增长（地产投资）
   - [ ] Ensure these helpers:
     - [ ] accept well-typed inputs (canonical DataFrames and parameter objects),

@@ -373,6 +373,25 @@ def prepare_style_focus_data(
     return merged_style_focus_df
 
 
+def prepare_shibor_prices_data(long_raw_shibor_df: pd.DataFrame) -> pd.DataFrame:
+    """Prepare data for Shibor 3M (monetary cycle) block."""
+    wide_raw_shibor_prices_df = reshape_long_df_into_wide_form(
+        long_df=long_raw_shibor_df,
+        index_col=style_config.SHIBOR_PRICES_COL_PARAM.dt_col,
+        name_col=style_config.SHIBOR_PRICES_COL_PARAM.term_col,
+        value_col=style_config.SHIBOR_PRICES_COL_PARAM.ytm_col,
+    )
+
+    shibor_prices_df = append_rolling_mean_column(
+        df=wide_raw_shibor_prices_df,
+        window_name=style_config.SHIBOR_PRICES_CONFIG['ROLLING_WINDOW'],
+        window_size=style_config.SHIBOR_PRICES_CONFIG['ROLLING_WINDOW_SIZE'],
+        rolling_mean_col=style_config.SHIBOR_PRICES_CONFIG['MEAN_COL'],
+    )
+
+    return shibor_prices_df
+
+
 @msg_printer
 def generate_style_charts():
     formatted_latest_day = date.today().strftime(config.WIND_DT_FORMAT)
@@ -776,22 +795,9 @@ def generate_style_charts():
 
         # NOTE 货币周期：Shibor3M
 
-        wide_raw_shibor_prices_df = reshape_long_df_into_wide_form(
-            long_df=long_raw_df_collection['SHIBOR_PRICES'],
-            index_col=style_config.SHIBOR_PRICES_COL_PARAM.dt_col,
-            name_col=style_config.SHIBOR_PRICES_COL_PARAM.term_col,
-            value_col=style_config.SHIBOR_PRICES_COL_PARAM.ytm_col,
+        shibor_prices_df = prepare_shibor_prices_data(
+            long_raw_shibor_df=long_raw_df_collection['SHIBOR_PRICES'],
         )
-
-        # st.write(wide_raw_shibor_prices_df)
-
-        shibor_prices_df = append_rolling_mean_column(
-            df=wide_raw_shibor_prices_df,
-            window_name=style_config.SHIBOR_PRICES_CONFIG['ROLLING_WINDOW'],
-            window_size=style_config.SHIBOR_PRICES_CONFIG['ROLLING_WINDOW_SIZE'],
-            rolling_mean_col=style_config.SHIBOR_PRICES_CONFIG['MEAN_COL'],
-        )
-        # st.write(shibor_prices_df)
 
         draw_bar_line_chart_with_highlighted_signal(
             dt_indexed_df=shibor_prices_df, config=style_config.SHIBOR_PRICES_CHART_PARAM
