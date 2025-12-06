@@ -183,21 +183,20 @@ def append_year_on_year_growth_column(
         return indexed_df
 
 
-def assign_signal(
-    row,
-    target_col,
-    upper_bound_col,
-    lower_bound_col,
-    top_signal,
-    bottom_signal,
-    middle_signal,
+def apply_signal_from_conditions(
+    df: pd.DataFrame,
+    signal_col: str,
+    conditions: list[pd.Series],
+    choices: list,
+    default,
 ):
-    if row[target_col] >= row[upper_bound_col]:
-        return top_signal
-    elif row[target_col] <= row[lower_bound_col]:
-        return bottom_signal
-    else:
-        return middle_signal
+    """Assign categorical signal values based on boolean conditions."""
+    df[signal_col] = np.select(
+        condlist=conditions,
+        choicelist=choices,
+        default=default,
+    )
+    return df
 
 
 def append_signal_column(
@@ -210,18 +209,19 @@ def append_signal_column(
     bottom_signal,
     middle_signal,
 ):
-    # print(signal_col)
-    df[signal_col] = df.apply(
-        assign_signal,
-        args=(
-            target_col,
-            upper_bound_col,
-            lower_bound_col,
-            top_signal,
-            bottom_signal,
-            middle_signal,
-        ),
-        axis=1,
-    )
+    conditions = [
+        df[target_col] >= df[upper_bound_col],
+        df[target_col] <= df[lower_bound_col],
+    ]
+    choices = [
+        top_signal,
+        bottom_signal,
+    ]
 
-    return df
+    return apply_signal_from_conditions(
+        df=df,
+        signal_col=signal_col,
+        conditions=conditions,
+        choices=choices,
+        default=middle_signal,
+    )

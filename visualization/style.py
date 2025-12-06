@@ -17,7 +17,7 @@ from data_preparation.data_processor import (
     # append_rolling_quantile_inv_q_column,
     append_rolling_sum_column,
     append_sum_column,
-    # append_signal_column,
+    apply_signal_from_conditions,
     append_year_on_year_growth_column,
     reshape_long_df_into_wide_form,
 )
@@ -26,7 +26,6 @@ from visualization.data_visualizer import (
     draw_bar_line_chart_with_highlighted_predefined_signal,
     draw_bar_line_chart_with_highlighted_signal,
     draw_grouped_lines,
-    # generate_signal,
 )
 
 
@@ -117,9 +116,11 @@ def prepare_value_growth_data(raw_wide_idx_df: pd.DataFrame, idx_name_df: pd.Dat
         param_cls.TradeSignal.LONG_GROWTH.value,
         param_cls.TradeSignal.LONG_VALUE.value,
     ]
-    value_growth_df['交易信号'] = np.select(
-        condlist=value_growth_conditions,
-        choicelist=value_growth_choices,
+    value_growth_df = apply_signal_from_conditions(
+        df=value_growth_df,
+        signal_col='交易信号',
+        conditions=value_growth_conditions,
+        choices=value_growth_choices,
         default=param_cls.TradeSignal.NO_SIGNAL.value,
     )
 
@@ -172,9 +173,11 @@ def prepare_index_turnover_data(long_wind_all_a_idx_val_df: pd.DataFrame) -> pd.
     turnover_choices = [
         param_cls.TradeSignal.LONG_GROWTH.value,
     ]
-    wide_wind_all_a_turnover_df['交易信号'] = np.select(
-        condlist=turnover_conditions,
-        choicelist=turnover_choices,
+    wide_wind_all_a_turnover_df = apply_signal_from_conditions(
+        df=wide_wind_all_a_turnover_df,
+        signal_col='交易信号',
+        conditions=turnover_conditions,
+        choices=turnover_choices,
         default=param_cls.TradeSignal.LONG_VALUE.value,
     )
 
@@ -364,9 +367,11 @@ def prepare_style_focus_data(
         style_config.STYLE_FOCUS_CHART_PARAM.bar_param.false_signal,
         style_config.STYLE_FOCUS_CHART_PARAM.bar_param.true_signal,
     ]
-    merged_style_focus_df[style_config.STYLE_FOCUS_CONFIG['SIGNAL_COL']] = np.select(
-        condlist=style_focus_conditions,
-        choicelist=style_focus_choices,
+    merged_style_focus_df = apply_signal_from_conditions(
+        df=merged_style_focus_df,
+        signal_col=style_config.STYLE_FOCUS_CONFIG['SIGNAL_COL'],
+        conditions=style_focus_conditions,
+        choices=style_focus_choices,
         default=style_config.STYLE_FOCUS_CHART_PARAM.bar_param.no_signal,
     )
 
@@ -497,9 +502,11 @@ def prepare_big_small_momentum_data(
         param_cls.TradeSignal.LONG_SMALL.value,
         param_cls.TradeSignal.LONG_BIG.value,
     ]
-    big_small_df['交易信号'] = np.select(
-        condlist=big_small_conditions,
-        choicelist=big_small_choices,
+    big_small_df = apply_signal_from_conditions(
+        df=big_small_df,
+        signal_col='交易信号',
+        conditions=big_small_conditions,
+        choices=big_small_choices,
         default=param_cls.TradeSignal.NO_SIGNAL.value,
     )
 
@@ -727,9 +734,11 @@ def generate_style_charts():
             style_config.INDEX_ERP_CHART_PARAM.bar_param.true_signal,
             style_config.INDEX_ERP_CHART_PARAM.bar_param.false_signal,
         ]
-        wide_erp_df[style_config.INDEX_ERP_CONFIG['SIGNAL_COL']] = np.select(
-            condlist=erp_conditions,
-            choicelist=erp_choices,
+        wide_erp_df = apply_signal_from_conditions(
+            df=wide_erp_df,
+            signal_col=style_config.INDEX_ERP_CONFIG['SIGNAL_COL'],
+            conditions=erp_conditions,
+            choices=erp_choices,
             default=style_config.INDEX_ERP_CHART_PARAM.bar_param.no_signal,
         )
 
@@ -946,9 +955,11 @@ def generate_style_charts():
             style_config.INDEX_ERP_2_CHART_PARAM.bar_param.false_signal,
         ]
         wide_erp_2_df = wide_erp_df.copy()
-        wide_erp_2_df[style_config.INDEX_ERP_CONFIG['SIGNAL_COL']] = np.select(
-            condlist=erp_conditions,
-            choicelist=erp_2_choices,
+        wide_erp_2_df = apply_signal_from_conditions(
+            df=wide_erp_2_df,
+            signal_col=style_config.INDEX_ERP_CONFIG['SIGNAL_COL'],
+            conditions=erp_conditions,
+            choices=erp_2_choices,
             default=style_config.INDEX_ERP_2_CHART_PARAM.bar_param.no_signal,
         )
         # st.write(wide_erp_2_df)

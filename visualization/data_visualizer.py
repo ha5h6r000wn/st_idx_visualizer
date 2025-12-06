@@ -407,37 +407,6 @@ def draw_bar_line_chart_with_highlighted_signal(dt_indexed_df, config: param_cls
         )
 
 
-def generate_signal(df, config: param_cls.BarLineWithSignalParam):
-    # 创建一个新的数据列，用于编码颜色
-
-    if not config.isSignalAssigned:
-        if config.bar_param.no_signal is None:
-            df[config.bar_param.axis_names['LEGEND']] = (
-                df[config.bar_param.axis_names['Y']] >= df[config.line_param.axis_names['Y']]
-            ).replace(
-                {
-                    True: config.bar_param.true_signal,
-                    False: config.bar_param.false_signal,
-                }
-            )
-        else:
-            df = append_signal_column(
-                df=df,
-                signal_col=config.bar_param.axis_names['LEGEND'],
-                target_col=config.bar_param.axis_names['Y'],
-                upper_bound_col=config.line_param.compared_cols[0],
-                lower_bound_col=config.line_param.compared_cols[1],
-                top_signal=config.bar_param.true_signal,
-                bottom_signal=config.bar_param.false_signal,
-                middle_signal=config.bar_param.no_signal,
-            )
-    st.write(df)
-
-    # dt_indexed_df = df.set_index(config.bar_param.axis_names['X'])
-
-    return df
-
-
 def draw_bar_line_chart_with_highlighted_predefined_signal(dt_indexed_df, config: param_cls.BarLineWithSignalParam):
     trade_dt = dt_indexed_df.index
     # st.write(trade_dt[-1])
@@ -475,4 +444,3 @@ def draw_bar_line_chart_with_highlighted_predefined_signal(dt_indexed_df, config
             theme='streamlit',
             use_container_width=True,
         )
-
