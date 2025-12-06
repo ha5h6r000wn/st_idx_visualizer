@@ -3,7 +3,11 @@ import streamlit as st
 
 from config import param_cls
 from config.config import CHART_NUM_FORMAT
-from data_preparation.data_processor import append_signal_column, reshape_wide_df_into_long_form
+from data_preparation.data_processor import (
+    append_signal_column,
+    apply_signal_from_conditions,
+    reshape_wide_df_into_long_form,
+)
 from utils import divide_by_100
 
 
@@ -354,13 +358,18 @@ def prepare_bar_line_with_signal_data(
 
     if not config.isSignalAssigned:
         if config.bar_param.no_signal is None:
-            selected_df[config.bar_param.axis_names['LEGEND']] = (
-                selected_df[config.bar_param.axis_names['Y']] >= selected_df[config.line_param.axis_names['Y']]
-            ).replace(
-                {
-                    True: config.bar_param.true_signal,
-                    False: config.bar_param.false_signal,
-                }
+            conditions = [
+                selected_df[config.bar_param.axis_names['Y']] >= selected_df[config.line_param.axis_names['Y']],
+            ]
+            choices = [
+                config.bar_param.true_signal,
+            ]
+            selected_df = apply_signal_from_conditions(
+                df=selected_df,
+                signal_col=config.bar_param.axis_names['LEGEND'],
+                conditions=conditions,
+                choices=choices,
+                default=config.bar_param.false_signal,
             )
         else:
             selected_df = append_signal_column(

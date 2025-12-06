@@ -110,26 +110,24 @@ The design goal is to make the style and strategy-index visualization paths bori
 
 **Current state**
 
-- Signal semantics are implemented in multiple places:
-  - manual `np.select` blocks in `visualization/style.py`,
-  - `append_signal_column` and `assign_signal` in `data_preparation/data_processor.py`,
-  - conditional logic in `prepare_bar_line_with_signal_data` and `generate_signal`.
+- Signal mapping is now centralized:
+  - `data_preparation/data_processor.apply_signal_from_conditions` implements the canonical “conditions → choices → default” mapping using `np.select`.
+  - `append_signal_column` is a thin wrapper around this helper for band-style signals (target vs upper/lower bounds).
+  - All style block signals (value vs growth, index turnover, credit expansion, style focus, big/small momentum, ERP and ERP_2, Shibor, and housing investment) are now computed in `visualization/style.py` using `apply_signal_from_conditions`.
+  - `prepare_bar_line_with_signal_data` routes simple threshold and band signals through the same helper chain (`apply_signal_from_conditions` and `append_signal_column`) for charts that still rely on on-the-fly signal generation (e.g., term-spread variants).
+  - The legacy `generate_signal` helper in `visualization/data_visualizer.py` has been removed.
 
 **Problems**
 
-- This duplication invites subtle differences in behavior if one path is updated and others are not.
-- Some helpers (`generate_signal`) mix computation with Streamlit logging (`st.write`), which is undesirable for core logic.
+- The signal API is unified, but:
+  - some chart configs still carry `isSignalAssigned` flags whose behavior depends on the helper used,
+  - and precomputed-signal vs on-the-fly signal generation is still split between `draw_bar_line_chart_with_highlighted_signal` and `draw_bar_line_chart_with_highlighted_predefined_signal`.
 
 **Design decisions**
 
-- Define one canonical signal API:
-  - A single helper, e.g., `compute_band_signal(frame, target, upper, lower, labels)`, that:
-    - uses clear, explicit column names,
-    - returns the input frame with a new signal column.
-  - This helper can be a thin wrapper around the existing `append_signal_column` but without Streamlit dependencies.
-- Bar+line+signal charts:
-  - All such charts compute signals via this API, whether they are quantile-based, mean-based, or band-based.
-  - Specialized conditions (e.g., combining two period excess returns) remain in the style data-prep helpers, but the final mapping from thresholds to labels uses the shared signal function.
+- Keep `apply_signal_from_conditions` as the single mapping primitive for signal assignment.
+- Prefer precomputed signals in data-prep helpers where business logic is non-trivial (e.g., combining multiple excess-return conditions), and reserve band-style `append_signal_column` for simple threshold/band cases.
+- Treat `generate_signal`-style debug helpers as dead code and remove them rather than keeping parallel paths.
 
 ### 5. Dead code removal
 

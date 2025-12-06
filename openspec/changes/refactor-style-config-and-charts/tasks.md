@@ -42,10 +42,10 @@
     - [x] call data-prep helpers first,
     - [x] then pass their outputs into existing `data_visualizer` chart helpers.
 
-- [ ] Unify and de-duplicate signal generation logic
-  - [ ] Consolidate `np.select`-based signal logic in `visualization/style.py` and `append_signal_column` in `data_preparation/data_processor.py` into a single, reusable pattern.
-  - [ ] Update bar+line+signal charts to use the unified signal-generator, keeping current signal semantics intact.
-  - [ ] Remove or simplify the separate `generate_signal` and `draw_bar_line_chart_with_highlighted_predefined_signal` paths if they become redundant after unification.
+- [x] Unify and de-duplicate signal generation logic
+  - [x] Consolidate `np.select`-based signal logic in `visualization/style.py` and `append_signal_column` in `data_preparation/data_processor.py` into a single, reusable pattern.
+  - [x] Update bar+line+signal charts to use the unified signal-generator, keeping current signal semantics intact.
+  - [x] Remove or simplify the separate `generate_signal` and `draw_bar_line_chart_with_highlighted_predefined_signal` paths if they become redundant after unification.
 
 - [ ] Consolidate dataset schema definitions
   - [ ] Review `CANONICAL_COL_MAPPINGS`, `CSV_DTYPE_MAPPING`, `WIND_COLS`, and `DATA_COL_PARAM` for overlapping responsibilities.

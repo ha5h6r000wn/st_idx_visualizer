@@ -453,6 +453,7 @@ CREDIT_EXPANSION_CHART_PARAM = param_cls.BarLineWithSignalParam(
         color='red',
     ),
     isConvertedToPct=True,
+    isSignalAssigned=True,
 )
 
 
@@ -577,6 +578,7 @@ SHIBOR_PRICES_CHART_PARAM = param_cls.BarLineWithSignalParam(
         color='red',
     ),
     isConvertedToPct=True,
+    isSignalAssigned=True,
 )
 
 
@@ -635,6 +637,7 @@ HOUSING_INVEST_CHART_PARAM = param_cls.BarLineWithSignalParam(
         color='red',
         y_axis_format=config.CHART_NUM_FORMAT['pct'],
     ),
+    isSignalAssigned=True,
 )
 
 # NOTE 期现利差（大小盘）

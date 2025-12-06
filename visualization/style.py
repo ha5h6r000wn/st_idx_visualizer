@@ -769,7 +769,20 @@ def generate_style_charts():
             window_size=style_config.CREDIT_EXPANSION_CONFIG['ROLLING_WINDOW_SIZE'],
             rolling_mean_col=style_config.CREDIT_EXPANSION_CONFIG['MEAN_COL'],
         )
-        # st.write(credit_expansion_df)
+        credit_expansion_conditions = [
+            credit_expansion_df[style_config.CREDIT_EXPANSION_CONFIG['YOY_COL']]
+            >= credit_expansion_df[style_config.CREDIT_EXPANSION_CONFIG['MEAN_COL']],
+        ]
+        credit_expansion_choices = [
+            style_config.CREDIT_EXPANSION_CONFIG['TRUE_SIGNAL'],
+        ]
+        credit_expansion_df = apply_signal_from_conditions(
+            df=credit_expansion_df,
+            signal_col=style_config.CREDIT_EXPANSION_CONFIG['SIGNAL_COL'],
+            conditions=credit_expansion_conditions,
+            choices=credit_expansion_choices,
+            default=style_config.CREDIT_EXPANSION_CONFIG['FALSE_SIGNAL'],
+        )
         draw_bar_line_chart_with_highlighted_signal(
             dt_indexed_df=credit_expansion_df,
             config=style_config.CREDIT_EXPANSION_CHART_PARAM,
@@ -846,6 +859,21 @@ def generate_style_charts():
             long_raw_shibor_df=long_raw_df_collection['SHIBOR_PRICES'],
         )
 
+        shibor_conditions = [
+            shibor_prices_df[style_config.SHIBOR_PRICES_CONFIG['SHIBOR_PRICE_COL']]
+            >= shibor_prices_df[style_config.SHIBOR_PRICES_CONFIG['MEAN_COL']],
+        ]
+        shibor_choices = [
+            style_config.SHIBOR_PRICES_CONFIG['TRUE_SIGNAL'],
+        ]
+        shibor_prices_df = apply_signal_from_conditions(
+            df=shibor_prices_df,
+            signal_col=style_config.SHIBOR_PRICES_CONFIG['SIGNAL_COL'],
+            conditions=shibor_conditions,
+            choices=shibor_choices,
+            default=style_config.SHIBOR_PRICES_CONFIG['FALSE_SIGNAL'],
+        )
+
         draw_bar_line_chart_with_highlighted_signal(
             dt_indexed_df=shibor_prices_df, config=style_config.SHIBOR_PRICES_CHART_PARAM
         )
@@ -853,6 +881,21 @@ def generate_style_charts():
         # NOTE 经济增长: 房地产完成额累计同比
 
         wide_raw_housing_invest_df = prepare_housing_invest_data(wide_raw_edb_df)
+
+        housing_invest_conditions = [
+            wide_raw_housing_invest_df[style_config.HOUSING_INVEST_CONFIG['YOY_COL']]
+            >= wide_raw_housing_invest_df[style_config.HOUSING_INVEST_CONFIG['PRE_YOY_COL']],
+        ]
+        housing_invest_choices = [
+            style_config.HOUSING_INVEST_CONFIG['TRUE_SIGNAL'],
+        ]
+        wide_raw_housing_invest_df = apply_signal_from_conditions(
+            df=wide_raw_housing_invest_df,
+            signal_col=style_config.HOUSING_INVEST_CONFIG['SIGNAL_COL'],
+            conditions=housing_invest_conditions,
+            choices=housing_invest_choices,
+            default=style_config.HOUSING_INVEST_CONFIG['FALSE_SIGNAL'],
+        )
 
         draw_bar_line_chart_with_highlighted_signal(
             dt_indexed_df=wide_raw_housing_invest_df,
