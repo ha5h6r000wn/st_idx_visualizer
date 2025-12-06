@@ -81,36 +81,30 @@ The design goal is to make the style and strategy-index visualization paths bori
 
 **Current state**
 
-- `visualization/data_visualizer.py` already has a `prepare_bar_line_with_signal_data` helper, but:
-  - it still depends on `DtSliderParam` and Streamlit for `custom_dt` when not provided,
-  - it mutates configuration objects (adjusting `y_axis_format`) based on `isConvertedToPct`,
-  - and there are parallel paths (`draw_bar_line_chart_with_highlighted_signal`, `draw_bar_line_chart_with_highlighted_predefined_signal`, `generate_signal`).
-- `visualization/style.py` is a large function that:
-  - performs non-trivial data transformations inline,
-  - defines some configs inline and others via `style_config`,
-  - and directly uses Streamlit widgets in the middle of numeric logic.
+- `visualization/style.py` now exposes pure data-prep helpers for all major style blocks:
+  - `prepare_value_growth_data`, `prepare_index_turnover_data`, `prepare_term_spread_data`,
+    `prepare_index_erp_data`, `prepare_style_focus_data`, `prepare_shibor_prices_data`,
+    `prepare_housing_invest_data`.
+- `generate_style_charts` calls these helpers first and then passes their outputs into the existing chart helpers (`draw_grouped_lines`, `draw_bar_line_chart_with_highlighted_signal`, `draw_bar_line_chart_with_highlighted_predefined_signal`).
+- `visualization/data_visualizer.py` still has:
+  - `prepare_bar_line_with_signal_data` which depends on `DtSliderParam` and mutates config objects via `isConvertedToPct`,
+  - parallel paths for `draw_bar_line_chart_with_highlighted_signal`, `draw_bar_line_chart_with_highlighted_predefined_signal`, and `generate_signal`.
 
 **Problems**
 
-- Mixing Streamlit state with data-prep logic makes it hard to test or reuse the computations in non-UI contexts.
-- The code has to handle many special cases with `if` branches, instead of letting a clean data-prep contract eliminate special cases.
+- For style charts, data-prep vs rendering is now cleanly separated, but:
+  - bar+line+signal helpers still rely on behavior flags (`isLineDrawn`, `isConvertedToPct`, `isSignalAssigned`),
+  - and signal computation is split between the new helpers, `np.select` blocks, and `append_signal_column`.
+- For strategy-index charts, data-prep is still inline inside `visualization/stg_idx.py` (acceptable for now, but not yet using the same helper pattern).
 
 **Design decisions**
 
-- Pure data-prep helpers:
-  - For each style “block” (价值成长、市场情绪、期限利差、ERP、风格关注度、货币周期、经济增长), introduce a pure function:
-    - `prepare_<block>_frame(raw_frames, params, window_spec) -> DataFrame`
-  - These helpers:
-    - accept canonical input frames and configuration objects,
-    - compute derived columns (ratios, spreads, rolling stats, signals),
-    - and return an indexed DataFrame, with no Streamlit imports.
-- Streamlit boundary:
-  - `visualization/style.py` becomes responsible for:
-    - calling slider/select widgets,
-    - slicing DataFrames according to user selections,
-    - and delegating to chart helpers with flat chart configs.
-  - The bar+line+signal pipeline becomes:
-    - `prepare_*_frame(...)` → `prepare_bar_line_with_signal_data(frame, config, custom_dt)` → chart helper.
+- Keep the new style data-prep helpers as the canonical pattern going forward; do not re-introduce inline transformations in `generate_style_charts`.
+- In a follow-up step, simplify `prepare_bar_line_with_signal_data` and the related helpers so that they:
+  - no longer mutate config objects,
+  - no longer depend on `DtSliderParam` for `custom_dt`,
+  - and assume signals are already computed by data-prep helpers.
+- Consider extracting light-weight data-prep helpers for strategy-index charts in `visualization/stg_idx.py` once style-side refactors are complete and stable.
 
 ### 4. Unified signal generation
 
@@ -156,4 +150,3 @@ The design goal is to make the style and strategy-index visualization paths bori
 - Keep only:
   - high-signal comments documenting domain formulas or business rules,
   - and TODOs with clear, actionable next steps.
-

@@ -65,12 +65,12 @@ This change aligns implementation with those specs while keeping the UI behavior
 - Chart outputs (values, signals, labels) for existing tabs:
   - 策略指数页面 (`visualization/stg_idx.py`)
   - 风格研判页面 (`visualization/style.py`)
-  remain identical for the same input CSVs.
-- The bar+line+signal path has:
-  - a single, spec-compliant data-preparation helper that can run without Streamlit,
-  - a thin rendering helper whose configuration is limited to axis names/types, formats, and colors.
-- There is a clear, single source of truth for each dataset’s canonical schema.
+  remain identical for the same input CSVs after each incremental change.
+- For风格研判页面, each macro/style block（价值成长、市场情绪、期限利差、ERP、信用扩张、风格关注度、Shibor、地产投资）has:
+  - a dedicated, Streamlit-free data-preparation helper in `visualization/style.py`,
+  - and the tab code calls these helpers first, then passes their outputs into chart helpers.
+- The bar+line+signal path is prepared via a single data-prep step per block; rendering helpers remain thin and only depend on axis names/types, formats, and colors.
+- There is a clear, single source of truth for each dataset’s canonical schema (still pending full consolidation for non-index tables).
 - Unused database session paths are either:
   - removed from the runtime code paths used by Streamlit, or
   - explicitly isolated as ETL-only, with the CSV-backed `DataSource` remaining the only path for the app.
-

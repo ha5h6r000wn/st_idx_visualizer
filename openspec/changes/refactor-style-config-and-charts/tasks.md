@@ -33,13 +33,14 @@
     - [x] 风格关注度
     - [x] 货币周期（Shibor）
     - [x] 经济增长（地产投资）
-  - [ ] Ensure these helpers:
-    - [ ] accept well-typed inputs (canonical DataFrames and parameter objects),
-    - [ ] return fully prepared frames ready for charting,
-    - [ ] avoid direct Streamlit calls or widget interactions.
-  - [ ] Adapt `visualization/style.py` to:
-    - [ ] call data-prep helpers first,
-    - [ ] then pass their outputs into existing `data_visualizer` chart helpers.
+    - [x] 大盘/小盘相对动量
+  - [x] Ensure these helpers:
+    - [x] accept well-typed inputs (canonical DataFrames and parameter objects),
+    - [x] return fully prepared frames ready for charting,
+    - [x] avoid direct Streamlit calls or widget interactions.
+  - [x] Adapt `visualization/style.py` to:
+    - [x] call data-prep helpers first,
+    - [x] then pass their outputs into existing `data_visualizer` chart helpers.
 
 - [ ] Unify and de-duplicate signal generation logic
   - [ ] Consolidate `np.select`-based signal logic in `visualization/style.py` and `append_signal_column` in `data_preparation/data_processor.py` into a single, reusable pattern.

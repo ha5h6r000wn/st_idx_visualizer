@@ -409,6 +409,105 @@ def prepare_housing_invest_data(wide_raw_edb_df: pd.DataFrame) -> pd.DataFrame:
     return wide_raw_housing_invest_df
 
 
+def prepare_big_small_momentum_data(
+    raw_wide_idx_df: pd.DataFrame,
+    idx_name_df: pd.DataFrame,
+):
+    """Prepare data for big vs small cap momentum block."""
+    big_name_col, small_name_col = tuple(
+        map(
+            lambda x: idx_name_df.loc[style_config.STYLE_IDX_CODES[x]].values[0],
+            ['大盘', '小盘'],
+        )
+    )
+    big_small_df = raw_wide_idx_df[[big_name_col, small_name_col]].copy()
+    big_small_df = append_ratio_column(
+        df=big_small_df,
+        numerator_col=big_name_col,
+        denominator_col=small_name_col,
+        ratio_col='沪深300/中证2000',
+    )
+    big_small_df = append_rolling_mean_column(
+        df=big_small_df,
+        window_name='一月',
+        window_size=config.TRADE_DT_COUNT['一月'],
+        dropna=False,
+    )
+
+    ratio_mean_df = big_small_df[['沪深300/中证2000', '近一月均值']].dropna(inplace=False)
+
+    for col, new_col in zip(
+        [big_name_col, small_name_col],
+        ['沪深300近一月收益率', '中证2000近一月收益率'],
+    ):
+        big_small_df[new_col] = big_small_df[col].pct_change(
+            get_avg_dt_count_via_dt_type(
+                dt_type=TradeDtType.STOCK_MKT,
+                period='一月',
+            )
+        )
+    for col, new_col in zip(
+        [big_name_col, small_name_col],
+        ['沪深300近两周收益率', '中证2000近两周收益率'],
+    ):
+        big_small_df[new_col] = big_small_df[col].pct_change(
+            get_avg_dt_count_via_dt_type(
+                dt_type=TradeDtType.STOCK_MKT,
+                period='两周',
+            )
+        )
+    big_small_df.dropna(inplace=True)
+
+    pct_change_df = big_small_df[
+        [
+            '沪深300近一月收益率',
+            '中证2000近一月收益率',
+            '沪深300近两周收益率',
+            '中证2000近两周收益率',
+        ]
+    ].dropna(inplace=False)
+
+    big_small_df = append_difference_column(
+        df=big_small_df,
+        minuend_col='沪深300近一月收益率',
+        subtrahend_col='中证2000近一月收益率',
+        difference_col='大盘对小盘近一月超额',
+    )
+    big_small_df = append_difference_column(
+        df=big_small_df,
+        minuend_col='沪深300近两周收益率',
+        subtrahend_col='中证2000近两周收益率',
+        difference_col='大盘对小盘近两周超额',
+    )
+    big_small_df = append_sum_column(
+        df=big_small_df,
+        sum_1_col='大盘对小盘近一月超额',
+        sum_2_col='大盘对小盘近两周超额',
+        sum_col='相对动量',
+        multiplier_1=1,
+        multiplier_2=2,
+        multiplier_sum=0.5,
+    )
+
+    big_small_conditions = [
+        (big_small_df['大盘对小盘近一月超额'] < 0) & (big_small_df['大盘对小盘近两周超额'] < 0),
+        (big_small_df['大盘对小盘近一月超额'] > 0) & (big_small_df['大盘对小盘近两周超额'] > 0),
+    ]
+    big_small_choices = [
+        param_cls.TradeSignal.LONG_SMALL.value,
+        param_cls.TradeSignal.LONG_BIG.value,
+    ]
+    big_small_df['交易信号'] = np.select(
+        condlist=big_small_conditions,
+        choicelist=big_small_choices,
+        default=param_cls.TradeSignal.NO_SIGNAL.value,
+    )
+
+    signal_df = big_small_df
+
+    return ratio_mean_df, pct_change_df, signal_df
+
+
 @msg_printer
 def generate_style_charts():
     formatted_latest_day = date.today().strftime(config.WIND_DT_FORMAT)
@@ -671,25 +770,16 @@ def generate_style_charts():
     with tab2:
         # NOTE 大小盘比价 —— 沪深300/中证2000
 
+        big_small_ratio_df, big_small_pct_change_df, big_small_signal_df = prepare_big_small_momentum_data(
+            raw_wide_idx_df=raw_wide_idx_df,
+            idx_name_df=idx_name_df,
+        )
+
         big_name_col, small_name_col = tuple(
             map(
                 lambda x: idx_name_df.loc[style_config.STYLE_IDX_CODES[x]].values[0],
                 ['大盘', '小盘'],
             )
-        )
-        big_small_df = raw_wide_idx_df[[big_name_col, small_name_col]].copy()
-        big_small_df = append_ratio_column(
-            df=big_small_df,
-            numerator_col=big_name_col,
-            denominator_col=small_name_col,
-            ratio_col='沪深300/中证2000',
-        )
-        big_small_df = append_rolling_mean_column(
-            df=big_small_df,
-            window_name='一月',
-            window_size=config.TRADE_DT_COUNT['一月'],
-            # rolling_mean_col='近一年均值',
-            dropna=False,
         )
 
         big_small_line_config = param_cls.IdxLineParam(
@@ -698,35 +788,12 @@ def generate_style_charts():
             y_axis_format=config.CHART_NUM_FORMAT['float'],
         )
         draw_grouped_lines(
-            big_small_df[['沪深300/中证2000', '近一月均值']].dropna(inplace=False),
+            big_small_ratio_df,
             big_small_line_config,
         )
         # st.write(big_small_df)
 
         # NOTE 相对动量(大盘/小盘)
-        for col, new_col in zip(
-            [big_name_col, small_name_col],
-            ['沪深300近一月收益率', '中证2000近一月收益率'],
-        ):
-            big_small_df[new_col] = big_small_df[col].pct_change(
-                get_avg_dt_count_via_dt_type(
-                    dt_type=TradeDtType.STOCK_MKT,
-                    period='一月',
-                )
-            )
-        for col, new_col in zip(
-            [big_name_col, small_name_col],
-            ['沪深300近两周收益率', '中证2000近两周收益率'],
-        ):
-            big_small_df[new_col] = big_small_df[col].pct_change(
-                get_avg_dt_count_via_dt_type(
-                    dt_type=TradeDtType.STOCK_MKT,
-                    period='两周',
-                )
-            )
-        big_small_df.dropna(inplace=True)
-        # st.write(big_small_df)
-
         big_small_line_config = param_cls.IdxLineParam(
             axis_names=style_config.STYLE_CHART_AXIS_NAMES['VALUE_GROWTH_PCT_CHANGE'],
             title='大盘 VS 小盘',
@@ -739,14 +806,7 @@ def generate_style_charts():
         )
 
         draw_grouped_lines(
-            big_small_df[
-                [
-                    '沪深300近一月收益率',
-                    '中证2000近一月收益率',
-                    '沪深300近两周收益率',
-                    '中证2000近两周收益率',
-                ]
-            ].dropna(inplace=False),
+            big_small_pct_change_df,
             big_small_line_config,
         )
 
@@ -755,47 +815,8 @@ def generate_style_charts():
         #     options=value_growth_df.index.tolist(),
         # )
 
-        big_small_df = append_difference_column(
-            df=big_small_df,
-            minuend_col='沪深300近一月收益率',
-            subtrahend_col='中证2000近一月收益率',
-            difference_col='大盘对小盘近一月超额',
-        )
-        big_small_df = append_difference_column(
-            df=big_small_df,
-            minuend_col='沪深300近两周收益率',
-            subtrahend_col='中证2000近两周收益率',
-            difference_col='大盘对小盘近两周超额',
-        )
-        big_small_df = append_sum_column(
-            df=big_small_df,
-            sum_1_col='大盘对小盘近一月超额',
-            sum_2_col='大盘对小盘近两周超额',
-            sum_col='相对动量',
-            multiplier_1=1,
-            multiplier_2=2,
-            multiplier_sum=0.5,
-        )
-        # st.write(value_growth_df)
-
-        big_small_conditions = [
-            (big_small_df['大盘对小盘近一月超额'] < 0) & (big_small_df['大盘对小盘近两周超额'] < 0),
-            (big_small_df['大盘对小盘近一月超额'] > 0) & (big_small_df['大盘对小盘近两周超额'] > 0),
-        ]
-        big_small_choices = [
-            param_cls.TradeSignal.LONG_SMALL.value,
-            param_cls.TradeSignal.LONG_BIG.value,
-        ]
-        big_small_df['交易信号'] = np.select(
-            condlist=big_small_conditions,
-            choicelist=big_small_choices,
-            default=param_cls.TradeSignal.NO_SIGNAL.value,
-        )
-        # st.write(big_small_df)
-        # print(big_small_df.head())
-
         draw_bar_line_chart_with_highlighted_predefined_signal(
-            dt_indexed_df=big_small_df,
+            dt_indexed_df=big_small_signal_df,
             config=style_config.RELATIVE_MOMENTUM_BIG_SMALL_CHART_PARAM,
         )
 
@@ -803,7 +824,7 @@ def generate_style_charts():
 
         merged_style_focus_df = prepare_style_focus_data(
             long_big_small_idx_val_df=long_big_small_idx_val_df,
-            big_small_df=big_small_df,
+            big_small_df=big_small_signal_df,
         )
         draw_bar_line_chart_with_highlighted_signal(
             dt_indexed_df=merged_style_focus_df,
@@ -893,7 +914,7 @@ def generate_style_charts():
 
         # st.write(big_small_df)
 
-        merged_erp_df = wide_erp_df.join(big_small_df, how='inner', lsuffix='_erp', rsuffix='_big_small')
+        merged_erp_df = wide_erp_df.join(big_small_signal_df, how='inner', lsuffix='_erp', rsuffix='_big_small')
         merged_erp_df.index.name = wide_erp_df.index.name
         # st.write(merged_erp_df)
         # erp_conditions = [
