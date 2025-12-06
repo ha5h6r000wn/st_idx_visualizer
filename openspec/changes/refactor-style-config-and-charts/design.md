@@ -113,9 +113,9 @@ The design goal is to make the style and strategy-index visualization paths bori
 - Signal mapping is now centralized:
   - `data_preparation/data_processor.apply_signal_from_conditions` implements the canonical “conditions → choices → default” mapping using `np.select`.
   - `append_signal_column` is a thin wrapper around this helper for band-style signals (target vs upper/lower bounds).
-  - All style block signals (value vs growth, index turnover, credit expansion, style focus, big/small momentum, ERP and ERP_2, Shibor, and housing investment) are now computed in `visualization/style.py` using `apply_signal_from_conditions`.
-  - `prepare_bar_line_with_signal_data` routes simple threshold and band signals through the same helper chain (`apply_signal_from_conditions` and `append_signal_column`) for charts that still rely on on-the-fly signal generation (e.g., term-spread variants).
-  - The legacy `generate_signal` helper in `visualization/data_visualizer.py` has been removed.
+  - All style block signals (value vs growth, index turnover, credit expansion, style focus, big/small momentum, ERP and ERP_2, Shibor, and housing investment) are computed in `visualization/style.py` using `apply_signal_from_conditions`, and the corresponding chart configs set `isSignalAssigned=True`.
+  - `draw_bar_line_chart_with_highlighted_signal` is the default path for bar+line+signal charts with precomputed signals (index turnover, ERP, credit expansion, Shibor, housing investment, ERP_2, style focus), while `prepare_bar_line_with_signal_data` still routes simple threshold and band signals through (`apply_signal_from_conditions` and `append_signal_column`) for charts that rely on on-the-fly signal generation (e.g., term-spread variants).
+  - The legacy `generate_signal` helper in `visualization/data_visualizer.py` has been removed; `draw_bar_line_chart_with_highlighted_predefined_signal` is now only used for bar-only relative-momentum charts that do not have a line baseline.
 
 **Problems**
 

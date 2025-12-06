@@ -686,7 +686,7 @@ def generate_style_charts():
 
         wide_wind_all_a_turnover_df = prepare_index_turnover_data(long_wind_all_a_idx_val_df)
 
-        draw_bar_line_chart_with_highlighted_predefined_signal(
+        draw_bar_line_chart_with_highlighted_signal(
             dt_indexed_df=wide_wind_all_a_turnover_df,
             config=style_config.INDEX_TURNOVER_CHART_PARAM,
         )
@@ -742,7 +742,7 @@ def generate_style_charts():
             default=style_config.INDEX_ERP_CHART_PARAM.bar_param.no_signal,
         )
 
-        draw_bar_line_chart_with_highlighted_predefined_signal(
+        draw_bar_line_chart_with_highlighted_signal(
             dt_indexed_df=wide_erp_df,
             config=style_config.INDEX_ERP_CHART_PARAM,
         )

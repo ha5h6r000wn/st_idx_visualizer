@@ -148,6 +148,7 @@ RELATIVE_MOMENTUM_VALUE_GROWTH_CHART_PARAM = param_cls.BarLineWithSignalParam(
         no_signal=param_cls.TradeSignal.NO_SIGNAL.value,
     ),
     isConvertedToPct=False,
+    isSignalAssigned=True,
 )
 
 
@@ -315,6 +316,7 @@ INDEX_TURNOVER_CHART_PARAM = param_cls.BarLineWithSignalParam(
         ],
     ),
     isConvertedToPct=True,
+    isSignalAssigned=True,
 )
 
 # NOTE ERP股债性价比
@@ -394,6 +396,7 @@ INDEX_ERP_CHART_PARAM = param_cls.BarLineWithSignalParam(
             INDEX_ERP_CONFIG['QUANTILE_FLOOR_COL'],
         ],
     ),
+    isSignalAssigned=True,
 )
 
 
@@ -503,6 +506,7 @@ RELATIVE_MOMENTUM_BIG_SMALL_CHART_PARAM = param_cls.BarLineWithSignalParam(
         ],
     ),
     isConvertedToPct=False,
+    isSignalAssigned=True,
 )
 
 # NOTE 货币周期：Shibor3M
