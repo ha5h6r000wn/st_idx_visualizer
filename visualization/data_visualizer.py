@@ -356,7 +356,11 @@ def prepare_bar_line_with_signal_data(
     else:
         selected_df = dt_indexed_df.reset_index()
 
-    if not config.isSignalAssigned:
+    legend_col = config.bar_param.axis_names['LEGEND']
+
+    # If a signal column is already present, respect it and avoid
+    # recomputing signals, regardless of the isSignalAssigned flag.
+    if not config.isSignalAssigned and legend_col not in selected_df.columns:
         if config.bar_param.no_signal is None:
             conditions = [
                 selected_df[config.bar_param.axis_names['Y']] >= selected_df[config.line_param.axis_names['Y']],

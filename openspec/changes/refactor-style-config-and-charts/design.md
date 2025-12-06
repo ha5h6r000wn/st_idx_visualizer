@@ -114,7 +114,7 @@ The design goal is to make the style and strategy-index visualization paths bori
   - `data_preparation/data_processor.apply_signal_from_conditions` implements the canonical “conditions → choices → default” mapping using `np.select`.
   - `append_signal_column` is a thin wrapper around this helper for band-style signals (target vs upper/lower bounds).
   - All style block signals (value vs growth, index turnover, credit expansion, style focus, big/small momentum, ERP and ERP_2, Shibor, and housing investment) are computed in `visualization/style.py` using `apply_signal_from_conditions`, and the corresponding chart configs set `isSignalAssigned=True`.
-  - `draw_bar_line_chart_with_highlighted_signal` is the default path for bar+line+signal charts with precomputed signals (index turnover, ERP, credit expansion, Shibor, housing investment, ERP_2, style focus), while `prepare_bar_line_with_signal_data` still routes simple threshold and band signals through (`apply_signal_from_conditions` and `append_signal_column`) for charts that rely on on-the-fly signal generation (e.g., term-spread variants).
+  - `draw_bar_line_chart_with_highlighted_signal` is the default path for bar+line+signal charts with precomputed signals (index turnover, ERP, credit expansion, Shibor, housing investment, ERP_2, style focus). `prepare_bar_line_with_signal_data` now treats any existing signal column on the input frame as authoritative and only computes signals on-the-fly (via `apply_signal_from_conditions` and `append_signal_column`) when the signal column is absent (e.g., for term-spread variants that still rely on threshold/band-based signals).
   - The legacy `generate_signal` helper in `visualization/data_visualizer.py` has been removed; `draw_bar_line_chart_with_highlighted_predefined_signal` is now only used for bar-only relative-momentum charts that do not have a line baseline.
 
 **Problems**
@@ -129,7 +129,21 @@ The design goal is to make the style and strategy-index visualization paths bori
 - Prefer precomputed signals in data-prep helpers where business logic is non-trivial (e.g., combining multiple excess-return conditions), and reserve band-style `append_signal_column` for simple threshold/band cases.
 - Treat `generate_signal`-style debug helpers as dead code and remove them rather than keeping parallel paths.
 
-### 5. Dead code removal
+### 5. Future work: signal handling and chart config
+
+The current change intentionally stops short of fully redesigning chart configuration and signal responsibilities. Follow-up work SHOULD:
+
+- Split configuration models so that:
+  - style charts with precomputed business signals use a dedicated, minimal config that does not expose `isSignalAssigned`, `no_signal`, or band-related fields, and
+  - generic bar+line+band charts retain a separate config that explicitly models threshold/band-based signal behavior.
+- Split helpers so that:
+  - one rendering helper assumes signals are already present on the frame and never mutates signal columns, and
+  - a separate helper is responsible for purely mechanical band-based signal computation, only used by charts that opt into that behavior.
+- Add guard rails and tests:
+  - for style charts, assert that the expected signal column is present on the frame before rendering,
+  - and add tests around style data-prep helpers to ensure they always produce the required signal columns for a fixed CSV snapshot.
+
+### 6. Dead code removal
 
 **Current state**
 
