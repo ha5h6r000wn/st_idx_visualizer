@@ -170,6 +170,31 @@ The current change intentionally stops short of fully redesigning chart configur
       - non-empty output,
       - monotonic trade-date index,
       - and presence of the configured Shibor price and rolling-mean columns.
+    - `prepare_index_turnover_data` to verify:
+      - non-empty output,
+      - monotonic trade-date index,
+      - presence of the configured rolling-mean columns,
+      - and that the `交易信号` column only contains the expected turnover signals.
+    - `prepare_term_spread_data` to verify:
+      - non-empty outputs for term-spread and yield-curve frames,
+      - monotonic trade-date indices,
+      - and presence of the configured spread and rolling-mean columns.
+    - `prepare_index_erp_data` to verify:
+      - non-empty ERP frame with monotonic trade-date index,
+      - presence of ERP value, rolling mean, and quantile bands,
+      - and that the returned ERP conditions align with the ERP frame and are boolean.
+    - `prepare_big_small_momentum_data` to verify:
+      - non-empty ratio/percentage-change/signal frames,
+      - monotonic trade-date indices,
+      - and that the `交易信号` column only contains the expected big/small signals.
+    - `prepare_style_focus_data` to verify:
+      - non-empty output with monotonic trade-date index,
+      - presence of style-focus value and quantile columns,
+      - and that the style-focus signal column only contains the expected enum values.
+    - `prepare_housing_invest_data` and the inline credit-expansion prep to verify:
+      - non-empty outputs with monotonic trade-date indices,
+      - presence of the configured YoY and rolling-mean columns,
+      - and that credit-expansion signals stay within the configured enum set.
   - `scripts/run_quick_checks.py` provides a single entry point for running the fast “style prep” test subset via `python scripts/run_quick_checks.py`, which runs `pytest -m style_prep tests`.
 
 **Planned extensions**

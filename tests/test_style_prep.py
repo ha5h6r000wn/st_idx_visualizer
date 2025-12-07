@@ -11,9 +11,18 @@ if str(PROJECT_ROOT) not in sys.path:
 
 from config import config, param_cls, style_config  # noqa: E402
 from data_preparation.data_fetcher import fetch_data_from_local, fetch_index_data_from_local  # noqa: E402
+from data_preparation.data_processor import (  # noqa: E402
+    append_rolling_mean_column,
+    apply_signal_from_conditions,
+    reshape_long_df_into_wide_form,
+)
 from visualization.style import (  # noqa: E402
+    prepare_big_small_momentum_data,
+    prepare_housing_invest_data,
+    prepare_index_erp_data,
     prepare_index_turnover_data,
     prepare_shibor_prices_data,
+    prepare_style_focus_data,
     prepare_term_spread_data,
     prepare_value_growth_data,
 )
@@ -150,3 +159,187 @@ def test_prepare_term_spread_data_basic_invariants():
     mean_col = style_config.TERM_SPREAD_CONFIG["MEAN_COL"]
     for col in (spread_col, mean_col):
         assert col in term_spread_df.columns
+
+
+@pytest.mark.style_prep
+def test_prepare_index_erp_data_basic_invariants():
+    # Reuse the same data wiring as generate_style_charts:
+    # - CN_BOND_YIELD wide frame from prepare_term_spread_data
+    # - A_IDX_VAL filtered to the benchmark index for ERP.
+    latest_date = "99991231"
+
+    long_raw_cn_bond_yield_df = fetch_data_from_local(latest_date=latest_date, table_name="CN_BOND_YIELD")
+    term_spread_df, yield_curve_df, wide_raw_cn_bond_yield_df = prepare_term_spread_data(
+        long_raw_cn_bond_yield_df=long_raw_cn_bond_yield_df
+    )
+
+    long_a_idx_val_df = fetch_data_from_local(latest_date=latest_date, table_name="A_IDX_VAL")
+    name_col = style_config.DATA_COL_PARAM[param_cls.WindPortal.A_IDX_VAL].name_col
+    long_wind_all_a_idx_val_df = long_a_idx_val_df.query(f"{name_col} == '万得全A'")
+
+    wide_erp_df, erp_conditions = prepare_index_erp_data(
+        long_wind_all_a_idx_val_df=long_wind_all_a_idx_val_df,
+        wide_raw_cn_bond_yield_df=wide_raw_cn_bond_yield_df,
+    )
+
+    assert not wide_erp_df.empty
+    assert wide_erp_df.index.is_monotonic_increasing
+
+    # ERP frame must contain ERP value, rolling mean, and quantile bands
+    erp_col = style_config.INDEX_ERP_CONFIG["ERP_COL"]
+    mean_col = "近一月均值"
+    ceil_col = style_config.INDEX_ERP_CONFIG["QUANTILE_CEILING_COL"]
+    floor_col = style_config.INDEX_ERP_CONFIG["QUANTILE_FLOOR_COL"]
+    for col in (erp_col, mean_col, ceil_col, floor_col):
+        assert col in wide_erp_df.columns
+
+    # Conditions should be aligned with ERP frame and boolean
+    assert isinstance(erp_conditions, list)
+    assert len(erp_conditions) == 2
+    for cond in erp_conditions:
+        assert len(cond) == len(wide_erp_df)
+        assert cond.dtype == bool
+
+
+@pytest.mark.style_prep
+def test_prepare_big_small_momentum_data_basic_invariants():
+    raw_wide_idx_df, idx_name_df = _load_style_index_data()
+
+    ratio_mean_df, pct_change_df, signal_df = prepare_big_small_momentum_data(
+        raw_wide_idx_df=raw_wide_idx_df,
+        idx_name_df=idx_name_df,
+    )
+
+    assert not ratio_mean_df.empty
+    assert not pct_change_df.empty
+    assert not signal_df.empty
+
+    assert ratio_mean_df.index.is_monotonic_increasing
+    assert pct_change_df.index.is_monotonic_increasing
+    assert signal_df.index.is_monotonic_increasing
+
+    # Signal column and value set
+    assert "交易信号" in signal_df.columns
+    signal_values = set(signal_df["交易信号"].dropna().unique().tolist())
+    expected = {
+        param_cls.TradeSignal.LONG_SMALL.value,
+        param_cls.TradeSignal.LONG_BIG.value,
+        param_cls.TradeSignal.NO_SIGNAL.value,
+    }
+    assert signal_values.issubset(expected)
+
+
+@pytest.mark.style_prep
+def test_prepare_style_focus_data_basic_invariants():
+    raw_wide_idx_df, idx_name_df = _load_style_index_data()
+
+    # Build big/small momentum signals
+    _, _, big_small_signal_df = prepare_big_small_momentum_data(
+        raw_wide_idx_df=raw_wide_idx_df,
+        idx_name_df=idx_name_df,
+    )
+
+    latest_date = "99991231"
+    long_a_idx_val_df = fetch_data_from_local(latest_date=latest_date, table_name="A_IDX_VAL")
+    name_col = style_config.DATA_COL_PARAM[param_cls.WindPortal.A_IDX_VAL].name_col
+    long_big_small_idx_val_df = long_a_idx_val_df.query(f"{name_col} in ('沪深300', '中证1000')")
+
+    style_focus_df = prepare_style_focus_data(
+        long_big_small_idx_val_df=long_big_small_idx_val_df,
+        big_small_df=big_small_signal_df,
+    )
+
+    assert not style_focus_df.empty
+    assert style_focus_df.index.is_monotonic_increasing
+
+    # Check presence of style-focus core columns and signal
+    focus_col = style_config.STYLE_FOCUS_CONFIG["STYLE_FOCUS_COL"]
+    ceil_col = style_config.STYLE_FOCUS_CONFIG["QUANTILE_CEILING_COL"]
+    floor_col = style_config.STYLE_FOCUS_CONFIG["QUANTILE_FLOOR_COL"]
+    for col in (focus_col, ceil_col, floor_col):
+        assert col in style_focus_df.columns
+
+    assert style_config.STYLE_FOCUS_CONFIG["SIGNAL_COL"] in style_focus_df.columns
+    signal_values = set(style_focus_df[style_config.STYLE_FOCUS_CONFIG["SIGNAL_COL"]].dropna().unique().tolist())
+    expected = {
+        style_config.STYLE_FOCUS_CONFIG["TRUE_SIGNAL"],
+        style_config.STYLE_FOCUS_CONFIG["FALSE_SIGNAL"],
+        style_config.STYLE_FOCUS_CONFIG["NO_SIGNAL"],
+    }
+    assert signal_values.issubset(expected)
+
+
+@pytest.mark.style_prep
+def test_prepare_housing_invest_and_credit_expansion_basic_invariants():
+    latest_date = "99991231"
+    long_edb_df = fetch_data_from_local(latest_date=latest_date, table_name="EDB")
+
+    wide_raw_edb_df = reshape_long_df_into_wide_form(
+        long_df=long_edb_df,
+        index_col=style_config.DATA_COL_PARAM[param_cls.WindPortal.EDB].dt_col,
+        name_col=style_config.DATA_COL_PARAM[param_cls.WindPortal.EDB].name_col,
+        value_col=style_config.DATA_COL_PARAM[param_cls.WindPortal.EDB].value_col,
+    )
+
+    # Housing investment YoY prep
+    housing_df = prepare_housing_invest_data(wide_raw_edb_df=wide_raw_edb_df)
+    assert not housing_df.empty
+    assert housing_df.index.is_monotonic_increasing
+
+    for col in (
+        style_config.HOUSING_INVEST_CONFIG["YOY_COL"],
+        style_config.HOUSING_INVEST_CONFIG["PRE_YOY_COL"],
+    ):
+        assert col in housing_df.columns
+
+    # Credit expansion prep (inline data-prep replicated from generate_style_charts)
+    credit_df = (
+        wide_raw_edb_df[[style_config.CREDIT_EXPANSION_CONFIG["CREDIT_EXPANSION_COL"]]]
+        .copy()
+        .rename(
+            columns={
+                style_config.CREDIT_EXPANSION_CONFIG["CREDIT_EXPANSION_COL"]: style_config.CREDIT_EXPANSION_CONFIG[
+                    "YOY_COL"
+                ],
+            }
+        )
+    )
+
+    credit_df = append_rolling_mean_column(
+        df=credit_df,
+        window_name=style_config.CREDIT_EXPANSION_CONFIG["ROLLING_WINDOW"],
+        window_size=style_config.CREDIT_EXPANSION_CONFIG["ROLLING_WINDOW_SIZE"],
+        rolling_mean_col=style_config.CREDIT_EXPANSION_CONFIG["MEAN_COL"],
+    )
+
+    assert not credit_df.empty
+    assert credit_df.index.is_monotonic_increasing
+
+    for col in (
+        style_config.CREDIT_EXPANSION_CONFIG["YOY_COL"],
+        style_config.CREDIT_EXPANSION_CONFIG["MEAN_COL"],
+    ):
+        assert col in credit_df.columns
+
+    conditions = [
+        credit_df[style_config.CREDIT_EXPANSION_CONFIG["YOY_COL"]]
+        >= credit_df[style_config.CREDIT_EXPANSION_CONFIG["MEAN_COL"]],
+    ]
+    choices = [
+        style_config.CREDIT_EXPANSION_CONFIG["TRUE_SIGNAL"],
+    ]
+    credit_df = apply_signal_from_conditions(
+        df=credit_df,
+        signal_col=style_config.CREDIT_EXPANSION_CONFIG["SIGNAL_COL"],
+        conditions=conditions,
+        choices=choices,
+        default=style_config.CREDIT_EXPANSION_CONFIG["FALSE_SIGNAL"],
+    )
+
+    assert style_config.CREDIT_EXPANSION_CONFIG["SIGNAL_COL"] in credit_df.columns
+    signal_values = set(credit_df[style_config.CREDIT_EXPANSION_CONFIG["SIGNAL_COL"]].dropna().unique().tolist())
+    expected = {
+        style_config.CREDIT_EXPANSION_CONFIG["TRUE_SIGNAL"],
+        style_config.CREDIT_EXPANSION_CONFIG["FALSE_SIGNAL"],
+    }
+    assert signal_values.issubset(expected)
