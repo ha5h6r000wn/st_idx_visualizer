@@ -154,6 +154,40 @@ The current change intentionally stops short of fully redesigning chart configur
   - for style charts, assert that the expected signal column is present on the frame before rendering,
   - and add tests around style data-prep helpers to ensure they always produce the required signal columns for a fixed CSV snapshot.
 
+### 7. Validation strategy
+
+**Current state**
+
+- Manual validation:
+  - The style page has been repeatedly verified via `streamlit run app.py`, with side-by-side comparison of charts and signals before/after refactors.
+- Automated checks:
+  - `tests/test_style_prep.py` exercises:
+    - `prepare_value_growth_data` to verify:
+      - non-empty outputs for ratio/percentage-change/signal frames,
+      - monotonic trade-date indices,
+      - and that the `交易信号` column only contains the expected value/growth/neutral labels.
+    - `prepare_shibor_prices_data` to verify:
+      - non-empty output,
+      - monotonic trade-date index,
+      - and presence of the configured Shibor price and rolling-mean columns.
+  - `scripts/run_quick_checks.py` provides a single entry point for running the fast “style prep” test subset via `python scripts/run_quick_checks.py`, which runs `pytest -m style_prep tests`.
+
+**Planned extensions**
+
+- Incrementally extend automated coverage to:
+  - index turnover (`prepare_index_turnover_data`),
+  - term spread (`prepare_term_spread_data`),
+  - ERP / ERP_2 (`prepare_index_erp_data`),
+  - credit expansion, style focus, and housing investment.
+- For each helper, assert a minimal set of invariants:
+  - monotonic date index,
+  - presence of expected canonical columns and signal columns,
+  - and that signal values remain within the configured enum set.
+- Recommend wiring `scripts/run_quick_checks.py` into a Git pre-commit hook, for example:
+  - `.git/hooks/pre-commit`:
+    - `#!/usr/bin/env bash`
+    - `python scripts/run_quick_checks.py || exit 1`
+
 ### 6. Dead code removal
 
 **Current state**
