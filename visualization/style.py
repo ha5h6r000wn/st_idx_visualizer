@@ -760,7 +760,6 @@ def generate_style_charts():
             big_small_ratio_df,
             big_small_line_config,
         )
-        # st.write(big_small_df)
 
         # NOTE 相对动量(大盘/小盘)
         big_small_line_config = param_cls.IdxLineParam(

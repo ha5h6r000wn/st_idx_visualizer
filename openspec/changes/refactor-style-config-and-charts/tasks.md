@@ -55,10 +55,10 @@
     - and any required aliases for charts.
   - [ ] Update consumers in `data_preparation` and `visualization` to use these canonical definitions, keeping all existing Chinese labels.
 
-- [ ] Remove dead or commented-out chart code
-  - [ ] Identify large commented blocks in `config/style_config.py` and `visualization/style.py` that are no longer relevant.
-  - [ ] Remove legacy chart helpers or comments (e.g., old `draw_test` paths) in line with the `visualization` spec’s “Remove dead chart code” requirement.
-  - [ ] Keep small, high-signal comments where they clarify domain-specific behavior.
+- [x] Remove dead or commented-out chart code
+  - [x] Identify large commented blocks in `config/style_config.py` and `visualization/style.py` that are no longer relevant.
+  - [x] Remove legacy chart helpers or comments (e.g., old `draw_test` paths) in line with the `visualization` spec’s “Remove dead chart code” requirement.
+  - [x] Keep small, high-signal comments where they clarify domain-specific behavior.
 
 - [ ] Validation
   - [ ] Add minimal tests or scripts that:

@@ -147,11 +147,12 @@ The current change intentionally stops short of fully redesigning chart configur
 
 **Current state**
 
-- `config/style_config.py` and `visualization/style.py` contain large commented blocks and legacy code paths (e.g., old `draw_test` helper usage and alternative ERP conditions).
+- As of this change, `config/style_config.py` and `visualization/style.py` no longer contain large commented-out legacy chart helpers or alternate ERP conditions.
+- Domain-level NOTE comments are retained to document style frameworks and business intent, but debug-only `st.write` calls and the old `draw_test` path have been removed.
 
 **Problems**
 
-- Commented-out code hides the real behavior and encourages “just in case” branches instead of clean abstractions.
+- Previously, commented-out code hid the real behavior and encouraged “just in case” branches instead of clean abstractions.
 
 **Design decisions**
 
