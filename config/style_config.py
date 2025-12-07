@@ -531,9 +531,6 @@ SHIBOR_PRICES_CONFIG.update(
             dt_type=SHIBOR_PRICES_CONFIG['DT_TYPE'],
             period=SHIBOR_PRICES_CONFIG['SLIDER_DEFAULT_OFFSET'],
         ),
-        # 'WIND_COL_ALIAS': get_wind_col_alias_with_sql_parser(
-        #     get_cwd_file_path(SQL_DIR, SHIBOR_PRICES_CONFIG['SQL_NAME'])
-        # ),
         'ROLLING_WINDOW_SIZE': get_avg_dt_count_via_dt_type(
             dt_type=SHIBOR_PRICES_CONFIG['DT_TYPE'],
             period=SHIBOR_PRICES_CONFIG['ROLLING_WINDOW'],
@@ -590,7 +587,6 @@ SHIBOR_PRICES_CHART_PARAM = param_cls.BarLineWithSignalParam(
 HOUSING_INVEST_CONFIG = {
     'WIND_TABLE': param_cls.WindPortal.EDB,
     'SLIDER_START_DT': '20180101',
-    # 'SLIDER_DEFAULT_OFFSET_DT_COUNT': 40,
     'HOUSING_INVEST_COL': '中国:房地产开发投资完成额:累计值',
     'YOY_COL': '经济增长',
     'PRE_YOY_COL': '上一期数值',
@@ -601,19 +597,9 @@ HOUSING_INVEST_CONFIG = {
     'BAR_TITLE': '经济增长 —— 中国:房地产开发投资完成额:累计值:同比',
     'LINE_STROKE_DASH': (5, 3),
 }
-# HOUSING_INVEST_COL_PARAM = param_cls.WindAIndexValueColParam(
-#     dt_col=DATA_CONFIG[HOUSING_INVEST_CONFIG['WIND_TABLE']]['WIND_COL_ALIAS']['TDATE'],
-#     name_col=DATA_CONFIG[HOUSING_INVEST_CONFIG['WIND_TABLE']]['WIND_COL_ALIAS'][
-#         'F3_4112'
-#     ],
-#     value_col=DATA_CONFIG[HOUSING_INVEST_CONFIG['WIND_TABLE']]['WIND_COL_ALIAS'][
-#         'INDICATOR_NUM'
-#     ],
-# )
 HOUSING_INVEST_CHART_PARAM = param_cls.BarLineWithSignalParam(
     dt_slider_param=param_cls.DtSliderParam(
         start_dt=HOUSING_INVEST_CONFIG['SLIDER_START_DT'],
-        # default_start_offset=HOUSING_INVEST_CONFIG['SLIDER_DEFAULT_OFFSET_DT_COUNT'],
         key='HOUSING_INVEST_SLIDER',
     ),
     bar_param=param_cls.SignalBarParam(

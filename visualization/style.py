@@ -14,7 +14,6 @@ from data_preparation.data_processor import (
     append_ratio_column,
     append_rolling_mean_column,
     append_rolling_quantile_column,
-    # append_rolling_quantile_inv_q_column,
     append_rolling_sum_column,
     append_sum_column,
     apply_signal_from_conditions,
@@ -519,27 +518,12 @@ def prepare_big_small_momentum_data(
 def generate_style_charts():
     formatted_latest_day = date.today().strftime(config.WIND_DT_FORMAT)
 
-    # wind_portal_keys = [
-    #     param_cls.WindPortal.CN_BOND_YIELD,
-    #     param_cls.WindPortal.A_IDX_VAL,
-    #     param_cls.WindPortal.EDB,
-    # ]
     wind_local_keys = [
         'CN_BOND_YIELD',
         'A_IDX_VAL',
         'EDB',
         'SHIBOR_PRICES',
     ]
-
-    # long_raw_df_collection = {
-    #     key: fetch_data_with_wind_portal(
-    #         latest_date=formatted_latest_day,
-    #         _config=style_config.DATA_QUERY_PARAM[key],
-    #         table_name=key,
-    #     )
-    #     for key in wind_portal_keys
-    # }
-    # st.write(long_raw_df_collection[param_cls.WindPortal.CN_BOND_YIELD])
 
     long_raw_df_collection = {
         key: fetch_data_from_local(
@@ -548,26 +532,6 @@ def generate_style_charts():
         )
         for key in wind_local_keys
     }
-    # st.write(long_raw_df_collection["CN_BOND_YIELD"])
-    # st.write(long_raw_df_collection['SHIBOR_PRICES'])
-    # long_raw_edb_df = fetch_data_with_wind_portal(
-    #     latest_date=formatted_latest_day,
-    #     config=style_config.DATA_QUERY_PARAM[param_cls.WindPortal.EDB],
-    #     table_name=param_cls.WindPortal.EDB,
-    # )
-    # # st.write(long_raw_edb_df)
-    # long_raw_a_idx_val = fetch_data_with_wind_portal(
-    #     latest_date=formatted_latest_day,
-    #     config=style_config.DATA_QUERY_PARAM[param_cls.WindPortal.A_IDX_VAL],
-    #     table_name=param_cls.WindPortal.A_IDX_VAL,
-    # )
-    # # st.write(long_raw_a_idx_val)
-    # long_raw_cn_bond_yield_df = fetch_data_with_wind_portal(
-    #     latest_date=formatted_latest_day,
-    #     config=style_config.DATA_QUERY_PARAM[param_cls.WindPortal.CN_BOND_YIELD],
-    #     table_name=param_cls.WindPortal.CN_BOND_YIELD,
-    # )
-    # # st.write(long_raw_cn_bond_yield_df)
 
     wide_raw_edb_df = reshape_long_df_into_wide_form(
         long_df=long_raw_df_collection['EDB'],
@@ -575,26 +539,12 @@ def generate_style_charts():
         name_col=style_config.DATA_COL_PARAM[param_cls.WindPortal.EDB].name_col,
         value_col=style_config.DATA_COL_PARAM[param_cls.WindPortal.EDB].value_col,
     )
-    # st.write(long_raw_df_collection[param_cls.WindPortal.A_IDX_VAL])
     long_wind_all_a_idx_val_df = long_raw_df_collection['A_IDX_VAL'].query(
         f'{style_config.DATA_COL_PARAM[param_cls.WindPortal.A_IDX_VAL].name_col} == "万得全A"'
     )
     long_big_small_idx_val_df = long_raw_df_collection['A_IDX_VAL'].query(
         f'{style_config.DATA_COL_PARAM[param_cls.WindPortal.A_IDX_VAL].name_col} in ("沪深300", "中证1000")'
     )
-    # st.write(long_big_small_idx_val_df)
-
-    # wide_raw_df_collection = {
-    #     key: reshape_long_df_into_wide_form(
-    #         long_df=long_raw_df_collection[key],
-    #         index_col=style_config.DATA_COL_PARAM[key].dt_col,
-    #         name_col=style_config.DATA_COL_PARAM[key].name_col,
-    #         value_col=style_config.DATA_COL_PARAM[key].value_col,
-    #     )
-    #     for key in wind_portal_keys
-    # }
-
-    # st.write(long_raw_edb_df)
 
     wind_idx_param = param_cls.WindListedSecParam(
         wind_codes=tuple(style_config.STYLE_IDX_CODES.values()),
@@ -607,10 +557,7 @@ def generate_style_charts():
 
     idx_col_param = param_cls.WindIdxColParam()
 
-    # raw_long_idx_df = fetch_index_data_with_wind_portal(latest_date=formatted_latest_day, _config=wind_idx_param)
-    # st.write(raw_long_idx_df)
     raw_long_idx_df = fetch_index_data_from_local(latest_date=formatted_latest_day, _config=wind_idx_param)
-    # st.write(raw_long_idx_df)
 
     idx_name_df = (
         raw_long_idx_df[[idx_col_param.code_col, idx_col_param.name_col]]
@@ -832,11 +779,6 @@ def generate_style_charts():
             big_small_line_config,
         )
 
-        # value_growth_pct_change_slider_dt = st.select_slider(
-        #     '自选日期',
-        #     options=value_growth_df.index.tolist(),
-        # )
-
         draw_bar_line_chart_with_highlighted_predefined_signal(
             dt_indexed_df=big_small_signal_df,
             config=style_config.RELATIVE_MOMENTUM_BIG_SMALL_CHART_PARAM,
@@ -901,10 +843,6 @@ def generate_style_charts():
             dt_indexed_df=wide_raw_housing_invest_df,
             config=style_config.HOUSING_INVEST_CHART_PARAM,
         )
-        # draw_test(
-        #     dt_indexed_df=wide_raw_housing_invest_df,
-        #     config=style_config.HOUSING_INVEST_CHART_PARAM,
-        # )
 
         # NOTE 期现利差
 
@@ -941,57 +879,8 @@ def generate_style_charts():
 
         # NOTE ERP股债性价比（大小盘）
 
-        # st.write(big_small_df)
-
-        # for col, new_col in zip(
-        #     [big_name_col, small_name_col],
-        #     ['沪深300近两月收益率', '中证2000近两月收益率'],
-        # ):
-        #     big_small_df[new_col] = big_small_df[col].pct_change(
-        #         get_avg_dt_count_via_dt_type(
-        #             dt_type=TradeDtType.STOCK_MKT,
-        #             period='两月',
-        #         )
-        #     )
-        # for col, new_col in zip(
-        #     [big_name_col, small_name_col],
-        #     ['沪深300近两周收益率', '中证2000近两周收益率'],
-        # ):
-        #     big_small_df[new_col] = big_small_df[col].pct_change(
-        #         get_avg_dt_count_via_dt_type(
-        #             dt_type=TradeDtType.STOCK_MKT,
-        #             period='两周',
-        #         )
-        #     )
-
-        # st.write(big_small_df)
-
         merged_erp_df = wide_erp_df.join(big_small_signal_df, how='inner', lsuffix='_erp', rsuffix='_big_small')
         merged_erp_df.index.name = wide_erp_df.index.name
-        # st.write(merged_erp_df)
-        # erp_conditions = [
-        #     (
-        #         merged_erp_df[style_config.INDEX_ERP_CONFIG['ERP_COL']]
-        #         >= merged_erp_df[style_config.INDEX_ERP_CONFIG['QUANTILE_CEILING_COL']]
-        #     )
-        #     & (merged_erp_df['沪深300近两月收益率'] < merged_erp_df['中证2000近两月收益率'])
-        #     & (merged_erp_df['沪深300近两月收益率'] < 0),
-        #     (
-        #         merged_erp_df[style_config.INDEX_ERP_CONFIG['ERP_COL']]
-        #         >= merged_erp_df[style_config.INDEX_ERP_CONFIG['QUANTILE_CEILING_COL']]
-        #     )
-        #     & (merged_erp_df['沪深300近两月收益率'] > merged_erp_df['中证2000近两月收益率'])
-        #     & (merged_erp_df['沪深300近两月收益率'] > 0),
-        #     (
-        #         merged_erp_df[style_config.INDEX_ERP_CONFIG['ERP_COL']]
-        #         < merged_erp_df[style_config.INDEX_ERP_CONFIG['QUANTILE_FLOOR_COL']]
-        #     ),
-        # ]
-        # erp_choices = [
-        #     style_config.INDEX_ERP_2_CHART_PARAM.bar_param.false_signal,
-        #     style_config.INDEX_ERP_2_CHART_PARAM.bar_param.true_signal,
-        #     style_config.INDEX_ERP_2_CHART_PARAM.bar_param.false_signal,
-        # ]
 
         erp_2_choices = [
             style_config.INDEX_ERP_2_CHART_PARAM.bar_param.true_signal,
@@ -1005,7 +894,6 @@ def generate_style_charts():
             choices=erp_2_choices,
             default=style_config.INDEX_ERP_2_CHART_PARAM.bar_param.no_signal,
         )
-        # st.write(wide_erp_2_df)
 
         draw_bar_line_chart_with_highlighted_signal(
             dt_indexed_df=wide_erp_2_df,
