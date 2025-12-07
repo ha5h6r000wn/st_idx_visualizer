@@ -1,3 +1,10 @@
+"""ETL-only data-access helpers.
+
+These functions query the index database via SQLAlchemy sessions and are not
+used by the Streamlit visualization app. The app's runtime data path is
+CSV-only via `data_preparation.data_fetcher`.
+"""
+
 import pandas as pd
 from sqlalchemy import select
 from sqlalchemy.orm import Session

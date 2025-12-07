@@ -1,4 +1,9 @@
-"""SQLAlchemy models for database tables."""
+"""SQLAlchemy models for index-related database tables.
+
+These ORM models are used by ETL and data-sync tooling and are not imported
+by the Streamlit visualization app, which reads from CSV snapshots instead
+of this database.
+"""
 
 import uuid
 from datetime import datetime

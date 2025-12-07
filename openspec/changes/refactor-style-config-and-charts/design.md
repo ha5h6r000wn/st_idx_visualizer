@@ -33,7 +33,10 @@ The design goal is to make the style and strategy-index visualization paths bori
 - CSV-only path for the app:
   - Keep `CSVDataSource` as the only data-access path used by `visualization/*`.
   - Ensure `visualization/*` does not import `data_preparation/data_access` or use SQLAlchemy sessions.
-  - Treat `data_preparation/data_access.py` and `models.py` as ETL-only; either move them under an ETL namespace or clearly document that they are not part of the Streamlit runtime.
+  - Treat `data_preparation/data_access.py` and `models.py` as ETL-only:
+    - either move them under an ETL namespace, or
+    - clearly document that they are not part of the Streamlit runtime.  
+    - For this change, we take the documentation path by adding explicit module-level docstrings in `data_preparation/data_access.py` and `models.py` stating that they are ETL-only and that the Streamlit app uses the CSV-based readers instead.
 - Correctness fix:
   - Fix `fetch_table` to select the correct date column based on the same canonical schema used by `read_csv_data`, rather than comparing to Enum members directly.
 

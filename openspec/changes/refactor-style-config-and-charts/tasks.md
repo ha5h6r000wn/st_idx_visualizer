@@ -10,8 +10,9 @@
 - [ ] Refine data-access behavior for CSV-only paths
   - [x] Fix the `CSVDataSource.fetch_table` date-column selection bug for `A_IDX_PRICE` while keeping behavior for other tables unchanged.
   - [x] Confirm that `Streamlit` UI modules (`visualization/*.py`) do not rely on `data_preparation/data_access.py` or database sessions.
-  - [ ] If `data_preparation/data_access.py` is unused by the app, either:
+  - [x] If `data_preparation/data_access.py` is unused by the app, either:
     - [ ] Move it under an ETL-specific namespace, or
+    - [x] Clearly document in `data_preparation/data_access.py` and `models.py` that they are ETL-only and not part of the Streamlit runtime, or
     - [ ] Remove it in a separate, clearly documented step consistent with the `data-access` spec.
 
 - [ ] Simplify and clarify chart configuration models
