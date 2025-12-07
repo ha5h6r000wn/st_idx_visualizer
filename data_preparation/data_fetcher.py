@@ -16,6 +16,7 @@ INDEX_PRICE_SCHEMA = {
         'wind_name': 'S_INFO_NAME',
         'close': 'S_DQ_CLOSE',
     },
+    'dtypes': config.CSV_DTYPE_MAPPING['A_IDX_PRICE'],
 }
 
 CN_BOND_YIELD_SCHEMA = {
@@ -27,6 +28,7 @@ CN_BOND_YIELD_SCHEMA = {
         'curve_term': '交易期限',
         'ytm': '到期收益率',
     },
+    'dtypes': config.CSV_DTYPE_MAPPING['CN_BOND_YIELD'],
 }
 
 INDEX_VALUATION_SCHEMA = {
@@ -39,6 +41,7 @@ INDEX_VALUATION_SCHEMA = {
         'turnover': '日换手率',
         'pe_ttm': '市盈率',
     },
+    'dtypes': config.CSV_DTYPE_MAPPING['A_IDX_VAL'],
 }
 
 ECONOMIC_DATA_SCHEMA = {
@@ -52,6 +55,7 @@ ECONOMIC_DATA_SCHEMA = {
         'indicator_freq': '指标频率',
         'indicator_value': '指标数值',
     },
+    'dtypes': config.CSV_DTYPE_MAPPING['EDB'],
 }
 
 SHIBOR_PRICES_SCHEMA = {
@@ -63,6 +67,7 @@ SHIBOR_PRICES_SCHEMA = {
         'rate': '利率',
         'term': '期限',
     },
+    'dtypes': config.CSV_DTYPE_MAPPING['SHIBOR_PRICES'],
 }
 
 
@@ -104,16 +109,18 @@ def read_csv_data(table_name: str) -> pd.DataFrame:
         return pd.DataFrame()
 
     try:
+        schema = DATASET_SCHEMAS.get(table_name)
+        dtypes = schema['dtypes'] if schema and 'dtypes' in schema else config.CSV_DTYPE_MAPPING[table_name]
         # Read CSV with specified data types
-        df = pd.read_csv(csv_path, dtype=config.CSV_DTYPE_MAPPING[table_name])
+        df = pd.read_csv(csv_path, dtype=dtypes)
 
         # Verify all required columns are present
-        missing_cols = set(config.CSV_DTYPE_MAPPING[table_name].keys()) - set(df.columns)
+        missing_cols = set(dtypes.keys()) - set(df.columns)
         if missing_cols:
             raise ValueError(f'Missing columns in {table_name} CSV file: {missing_cols}')
 
         # Verify data types and handle any conversion errors
-        for col, dtype in config.CSV_DTYPE_MAPPING[table_name].items():
+        for col, dtype in dtypes.items():
             try:
                 if dtype is float:
                     # Convert to numeric, coerce errors to NaN
