@@ -49,7 +49,7 @@
   - [x] Remove or simplify the separate `generate_signal` and `draw_bar_line_chart_with_highlighted_predefined_signal` paths if they become redundant after unification.
 
 - [ ] Consolidate dataset schema definitions
-  - [ ] Review `CANONICAL_COL_MAPPINGS`, `CSV_DTYPE_MAPPING`, `WIND_COLS`, and `DATA_COL_PARAM` for overlapping responsibilities.
+  - [x] Review `CANONICAL_COL_MAPPINGS`, `CSV_DTYPE_MAPPING`, `WIND_COLS`, and `DATA_COL_PARAM` for overlapping responsibilities.
   - [ ] Define a single source of truth per dataset for:
     - canonical column names,
     - CSV column dtypes,

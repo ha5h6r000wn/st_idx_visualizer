@@ -36,6 +36,8 @@ The design goal is to make the style and strategy-index visualization paths bori
     - centralizes the date-column selection logic for `CSVDataSource.fetch_table` via `DATASET_SCHEMAS`,
     - and attaches the per-table dtype mappings (`dtypes`) to each schema while still sourcing them from `config.CSV_DTYPE_MAPPING` for compatibility.
   - `read_csv_data` now prefers the `dtypes` declared on each schema (when present) and falls back to `config.CSV_DTYPE_MAPPING[table_name]` for any tables without an explicit schema.
+  - `WIND_COLS` in `config.config` is retained as a legacy/index-DB helper for index-price column aliases; it mirrors the raw CSV column names already captured by `INDEX_PRICE_SCHEMA` and is not treated as a separate schema.
+  - `DATA_COL_PARAM` in `config/style_config.py` continues to describe per-chart column roles (e.g., which CSV columns to use as X/Y/legend for EDB and A_IDX_VAL). These objects are consumers of the canonical CSV schemas rather than an alternative schema definition.
 - CSV-only path for the app:
   - Keep `CSVDataSource` as the only data-access path used by `visualization/*`.
   - Ensure `visualization/*` does not import `data_preparation/data_access` or use SQLAlchemy sessions.

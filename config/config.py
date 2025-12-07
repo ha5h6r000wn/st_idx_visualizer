@@ -29,6 +29,12 @@ WIND_COLS = {
     'sec_name': 'S_INFO_NAME',
     'close': 'S_DQ_CLOSE',
 }
+# NOTE:
+# `WIND_COLS` exists for legacy index/DB tooling and expresses the same raw
+# CSV column names as the canonical index-price schema. The CSV-backed
+# Streamlit path should treat `data_preparation.data_fetcher.INDEX_PRICE_SCHEMA`
+# (and related dataset schemas) as the single source of truth for column
+# names and dtypes.
 ST_CACHE_TTL = 6 * 60 * 60
 START_DT = '20200101'
 WIND_DT_FORMAT = r'%Y%m%d'
