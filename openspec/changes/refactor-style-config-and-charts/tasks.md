@@ -63,8 +63,8 @@
 
 - [ ] Validation
   - [ ] Add minimal tests or scripts that:
-    - [x] exercise data-prep functions for key style components with fixture CSVs under `data/` (starting with value-vs-growth and Shibor),
-    - [ ] extend coverage to remaining style components (index turnover, term spread, ERP/ERP_2, credit expansion, style focus, housing investment),
+    - [x] exercise data-prep functions for key style components with fixture CSVs under `data/` (starting with value-vs-growth, Shibor, index turnover, and term spread),
+    - [ ] extend coverage to remaining style components (ERP/ERP_2, credit expansion, style focus, housing investment),
     - [ ] and assert key invariants (e.g., presence of canonical columns, monotonic date indices).
   - [ ] Manually run `streamlit run app.py` and verify:
     - [ ] all charts render without errors,
