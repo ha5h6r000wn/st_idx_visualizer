@@ -6,7 +6,7 @@ import pandas as pd
 from config import config, param_cls, style_config
 
 
-# Canonical schema definitions (incrementally introduced; index prices first)
+# Canonical schema definitions (incrementally introduced per dataset)
 INDEX_PRICE_SCHEMA = {
     'table_name': 'A_IDX_PRICE',
     'date_col': 'TRADE_DT',
@@ -18,23 +18,33 @@ INDEX_PRICE_SCHEMA = {
     },
 }
 
-
-CANONICAL_COL_MAPPINGS = {
-    'A_IDX_PRICE': INDEX_PRICE_SCHEMA['canonical_cols'],
-    'CN_BOND_YIELD': {
+CN_BOND_YIELD_SCHEMA = {
+    'table_name': 'CN_BOND_YIELD',
+    'date_col': '交易日期',
+    'canonical_cols': {
         'trade_date': '交易日期',
         'curve_name': '曲线名称',
         'curve_term': '交易期限',
         'ytm': '到期收益率',
     },
-    'A_IDX_VAL': {
+}
+
+INDEX_VALUATION_SCHEMA = {
+    'table_name': 'A_IDX_VAL',
+    'date_col': '交易日期',
+    'canonical_cols': {
         'trade_date': '交易日期',
         'wind_code': '证券代码',
         'wind_name': '证券简称',
         'turnover': '日换手率',
         'pe_ttm': '市盈率',
     },
-    'EDB': {
+}
+
+ECONOMIC_DATA_SCHEMA = {
+    'table_name': 'EDB',
+    'date_col': '交易日期',
+    'canonical_cols': {
         'trade_date': '交易日期',
         'indicator_code': '指标代码',
         'indicator_name': '指标名称',
@@ -42,12 +52,38 @@ CANONICAL_COL_MAPPINGS = {
         'indicator_freq': '指标频率',
         'indicator_value': '指标数值',
     },
-    'SHIBOR_PRICES': {
+}
+
+SHIBOR_PRICES_SCHEMA = {
+    'table_name': 'SHIBOR_PRICES',
+    'date_col': '交易日期',
+    'canonical_cols': {
         'trade_date': '交易日期',
         'wind_code': '证券代码',
         'rate': '利率',
         'term': '期限',
     },
+}
+
+
+CANONICAL_COL_MAPPINGS = {
+    INDEX_PRICE_SCHEMA['table_name']: INDEX_PRICE_SCHEMA['canonical_cols'],
+    CN_BOND_YIELD_SCHEMA['table_name']: CN_BOND_YIELD_SCHEMA['canonical_cols'],
+    INDEX_VALUATION_SCHEMA['table_name']: INDEX_VALUATION_SCHEMA['canonical_cols'],
+    ECONOMIC_DATA_SCHEMA['table_name']: ECONOMIC_DATA_SCHEMA['canonical_cols'],
+    SHIBOR_PRICES_SCHEMA['table_name']: SHIBOR_PRICES_SCHEMA['canonical_cols'],
+}
+
+
+DATASET_SCHEMAS = {
+    schema['table_name']: schema
+    for schema in (
+        INDEX_PRICE_SCHEMA,
+        CN_BOND_YIELD_SCHEMA,
+        INDEX_VALUATION_SCHEMA,
+        ECONOMIC_DATA_SCHEMA,
+        SHIBOR_PRICES_SCHEMA,
+    )
 }
 
 
@@ -119,8 +155,9 @@ class CSVDataSource:
         if df.empty:
             return df
 
-        if table_name == INDEX_PRICE_SCHEMA['table_name']:
-            date_col = INDEX_PRICE_SCHEMA['date_col']
+        schema = DATASET_SCHEMAS.get(table_name)
+        if schema is not None:
+            date_col = schema['date_col']
         else:
             date_col = '交易日期'
         start_date = style_config.DATA_CONFIG[getattr(param_cls.WindPortal, table_name)]['DATA_START_DT']

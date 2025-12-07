@@ -30,6 +30,11 @@ The design goal is to make the style and strategy-index visualization paths bori
     - `read_csv_data` (for dtypes),
     - `add_canonical_columns` (for aliases),
     - and any data-prep functions that rely on specific columns.
+  - As of this change, `data_preparation/data_fetcher.py` defines canonical schema objects for all CSV-backed tables:
+    - `INDEX_PRICE_SCHEMA`, `CN_BOND_YIELD_SCHEMA`, `INDEX_VALUATION_SCHEMA`, `ECONOMIC_DATA_SCHEMA`, `SHIBOR_PRICES_SCHEMA`,
+    - exposes their canonical column mappings via `CANONICAL_COL_MAPPINGS`,
+    - and centralizes the date-column selection logic for `CSVDataSource.fetch_table` via `DATASET_SCHEMAS`.
+  - Dtype information remains in `config.CSV_DTYPE_MAPPING` for now and will be folded into these schema objects in a later, explicit step.
 - CSV-only path for the app:
   - Keep `CSVDataSource` as the only data-access path used by `visualization/*`.
   - Ensure `visualization/*` does not import `data_preparation/data_access` or use SQLAlchemy sessions.
