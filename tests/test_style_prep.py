@@ -11,11 +11,8 @@ if str(PROJECT_ROOT) not in sys.path:
 
 from config import config, param_cls, style_config  # noqa: E402
 from data_preparation.data_fetcher import fetch_data_from_local, fetch_index_data_from_local  # noqa: E402
-from data_preparation.data_processor import (  # noqa: E402
-    append_rolling_mean_column,
-    apply_signal_from_conditions,
-    reshape_long_df_into_wide_form,
-)
+from data_preparation.data_processor import append_rolling_mean_column, apply_signal_from_conditions, reshape_long_df_into_wide_form  # noqa: E402
+from visualization import data_visualizer  # noqa: E402
 from visualization.style import (  # noqa: E402
     prepare_big_small_momentum_data,
     prepare_housing_invest_data,
@@ -53,6 +50,155 @@ def _load_style_index_data() -> tuple[pd.DataFrame, pd.DataFrame]:
     )
 
     return raw_wide_idx_df, idx_name_df
+
+
+@pytest.mark.style_prep
+def test_prepare_bar_line_with_signal_data_respects_existing_signal_column():
+    """prepare_bar_line_with_signal_data SHOULD NOT overwrite an existing signal column."""
+    index = pd.date_range(start='2024-01-01', periods=5, freq='D').strftime('%Y%m%d')
+    df = pd.DataFrame(
+        {
+            'TRADE_DT': index,
+            'value': [1, 2, 3, 4, 5],
+            'upper': [10, 10, 10, 10, 10],
+            'lower': [0, 0, 0, 0, 0],
+            'signal': ['A', 'B', 'C', 'D', 'E'],
+        }
+    ).set_index('TRADE_DT')
+
+    bar_param = param_cls.SignalBarParam(
+        axis_names={'X': 'TRADE_DT', 'Y': 'value', 'LEGEND': 'signal'},
+        title='test',
+        true_signal='UP',
+        false_signal='DOWN',
+        no_signal=None,
+    )
+    line_param = param_cls.LineParam(
+        axis_names={'X': 'TRADE_DT', 'Y': 'upper', 'LEGEND': 'line_legend'},
+        compared_cols=['upper', 'lower'],
+        y_axis_format=config.CHART_NUM_FORMAT['float'],
+    )
+    chart_config = param_cls.BarLineWithSignalParam(
+        dt_slider_param=None,
+        bar_param=bar_param,
+        line_param=line_param,
+        isLineDrawn=True,
+        isConvertedToPct=False,
+        isSignalAssigned=False,
+    )
+
+    result = data_visualizer.prepare_bar_line_with_signal_data(dt_indexed_df=df, config=chart_config)
+
+    assert 'signal' in result.columns
+    assert result['signal'].tolist() == ['A', 'B', 'C', 'D', 'E']
+
+
+@pytest.mark.style_prep
+def test_prepare_bar_line_with_signal_data_computes_signal_when_missing():
+    """prepare_bar_line_with_signal_data SHOULD compute signal when not present."""
+    index = pd.date_range(start='2024-01-01', periods=3, freq='D').strftime('%Y%m%d')
+    df = pd.DataFrame(
+        {
+            'TRADE_DT': index,
+            'value': [1.0, 2.0, 3.0],
+            'upper': [1.5, 1.5, 1.5],
+            'lower': [0.5, 0.5, 0.5],
+        }
+    ).set_index('TRADE_DT')
+
+    bar_param = param_cls.SignalBarParam(
+        axis_names={'X': 'TRADE_DT', 'Y': 'value', 'LEGEND': 'signal'},
+        title='test',
+        true_signal='UP',
+        false_signal='DOWN',
+        no_signal='FLAT',
+    )
+    line_param = param_cls.LineParam(
+        axis_names={'X': 'TRADE_DT', 'Y': 'upper', 'LEGEND': 'line_legend'},
+        compared_cols=['upper', 'lower'],
+        y_axis_format=config.CHART_NUM_FORMAT['float'],
+    )
+    chart_config = param_cls.BarLineWithSignalParam(
+        dt_slider_param=None,
+        bar_param=bar_param,
+        line_param=line_param,
+        isLineDrawn=True,
+        isConvertedToPct=False,
+        isSignalAssigned=False,
+    )
+
+    result = data_visualizer.prepare_bar_line_with_signal_data(dt_indexed_df=df, config=chart_config)
+
+    assert 'signal' in result.columns
+    signal_values = set(result['signal'].dropna().unique().tolist())
+    expected = {'UP', 'DOWN', 'FLAT'}
+    assert signal_values.issubset(expected)
+
+
+@pytest.mark.style_prep
+def test_get_custom_dt_with_slider_and_prepare_bar_line_with_signal_data_respects_window():
+    """Slider default window SHOULD match DtSliderParam offsets and be used by prepare_bar_line_with_signal_data."""
+    index = pd.date_range(start='2024-01-01', periods=10, freq='D').strftime('%Y%m%d')
+    df = pd.DataFrame(
+        {
+            'TRADE_DT': index,
+            'value': list(range(10)),
+            'upper': [10] * 10,
+            'lower': [0] * 10,
+        }
+    ).set_index('TRADE_DT')
+
+    # Sanity: use the same base slider semantics as production: offsets from the end.
+    dt_slider_param = param_cls.DtSliderParam(
+        start_dt='20240101',
+        default_start_offset=5,
+        default_end_offset=1,
+        key='TEST_SLIDER',
+    )
+
+    bar_param = param_cls.SignalBarParam(
+        axis_names={'X': 'TRADE_DT', 'Y': 'value', 'LEGEND': 'signal'},
+        title='test',
+        true_signal='UP',
+        false_signal='DOWN',
+        no_signal='FLAT',
+    )
+    line_param = param_cls.LineParam(
+        axis_names={'X': 'TRADE_DT', 'Y': 'upper', 'LEGEND': 'line_legend'},
+        compared_cols=['upper', 'lower'],
+        y_axis_format=config.CHART_NUM_FORMAT['float'],
+    )
+    chart_config = param_cls.BarLineWithSignalParam(
+        dt_slider_param=dt_slider_param,
+        bar_param=bar_param,
+        line_param=line_param,
+        isLineDrawn=True,
+        isConvertedToPct=False,
+        isSignalAssigned=False,
+    )
+
+    # Monkeypatch st.select_slider so that get_custom_dt_with_slider returns a deterministic window.
+    trade_dt = df.index
+    selected_dt = [dt for dt in trade_dt if dt >= dt_slider_param.start_dt]
+    expected_window = (
+        selected_dt[-dt_slider_param.default_start_offset],
+        selected_dt[-dt_slider_param.default_end_offset],
+    )
+
+    def _fake_select_slider(*args, **kwargs):
+        return expected_window
+
+    original_select_slider = data_visualizer.st.select_slider
+    try:
+        data_visualizer.st.select_slider = _fake_select_slider  # type: ignore[assignment]
+        result = data_visualizer.prepare_bar_line_with_signal_data(dt_indexed_df=df, config=chart_config)
+    finally:
+        data_visualizer.st.select_slider = original_select_slider  # type: ignore[assignment]
+
+    # After prepare_bar_line_with_signal_data, result should have been sliced to the expected window.
+    assert not result.empty
+    assert result['TRADE_DT'].iloc[0] == expected_window[0]
+    assert result['TRADE_DT'].iloc[-1] == expected_window[1]
 
 
 @pytest.mark.style_prep
