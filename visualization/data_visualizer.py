@@ -461,6 +461,31 @@ def build_bar_line_with_signal_param_for_style_chart(
     )
 
 
+def draw_style_bar_line_chart_with_highlighted_signal(
+    dt_indexed_df,
+    style_chart_config: param_cls.StyleBarLineChartConfig,
+    dt_slider_param: param_cls.DtSliderParam | None,
+    true_signal: str,
+    false_signal: str,
+    no_signal: str | None,
+    signal_order: list[str] | None,
+    compared_cols: list[str] | None = None,
+    is_converted_to_pct: bool = False,
+):
+    """Draw bar+line+signal chart for style blocks using a slim chart config."""
+    config = build_bar_line_with_signal_param_for_style_chart(
+        style_config=style_chart_config,
+        dt_slider_param=dt_slider_param,
+        true_signal=true_signal,
+        false_signal=false_signal,
+        no_signal=no_signal,
+        signal_order=signal_order,
+        compared_cols=compared_cols,
+        is_converted_to_pct=is_converted_to_pct,
+    )
+    draw_bar_line_chart_with_highlighted_signal(dt_indexed_df=dt_indexed_df, config=config)
+
+
 def draw_bar_line_chart_with_highlighted_signal(dt_indexed_df, config: param_cls.BarLineWithSignalParam):
     selected_df = prepare_bar_line_with_signal_data(dt_indexed_df, config)
     _render_bar_line_chart_with_highlighted_signal(selected_df, config, draw_line=config.isLineDrawn)

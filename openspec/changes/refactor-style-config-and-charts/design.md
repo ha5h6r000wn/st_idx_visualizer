@@ -116,6 +116,13 @@ The design goal is to make the style and strategy-index visualization paths bori
 - Extract a thin, shared renderer for bar+line+signal charts:
   - `draw_bar_line_chart_with_highlighted_signal` and `draw_bar_line_chart_with_highlighted_predefined_signal` both now delegate to a common `_render_bar_line_chart_with_highlighted_signal` helper that accepts an already-sliced/prepared frame and a `BarLineWithSignalParam`,
   - the renderer only builds the Altair bar/line layers and calls `st.altair_chart`, leaving date-window selection and signal computation to the caller.
+- Introduce a style-specific draw helper that bridges slim configs to the existing helpers:
+  - `build_bar_line_with_signal_param_for_style_chart` constructs a `BarLineWithSignalParam` from a `StyleBarLineChartConfig`, slider params, signal labels, and optional `compared_cols`,
+  - `draw_style_bar_line_chart_with_highlighted_signal` uses this builder and then calls `draw_bar_line_chart_with_highlighted_signal`, ensuring style charts can migrate to slim configs without changing behavior.
+- As the first adopter, the ERP style chart:
+  - defines `INDEX_ERP_STYLE_CHART_CONFIG` using `StyleBarLineChartConfig`,
+  - uses `draw_style_bar_line_chart_with_highlighted_signal` in `visualization/style.generate_style_charts`,
+  - and is covered by additional tests that validate the end-to-end pipeline (data-prep → signal assignment → helper wiring) remains unchanged for the existing CSV snapshot.
 - In a follow-up step, simplify `prepare_bar_line_with_signal_data` and the related helpers so that they:
   - no longer mutate config objects,
   - no longer depend on `DtSliderParam` for `custom_dt`,

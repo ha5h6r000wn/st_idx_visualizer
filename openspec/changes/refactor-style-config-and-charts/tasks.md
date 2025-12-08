@@ -20,7 +20,7 @@
     - unused or redundant fields and models,
     - boolean flags (`isLineDrawn`, `isConvertedToPct`, `isSignalAssigned`) that drive complex branching in the visualizer.
   - [ ] Introduce a flatter chart configuration for bar+line+signal charts that:
-    - [ ] keeps only axis names/types, formats, stroke dash, and color (initial scaffolding via `StyleBarLineChartConfig` complete),
+    - [ ] keeps only axis names/types, formats, stroke dash, and color (initial scaffolding via `StyleBarLineChartConfig` complete; ERP chart is wired through this path),
     - [ ] decouples slider configuration from chart configuration,
     - [ ] and maintains Pydantic usage only where it adds validation value.
   - [ ] Update `config/style_config.py` to use the flatter configuration for existing style charts without changing behavior.
@@ -67,5 +67,5 @@
     - [x] assert key invariants (e.g., presence of canonical columns, monotonic date indices, and signal values within the configured enum sets),
     - [x] cover `prepare_bar_line_with_signal_data` and `DtSliderParam`-driven window selection to ensure chart helpers respect precomputed signals and slider defaults.
   - [ ] Manually run `streamlit run app.py` and verify:
-    - [ ] all charts render without errors,
-    - [ ] chart values and signals visually match pre-change behavior for a fixed snapshot of CSV data.
+    - [x] all charts render without errors,
+    - [x] chart values and signals visually match pre-change behavior for a fixed snapshot of CSV data.

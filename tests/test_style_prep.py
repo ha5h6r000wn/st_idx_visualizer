@@ -111,6 +111,66 @@ def test_index_erp_style_chart_builds_equivalent_bar_line_config():
 
 
 @pytest.mark.style_prep
+def test_index_erp_style_draw_helper_smoke():
+    """Smoke test for the style-specific ERP draw helper."""
+    latest_date = "99991231"
+
+    long_raw_cn_bond_yield_df = fetch_data_from_local(latest_date=latest_date, table_name="CN_BOND_YIELD")
+    _, _, wide_raw_cn_bond_yield_df = prepare_term_spread_data(long_raw_cn_bond_yield_df=long_raw_cn_bond_yield_df)
+
+    long_a_idx_val_df = fetch_data_from_local(latest_date=latest_date, table_name="A_IDX_VAL")
+    name_col = style_config.DATA_COL_PARAM[param_cls.WindPortal.A_IDX_VAL].name_col
+    long_wind_all_a_idx_val_df = long_a_idx_val_df.query(f"{name_col} == '万得全A'")
+
+    wide_erp_df, erp_conditions = prepare_index_erp_data(
+        long_wind_all_a_idx_val_df=long_wind_all_a_idx_val_df,
+        wide_raw_cn_bond_yield_df=wide_raw_cn_bond_yield_df,
+    )
+
+    erp_choices = [
+        style_config.INDEX_ERP_CHART_PARAM.bar_param.true_signal,
+        style_config.INDEX_ERP_CHART_PARAM.bar_param.false_signal,
+    ]
+    wide_erp_df = apply_signal_from_conditions(
+        df=wide_erp_df,
+        signal_col=style_config.INDEX_ERP_CONFIG["SIGNAL_COL"],
+        conditions=erp_conditions,
+        choices=erp_choices,
+        default=style_config.INDEX_ERP_CHART_PARAM.bar_param.no_signal,
+    )
+
+    idx = wide_erp_df.index
+    custom_dt = (idx[0], idx[-1])
+
+    def _fake_select_slider(*args, **kwargs):
+        return custom_dt
+
+    def _fake_altair_chart(*args, **kwargs):
+        return None
+
+    original_select_slider = data_visualizer.st.select_slider
+    original_altair_chart = data_visualizer.st.altair_chart
+    try:
+        data_visualizer.st.select_slider = _fake_select_slider  # type: ignore[assignment]
+        data_visualizer.st.altair_chart = _fake_altair_chart  # type: ignore[assignment]
+
+        data_visualizer.draw_style_bar_line_chart_with_highlighted_signal(
+            dt_indexed_df=wide_erp_df,
+            style_chart_config=style_config.INDEX_ERP_STYLE_CHART_CONFIG,
+            dt_slider_param=style_config.INDEX_ERP_CHART_PARAM.dt_slider_param,
+            true_signal=style_config.INDEX_ERP_CONFIG["TRUE_SIGNAL"],
+            false_signal=style_config.INDEX_ERP_CONFIG["FALSE_SIGNAL"],
+            no_signal=style_config.INDEX_ERP_CONFIG["NO_SIGNAL"],
+            signal_order=style_config.INDEX_ERP_CHART_PARAM.bar_param.signal_order,
+            compared_cols=style_config.INDEX_ERP_CHART_PARAM.line_param.compared_cols,
+            is_converted_to_pct=style_config.INDEX_ERP_CHART_PARAM.isConvertedToPct,
+        )
+    finally:
+        data_visualizer.st.select_slider = original_select_slider  # type: ignore[assignment]
+        data_visualizer.st.altair_chart = original_altair_chart  # type: ignore[assignment]
+
+
+@pytest.mark.style_prep
 def test_prepare_bar_line_with_signal_data_respects_existing_signal_column():
     """prepare_bar_line_with_signal_data SHOULD NOT overwrite an existing signal column."""
     index = pd.date_range(start='2024-01-01', periods=5, freq='D').strftime('%Y%m%d')
