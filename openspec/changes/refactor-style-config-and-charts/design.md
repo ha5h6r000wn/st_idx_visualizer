@@ -110,6 +110,10 @@ The design goal is to make the style and strategy-index visualization paths bori
   - bar+line+signal helpers still rely on behavior flags (`isLineDrawn`, `isConvertedToPct`, `isSignalAssigned`),
   - and signal computation is split between the new helpers, `np.select` blocks, and `append_signal_column`.
 - For strategy-index charts, data-prep is still inline inside `visualization/stg_idx.py` (acceptable for now, but not yet using the same helper pattern).
+  - For strategy-index charts, the main visualization entry point is still `visualization/stg_idx.generate_stg_idx_charts`, but the data-prep responsibilities have been split into small helpers that mirror the style-page pattern:
+    - `prepare_stg_idx_grouped_return_df` prepares the grouped-return frame for the bar chart given a pre-selected custom date window,
+    - `prepare_stg_idx_nav_wide_df` prepares NAV wide frames for strategy and benchmark indices from the long price series,
+    - and `prepare_stg_idx_excess_corr_wide_df` prepares the excess-return correlation matrix for the heatmap, given a custom start date and benchmark name.
 
 **Design decisions**
 
@@ -212,7 +216,7 @@ The current change intentionally stops short of fully redesigning chart configur
     - `fetch_data_from_local` returns frames whose columns and dtypes respect the corresponding entries in `DATASET_SCHEMAS`,
     - the per-table date column exists and the returned frames are sorted monotonically by that column,
     - and canonical English aliases from `CANONICAL_COL_MAPPINGS` are present alongside the underlying Chinese columns.
-  - `scripts/run_quick_checks.py` provides a single entry point for running the fast “style prep” test subset via `python scripts/run_quick_checks.py`, which runs `pytest -m style_prep tests`.
+  - `scripts/run_quick_checks.py` provides a single entry point for running the fast “prep” test subset via `python scripts/run_quick_checks.py`, which runs `pytest -m "style_prep or stg_idx_prep or schema" tests`.
 
 **Planned extensions**
 
@@ -221,6 +225,7 @@ The current change intentionally stops short of fully redesigning chart configur
   - term spread (`prepare_term_spread_data`),
   - ERP / ERP_2 (`prepare_index_erp_data`),
   - credit expansion, style focus, and housing investment.
+  - strategy-index pages (`prepare_stg_idx_grouped_return_df`, `prepare_stg_idx_nav_wide_df`, `prepare_stg_idx_excess_corr_wide_df`) via invariants that assert non-empty frames, monotonic date indices, and well-formed correlation matrices.
 - For each helper, assert a minimal set of invariants:
   - monotonic date index,
   - presence of expected canonical columns and signal columns,

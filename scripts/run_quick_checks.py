@@ -7,7 +7,7 @@ import sys
 
 def main() -> int:
     project_root = pathlib.Path(__file__).resolve().parents[1]
-    cmd = [sys.executable, "-m", "pytest", "-m", "style_prep", "-vv", "tests"]
+    cmd = [sys.executable, "-m", "pytest", "-m", "style_prep or stg_idx_prep or schema", "-vv", "tests"]
     return subprocess.call(cmd, cwd=project_root)
 
 

@@ -26,6 +26,65 @@ china_now = datetime.now(china_tz)
 formatted_latest_day = china_now.strftime(config.WIND_DT_FORMAT)
 
 
+def prepare_stg_idx_grouped_return_df(
+    raw_long_df,
+    latest_dt: str,
+    trade_dt: list[str],
+    custom_dt: tuple[str, str],
+    data_col_config: param_cls.WindIdxColParam,
+):
+    """Prepare grouped return frame for strategy indices."""
+    return calculate_grouped_return(
+        raw_long_df,
+        latest_dt,
+        custom_dt,
+        trade_dt,
+        data_col_config,
+    )
+
+
+def prepare_stg_idx_nav_wide_df(
+    raw_long_df,
+    raw_name_df,
+    custom_dt: tuple[str, str],
+    data_col_config: param_cls.WindIdxColParam,
+):
+    """Prepare NAV wide frame for strategy and benchmark indices."""
+    raw_wide_df = reshape_long_df_into_wide_form(
+        raw_long_df,
+        data_col_config.dt_col,
+        data_col_config.name_col,
+        data_col_config.price_col,
+    )[raw_name_df[data_col_config.name_col].tolist()]
+    stg_idx_bench_close_wide_df = raw_wide_df.loc[custom_dt[0] : custom_dt[1]]
+    stg_idx_bench_nav_wide_df = convert_price_ts_into_nav_ts(stg_idx_bench_close_wide_df)
+    return stg_idx_bench_nav_wide_df
+
+
+def prepare_stg_idx_excess_corr_wide_df(
+    raw_long_df,
+    stg_idx_name_df,
+    trade_dt: list[str],
+    custom_dt: str,
+    data_col_config: param_cls.WindIdxColParam,
+    benchmark_name: str = '中证800',
+):
+    """Prepare excess-return correlation wide frame between strategy indices."""
+    raw_wide_df = reshape_long_df_into_wide_form(
+        raw_long_df,
+        data_col_config.dt_col,
+        data_col_config.name_col,
+        data_col_config.price_col,
+    )
+    ret_wide_df = raw_wide_df.pct_change().dropna()
+
+    excess_ret_wide_df = ret_wide_df.loc[custom_dt:, stg_idx_name_df.iloc[:, 0].tolist()].subtract(
+        ret_wide_df.loc[custom_dt:, benchmark_name], axis=0
+    )
+    corr_wide_df = excess_ret_wide_df.corr()
+    return corr_wide_df
+
+
 @msg_printer
 def generate_stg_idx_charts():
     # st.write(formatted_latest_day)
@@ -96,12 +155,12 @@ def generate_stg_idx_charts():
 
     stg_idx_grouped_ret_custom_dt = get_custom_dt_with_slider(trade_dt, stg_idx_grouped_ret_slider_config)
 
-    raw_grouped_ret_df = calculate_grouped_return(
-        raw_long_df,
-        formatted_latest_day,
-        stg_idx_grouped_ret_custom_dt,
-        trade_dt,
-        data_col_config,
+    raw_grouped_ret_df = prepare_stg_idx_grouped_return_df(
+        raw_long_df=raw_long_df,
+        latest_dt=formatted_latest_day,
+        trade_dt=trade_dt,
+        custom_dt=stg_idx_grouped_ret_custom_dt,
+        data_col_config=data_col_config,
     )
     # st.write(raw_long_df)
     # st.write(raw_grouped_ret_df)
@@ -112,27 +171,27 @@ def generate_stg_idx_charts():
 
     stg_idx_bench_nav_custom_dt = get_custom_dt_with_slider(trade_dt, stg_idx_bench_nav_slider_config)
 
-    raw_wide_df = reshape_long_df_into_wide_form(
-        raw_long_df,
-        data_col_config.dt_col,
-        data_col_config.name_col,
-        data_col_config.price_col,
-    )[raw_name_df[data_col_config.name_col].tolist()]
-    stg_idx_bench_close_wide_df = raw_wide_df.loc[stg_idx_bench_nav_custom_dt[0] : stg_idx_bench_nav_custom_dt[1]]
-    stg_idx_bench_nav_wide_df = convert_price_ts_into_nav_ts(stg_idx_bench_close_wide_df)
+    stg_idx_bench_nav_wide_df = prepare_stg_idx_nav_wide_df(
+        raw_long_df=raw_long_df,
+        raw_name_df=raw_name_df,
+        custom_dt=stg_idx_bench_nav_custom_dt,
+        data_col_config=data_col_config,
+    )
 
     draw_grouped_lines(wide_df=stg_idx_bench_nav_wide_df, config=line_config)
 
     # 3. 策略超额相关性热力图
 
-    ret_wide_df = raw_wide_df.pct_change().dropna()
-
     corr_custom_dt = get_custom_dt_with_select_slider(trade_dt, corr_slider_config)
 
-    excess_ret_wide_df = ret_wide_df.loc[corr_custom_dt:, stg_idx_name_df.iloc[:, 0].tolist()].subtract(
-        ret_wide_df.loc[corr_custom_dt:, '中证800'], axis=0
+    corr_wide_df = prepare_stg_idx_excess_corr_wide_df(
+        raw_long_df=raw_long_df,
+        stg_idx_name_df=stg_idx_name_df,
+        trade_dt=trade_dt,
+        custom_dt=corr_custom_dt,
+        data_col_config=data_col_config,
+        benchmark_name='中证800',
     )
-    corr_wide_df = excess_ret_wide_df.corr()
 
     draw_heatmap(corr_wide_df, heatmap_config)
     # st.write(corr_wide_df.rename_axis('策略指数'))

@@ -69,6 +69,10 @@
     - [x] assert key invariants (e.g., presence of canonical columns, monotonic date indices, and signal values within the configured enum sets),
     - [x] cover `prepare_bar_line_with_signal_data` and `DtSliderParam`-driven window selection to ensure chart helpers respect precomputed signals and slider defaults.
     - [x] validate that `fetch_data_from_local` respects the canonical dataset schemas for `CN_BOND_YIELD`, `A_IDX_VAL`, `EDB`, and `SHIBOR_PRICES` via `tests/test_data_fetcher_schema.py`.
+    - [x] add invariants for the strategy-index page via `tests/test_stg_idx_prep.py`, asserting:
+      - non-empty grouped-return frames that cover all configured strategy indices by name,
+      - NAV wide frames with monotonic date indices and non-empty series for each index,
+      - and symmetric excess-return correlation matrices with unit diagonal for the stg_idx heatmap.
   - [ ] Manually run `streamlit run app.py` and verify:
     - [x] all charts render without errors,
     - [x] chart values and signals visually match pre-change behavior for a fixed snapshot of CSV data.

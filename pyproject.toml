@@ -23,4 +23,6 @@ dependencies = [
 [tool.pytest.ini_options]
 markers = [
     "style_prep: fast checks for style data-prep helpers",
+    "schema: schema-level invariants for CSV-backed datasets",
+    "stg_idx_prep: fast checks for strategy-index data-prep helpers",
 ]
