@@ -319,6 +319,19 @@ INDEX_TURNOVER_CHART_PARAM = param_cls.BarLineWithSignalParam(
     isSignalAssigned=True,
 )
 
+INDEX_TURNOVER_STYLE_CHART_CONFIG = param_cls.StyleBarLineChartConfig(
+    bar_axis_names=INDEX_TURNOVER_CHART_PARAM.bar_param.axis_names,
+    bar_axis_types=INDEX_TURNOVER_CHART_PARAM.bar_param.axis_types,
+    line_axis_names=INDEX_TURNOVER_CHART_PARAM.line_param.axis_names,
+    line_axis_types=INDEX_TURNOVER_CHART_PARAM.line_param.axis_types,
+    title=INDEX_TURNOVER_CHART_PARAM.bar_param.title,
+    bar_y_axis_format=INDEX_TURNOVER_CHART_PARAM.bar_param.y_axis_format,
+    line_y_axis_format=INDEX_TURNOVER_CHART_PARAM.line_param.y_axis_format,
+    bar_color=None,
+    line_color=INDEX_TURNOVER_CHART_PARAM.line_param.color,
+    line_stroke_dash=INDEX_TURNOVER_CHART_PARAM.line_param.stroke_dash,
+)
+
 # NOTE ERP股债性价比
 INDEX_ERP_CONFIG = {
     'WIND_TABLE': param_cls.WindPortal.A_IDX_VAL,

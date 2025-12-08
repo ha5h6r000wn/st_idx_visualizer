@@ -629,9 +629,16 @@ def generate_style_charts():
 
         wide_wind_all_a_turnover_df = prepare_index_turnover_data(long_wind_all_a_idx_val_df)
 
-        draw_bar_line_chart_with_highlighted_signal(
+        draw_style_bar_line_chart_with_highlighted_signal(
             dt_indexed_df=wide_wind_all_a_turnover_df,
-            config=style_config.INDEX_TURNOVER_CHART_PARAM,
+            style_chart_config=style_config.INDEX_TURNOVER_STYLE_CHART_CONFIG,
+            dt_slider_param=style_config.INDEX_TURNOVER_CHART_PARAM.dt_slider_param,
+            true_signal=style_config.INDEX_TURNOVER_CONFIG['TRUE_SIGNAL'],
+            false_signal=style_config.INDEX_TURNOVER_CONFIG['FALSE_SIGNAL'],
+            no_signal=None,
+            signal_order=style_config.INDEX_TURNOVER_CHART_PARAM.bar_param.signal_order,
+            compared_cols=style_config.INDEX_TURNOVER_CHART_PARAM.line_param.compared_cols,
+            is_converted_to_pct=style_config.INDEX_TURNOVER_CHART_PARAM.isConvertedToPct,
         )
 
         # NOTE 期限利差
