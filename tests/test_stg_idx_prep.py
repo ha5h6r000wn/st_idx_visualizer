@@ -13,7 +13,7 @@ if str(PROJECT_ROOT) not in sys.path:
 
 from config import config, param_cls  # noqa: E402
 from data_preparation.data_analyzer import calculate_grouped_return  # noqa: E402
-from data_preparation.data_fetcher import fetch_index_data_from_local  # noqa: E402
+from data_preparation.data_fetcher import INDEX_PRICE_SCHEMA, fetch_index_data_from_local  # noqa: E402
 from data_preparation.data_processor import (  # noqa: E402
     convert_price_ts_into_nav_ts,
     reshape_long_df_into_wide_form,
@@ -30,6 +30,24 @@ def _load_stg_idx_raw_prices(latest_date: str) -> tuple[pd.DataFrame, param_cls.
 
     raw_long_df = fetch_index_data_from_local(latest_date=latest_date, _config=wind_config)
     return raw_long_df, data_col_config
+
+
+@pytest.mark.schema
+@pytest.mark.stg_idx_prep
+def test_stg_idx_loader_columns_from_canonical_index_price_schema() -> None:
+    """Strategy-index loader MUST use columns that come from the canonical A_IDX_PRICE schema."""
+    canonical_cols = INDEX_PRICE_SCHEMA["canonical_cols"]
+    idx_col_param = param_cls.WindIdxColParam()
+
+    used_cols = {
+        idx_col_param.dt_col,
+        idx_col_param.code_col,
+        idx_col_param.name_col,
+        idx_col_param.price_col,
+    }
+    allowed_raw_cols = set(canonical_cols.values())
+
+    assert used_cols.issubset(allowed_raw_cols)
 
 
 @pytest.mark.stg_idx_prep

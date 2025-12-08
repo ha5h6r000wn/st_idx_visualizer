@@ -52,13 +52,14 @@
 
 - [ ] Consolidate dataset schema definitions
   - [x] Review `CANONICAL_COL_MAPPINGS`, `CSV_DTYPE_MAPPING`, `WIND_COLS`, and `DATA_COL_PARAM` for overlapping responsibilities.
-  - [ ] Define a single source of truth per dataset for:
+  - [x] Define a single source of truth per dataset for:
     - canonical column names,
     - CSV column dtypes,
     - and any required aliases for charts.
   - [ ] Update consumers in `data_preparation` and `visualization` to use these canonical definitions, keeping all existing Chinese labels.
     - [x] Style-path consumers for EDB (via `DATA_COL_PARAM[param_cls.WindPortal.EDB]`) now reference the canonical CSV column names directly instead of SQL parser aliases.
     - [x] Style-path consumers for CN_BOND_YIELD (via `YIELD_CURVE_COL_PARAM`) are wired to the canonical CSV column names while preserving Chinese labels used in charts.
+    - [x] Index-price consumers for style and strategy-index pages read `A_IDX_PRICE` via `fetch_index_data_from_local` using `INDEX_PRICE_SCHEMA` plus `param_cls.WindIdxColParam`, with tests locking the date/code/name/close column mapping to the canonical schema.
 
 - [x] Remove dead or commented-out chart code
   - [x] Identify large commented blocks in `config/style_config.py` and `visualization/style.py` that are no longer relevant.

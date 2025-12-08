@@ -9,12 +9,15 @@ PROJECT_ROOT = pathlib.Path(__file__).resolve().parents[1]
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-from config import config  # noqa: E402
+from config import config, param_cls  # noqa: E402
 from data_preparation.data_fetcher import (  # noqa: E402
     CANONICAL_COL_MAPPINGS,
     DATASET_SCHEMAS,
+    INDEX_PRICE_SCHEMA,
     fetch_data_from_local,
+    fetch_index_data_from_local,
 )
+from config import style_config  # noqa: E402
 
 
 @pytest.mark.schema
@@ -66,3 +69,69 @@ def test_fetch_data_from_local_respects_dataset_schema(table_name: str) -> None:
         elif expected_dtype is str:
             assert pd.api.types.is_string_dtype(series), f"{table_name}.{col} expected string dtype"
 
+
+@pytest.mark.schema
+def test_wind_idx_col_param_matches_index_price_schema() -> None:
+    """WindIdxColParam MUST align with the canonical INDEX_PRICE schema."""
+    schema = INDEX_PRICE_SCHEMA
+    canonical_cols = schema["canonical_cols"]
+
+    idx_cols = param_cls.WindIdxColParam()
+
+    # Date column MUST be consistent between the schema and the column param.
+    assert schema["date_col"] == idx_cols.dt_col
+    assert canonical_cols["trade_date"] == idx_cols.dt_col
+
+    # Code/name/price columns MUST match the canonical mapping.
+    assert canonical_cols["wind_code"] == idx_cols.code_col
+    assert canonical_cols["wind_name"] == idx_cols.name_col
+    assert canonical_cols["close"] == idx_cols.price_col
+
+
+@pytest.mark.schema
+def test_fetch_index_data_from_local_respects_index_price_schema() -> None:
+    """fetch_index_data_from_local MUST respect INDEX_PRICE schema when data is present."""
+    latest_date = "99991231"
+
+    # Reuse the same index universe as the style and stg_idx pages to keep this
+    # test aligned with real consumers.
+    style_idx_codes = tuple(style_config.STYLE_IDX_CODES.values())
+    stg_and_bench_codes = tuple(config.STG_IDX_CODES + config.BENCH_IDX_CODES)
+    wind_idx_param = param_cls.WindListedSecParam(
+        wind_codes=style_idx_codes + stg_and_bench_codes,
+        start_date=config.START_DT,
+        sql_param=param_cls.SqlParam(sql_name=config.IDX_PRICE_SQL_NAME),
+    )
+
+    df = fetch_index_data_from_local(latest_date=latest_date, _config=wind_idx_param)
+    assert isinstance(df, pd.DataFrame)
+
+    if df.empty:
+        # Allow empty snapshots in some environments; invariants only apply when data exists.
+        return
+
+    schema = INDEX_PRICE_SCHEMA
+    dtypes = schema["dtypes"]
+
+    # All declared columns MUST exist on the frame.
+    missing_cols = set(dtypes.keys()) - set(df.columns)
+    assert not missing_cols, f"Missing columns for A_IDX_PRICE: {missing_cols}"
+
+    # Date column MUST exist and be monotonically decreasing.
+    date_col = schema["date_col"]
+    assert date_col in df.columns
+    assert df[date_col].is_monotonic_decreasing
+
+    # Canonical English aliases MUST be present alongside the CSV columns.
+    canonical_cols = CANONICAL_COL_MAPPINGS["A_IDX_PRICE"]
+    for canonical, source in canonical_cols.items():
+        assert source in df.columns
+        assert canonical in df.columns
+
+    # Column dtypes MUST be compatible with the declared mapping.
+    for col, expected_dtype in dtypes.items():
+        series = df[col]
+        if expected_dtype is float:
+            assert pd.api.types.is_numeric_dtype(series), f"A_IDX_PRICE.{col} expected numeric dtype"
+        elif expected_dtype is str:
+            assert pd.api.types.is_string_dtype(series), f"A_IDX_PRICE.{col} expected string dtype"

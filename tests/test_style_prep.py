@@ -10,7 +10,11 @@ if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
 from config import config, param_cls, style_config  # noqa: E402
-from data_preparation.data_fetcher import fetch_data_from_local, fetch_index_data_from_local  # noqa: E402
+from data_preparation.data_fetcher import (  # noqa: E402
+    INDEX_PRICE_SCHEMA,
+    fetch_data_from_local,
+    fetch_index_data_from_local,
+)
 from data_preparation.data_processor import append_rolling_mean_column, apply_signal_from_conditions, reshape_long_df_into_wide_form  # noqa: E402
 from visualization import data_visualizer  # noqa: E402
 from visualization.style import (  # noqa: E402
@@ -50,6 +54,25 @@ def _load_style_index_data() -> tuple[pd.DataFrame, pd.DataFrame]:
     )
 
     return raw_wide_idx_df, idx_name_df
+
+
+@pytest.mark.schema
+@pytest.mark.style_prep
+def test_style_index_loader_columns_from_canonical_index_price_schema() -> None:
+    """Style index loader MUST use columns that come from the canonical A_IDX_PRICE schema."""
+    canonical_cols = INDEX_PRICE_SCHEMA["canonical_cols"]
+    idx_col_param = param_cls.WindIdxColParam()
+
+    used_cols = {
+        idx_col_param.dt_col,
+        idx_col_param.code_col,
+        idx_col_param.name_col,
+        idx_col_param.price_col,
+    }
+    allowed_raw_cols = set(canonical_cols.values())
+
+    # All columns used by the loader MUST be a subset of the canonical raw columns.
+    assert used_cols.issubset(allowed_raw_cols)
 
 
 @pytest.mark.style_prep

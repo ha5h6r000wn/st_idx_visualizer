@@ -39,6 +39,7 @@ The design goal is to make the style and strategy-index visualization paths bori
   - `WIND_COLS` in `config.config` is retained as a legacy/index-DB helper for index-price column aliases; it mirrors the raw CSV column names already captured by `INDEX_PRICE_SCHEMA` and is not treated as a separate schema.
   - `DATA_COL_PARAM` in `config/style_config.py` continues to describe per-chart column roles (e.g., which CSV columns to use as X/Y/legend for EDB and A_IDX_VAL). These objects are consumers of the canonical CSV schemas rather than an alternative schema definition. For EDB, the column parameters now refer directly to the canonical CSV column names (`交易日期`, `指标名称`, `指标数值`) instead of going through SQL parser aliases.
   - Bond-yield consumers in the style path (e.g., `YIELD_CURVE_COL_PARAM` for term-spread charts) are also wired directly to the canonical CSV column names (`交易日期`, `曲线名称`, `交易期限`, `到期收益率`) while keeping Chinese labels unchanged.
+  - Index-price consumers for the style and strategy-index pages rely on `param_cls.WindIdxColParam`, whose default column names (`TRADE_DT`, `S_INFO_WINDCODE`, `S_INFO_NAME`, `S_DQ_CLOSE`) are validated against `INDEX_PRICE_SCHEMA["canonical_cols"]` so that any code using this param automatically stays aligned with the canonical `A_IDX_PRICE` schema.
 - CSV-only path for the app:
   - Keep `CSVDataSource` as the only data-access path used by `visualization/*`.
   - Ensure `visualization/*` does not import `data_preparation/data_access` or use SQLAlchemy sessions.
@@ -218,10 +219,12 @@ The current change intentionally stops short of fully redesigning chart configur
       - non-empty outputs with monotonic trade-date indices,
       - presence of the configured YoY and rolling-mean columns,
       - and that credit-expansion signals stay within the configured enum set.
-  - `tests/test_data_fetcher_schema.py` adds schema-level invariants for the core CSV-backed tables (`CN_BOND_YIELD`, `A_IDX_VAL`, `EDB`, `SHIBOR_PRICES`):
+  - `tests/test_data_fetcher_schema.py` adds schema-level invariants for the core CSV-backed tables (`A_IDX_PRICE`, `CN_BOND_YIELD`, `A_IDX_VAL`, `EDB`, `SHIBOR_PRICES`):
     - `fetch_data_from_local` returns frames whose columns and dtypes respect the corresponding entries in `DATASET_SCHEMAS`,
     - the per-table date column exists and the returned frames are sorted monotonically by that column,
     - and canonical English aliases from `CANONICAL_COL_MAPPINGS` are present alongside the underlying Chinese columns.
+    - `fetch_index_data_from_local` returns `A_IDX_PRICE` frames whose columns/dtypes respect `INDEX_PRICE_SCHEMA` and whose canonical aliases are added via `CANONICAL_COL_MAPPINGS["A_IDX_PRICE"]`; additional tests assert that `param_cls.WindIdxColParam` defaults (date/code/name/close) stay in sync with `INDEX_PRICE_SCHEMA["canonical_cols"]`.
+  - `tests/test_style_prep.py` and `tests/test_stg_idx_prep.py` include additional invariants that tie the style and strategy-index index loaders to the canonical index-price schema by asserting that the `WindIdxColParam` columns they use are a strict subset of the raw CSV columns declared in `INDEX_PRICE_SCHEMA["canonical_cols"]`.
   - `scripts/run_quick_checks.py` provides a single entry point for running the fast “prep” test subset via `python scripts/run_quick_checks.py`, which runs `pytest -m "style_prep or stg_idx_prep or schema" tests`.
 
 **Planned extensions**
