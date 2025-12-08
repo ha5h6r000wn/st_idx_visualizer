@@ -136,6 +136,34 @@ As of the current implementation, chart configuration models and boolean flags a
 
 No chart config fields are currently completely unused; the main complexity lies in the way `BarLineWithSignalParam` couples slider configuration, signal computation, and percentage scaling via the three flags above.
 
+### 3. Chart inventory
+
+The following tables summarize the current style and strategy-index chart paths, mapping each chart to its data sources, data-prep helpers, chart helpers, and configuration.
+
+**Style page**
+
+| Chart block                         | CSV tables                         | Data-prep helper(s)                                      | Chart helper(s)                                               | Config objects / types                                                                                                   |
+|-------------------------------------|------------------------------------|----------------------------------------------------------|----------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------|
+| Value vs Growth (ratio + returns)   | `A_IDX_PRICE`                      | `prepare_value_growth_data`                             | `draw_grouped_lines`, `draw_style_bar_chart_with_highlighted_signal` | Inline `IdxLineParam` (ratio/returns), `RELATIVE_MOMENTUM_VALUE_GROWTH_CHART_PARAM`, `RELATIVE_MOMENTUM_VALUE_GROWTH_STYLE_CHART_CONFIG` (`StyleBarChartConfig`) |
+| Index turnover (market sentiment)   | `A_IDX_VAL`                        | `prepare_index_turnover_data`                           | `draw_style_bar_line_chart_with_highlighted_signal`           | `INDEX_TURNOVER_CHART_PARAM` (`BarLineWithSignalParam`), `INDEX_TURNOVER_STYLE_CHART_CONFIG` (`StyleBarLineChartConfig`) |
+| Term spread (10Y–1Y)                | `CN_BOND_YIELD`                    | `prepare_term_spread_data`                              | `draw_style_bar_line_chart_with_highlighted_signal`, `draw_grouped_lines` | `TERM_SPREAD_CHART_PARAM`, `TERM_SPREAD_STYLE_CHART_CONFIG`, inline `IdxLineParam` for yield curves                     |
+| ERP (value vs bond yield)          | `A_IDX_VAL`, `CN_BOND_YIELD`      | `prepare_index_erp_data`                                | `draw_style_bar_line_chart_with_highlighted_signal`           | `INDEX_ERP_CHART_PARAM`, `INDEX_ERP_STYLE_CHART_CONFIG`, `INDEX_ERP_CONFIG`                                             |
+| Credit expansion                    | `EDB`                              | Inline prep over `wide_raw_edb_df`                      | `draw_style_bar_line_chart_with_highlighted_signal`           | `CREDIT_EXPANSION_CHART_PARAM`, `CREDIT_EXPANSION_STYLE_CHART_CONFIG`, `CREDIT_EXPANSION_CONFIG`                        |
+| Big vs Small (ratio + returns)      | `A_IDX_PRICE`                      | `prepare_big_small_momentum_data`                       | `draw_grouped_lines`, `draw_style_bar_chart_with_highlighted_signal` | Inline `IdxLineParam` (ratio/returns), `RELATIVE_MOMENTUM_BIG_SMALL_CHART_PARAM`, `RELATIVE_MOMENTUM_BIG_SMALL_STYLE_CHART_CONFIG` (`StyleBarChartConfig`)      |
+| Style focus                         | `A_IDX_VAL` (big/small valuations), `A_IDX_PRICE` (signals) | `prepare_style_focus_data`                               | `draw_style_bar_line_chart_with_highlighted_signal`           | `STYLE_FOCUS_CHART_PARAM`, `STYLE_FOCUS_STYLE_CHART_CONFIG`, `STYLE_FOCUS_CONFIG`                                       |
+| Shibor 3M                           | `SHIBOR_PRICES`                    | `prepare_shibor_prices_data`                            | `draw_style_bar_line_chart_with_highlighted_signal`           | `SHIBOR_PRICES_CHART_PARAM`, `SHIBOR_PRICES_STYLE_CHART_CONFIG`, `SHIBOR_PRICES_CONFIG`                                 |
+| Housing investment                  | `EDB`                              | `prepare_housing_invest_data`                           | `draw_style_bar_line_chart_with_highlighted_signal`           | `HOUSING_INVEST_CHART_PARAM`, `HOUSING_INVEST_STYLE_CHART_CONFIG`, `HOUSING_INVEST_CONFIG`                               |
+| Term spread 2 (期现利差)           | `CN_BOND_YIELD`                    | Reuses `prepare_term_spread_data` (shared `term_spread_df`) | `draw_style_bar_line_chart_with_highlighted_signal`, `draw_grouped_lines` | `TERM_SPREAD_2_CHART_PARAM`, `TERM_SPREAD_2_STYLE_CHART_CONFIG`, inline `IdxLineParam`                                   |
+| ERP 2 (big vs small ERP)           | `A_IDX_VAL`, `CN_BOND_YIELD`, `A_IDX_PRICE` (signals) | Reuses `prepare_index_erp_data`, combines with `big_small_signal_df` | `draw_style_bar_line_chart_with_highlighted_signal`           | `INDEX_ERP_2_CHART_PARAM`, `INDEX_ERP_2_STYLE_CHART_CONFIG`, `INDEX_ERP_CONFIG`, `INDEX_ERP_2_CONFIG`                   |
+
+**Strategy-index page**
+
+| Chart block                         | CSV tables     | Data-prep helper(s)                                             | Chart helper(s)                       | Config objects / types                                                                                     |
+|-------------------------------------|----------------|------------------------------------------------------------------|----------------------------------------|------------------------------------------------------------------------------------------------------------|
+| Grouped returns vs benchmark        | `A_IDX_PRICE`  | `prepare_stg_idx_grouped_return_df` (wraps `calculate_grouped_return`) | `draw_grouped_bars`                   | Inline `BaseBarParam` (`config.STG_IDX_CHART_AXIS_NAMES["RET_BAR"]`), `DtSliderParam`                      |
+| NAV lines for stg_idx + benchmark   | `A_IDX_PRICE`  | `prepare_stg_idx_nav_wide_df` (uses `reshape_long_df_into_wide_form` + `convert_price_ts_into_nav_ts`) | `draw_grouped_lines`                  | Inline `IdxLineParam` (`config.STG_IDX_CHART_AXIS_NAMES["NAV_LINE"]`), `DtSliderParam`                     |
+| Excess-return correlation heatmap   | `A_IDX_PRICE`  | `prepare_stg_idx_excess_corr_wide_df` (wide returns + excess vs benchmark + corr) | `draw_heatmap`                        | `HeatmapParam` (`config.STG_IDX_CHART_AXIS_NAMES["CORR_HEATMAP"]`, `config.STG_IDX_CHART_AXIS_TYPES`), `SelectSliderParam` |
+
 ### 3. Data-prep vs rendering separation
 
 **Current state**

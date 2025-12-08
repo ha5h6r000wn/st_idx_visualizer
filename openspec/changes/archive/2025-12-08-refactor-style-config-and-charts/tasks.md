@@ -1,34 +1,33 @@
 ## Tasks
 
-- [ ] Inventory current style and strategy-index chart paths
-  - [ ] Map each chart in `visualization/stg_idx.py` and `visualization/style.py` to:
+- [x] Inventory current style and strategy-index chart paths
+  - [x] Map each chart in `visualization/stg_idx.py` and `visualization/style.py` to:
     - data sources (CSV tables),
     - transformation helpers,
     - and chart helpers.
-  - [ ] Document which configurations in `config/style_config.py` and `config/param_cls.py` are used by each chart.
+  - [x] Document which configurations in `config/style_config.py` and `config/param_cls.py` are used by each chart, recorded in the “Chart inventory” section of `design.md`.
 
-- [ ] Refine data-access behavior for CSV-only paths
+- [x] Refine data-access behavior for CSV-only paths
   - [x] Fix the `CSVDataSource.fetch_table` date-column selection bug for `A_IDX_PRICE` while keeping behavior for other tables unchanged.
   - [x] Confirm that `Streamlit` UI modules (`visualization/*.py`) do not rely on `data_preparation/data_access.py` or database sessions.
   - [x] If `data_preparation/data_access.py` is unused by the app, either:
-    - [ ] Move it under an ETL-specific namespace, or
-    - [x] Clearly document in `data_preparation/data_access.py` and `models.py` that they are ETL-only and not part of the Streamlit runtime, or
-    - [ ] Remove it in a separate, clearly documented step consistent with the `data-access` spec.
+    - Clearly document in `data_preparation/data_access.py` and `models.py` that they are ETL-only and not part of the Streamlit runtime (chosen in this change),
+    - or defer moving/removing them to a future ETL-focused change.
 
-- [ ] Simplify and clarify chart configuration models
+- [x] Simplify and clarify chart configuration models
   - [x] Audit `config/param_cls.py` usage to identify:
     - unused or redundant fields and models (none are currently completely unused, but several are tightly coupled via `BarLineWithSignalParam`),
     - boolean flags (`isLineDrawn`, `isConvertedToPct`, `isSignalAssigned`) that drive complex branching in the visualizer and are now documented in the “Chart config and flag usage audit” section of `design.md`.
-  - [ ] Introduce a flatter chart configuration for bar+line+signal charts that:
-    - [ ] keeps only axis names/types, formats, stroke dash, and color (initial scaffolding via `StyleBarLineChartConfig` complete; ERP chart is wired through this path),
-    - [ ] decouples slider configuration from chart configuration,
-    - [ ] and maintains Pydantic usage only where it adds validation value.
-  - [ ] Update `config/style_config.py` to use the flatter configuration for existing style charts without changing behavior.
+  - [x] Introduce a flatter chart configuration for bar+line+signal charts that:
+    - [x] keeps only axis names/types, formats, stroke dash, and color for style charts (via `StyleBarLineChartConfig`),
+    - [x] decouples slider configuration from chart configuration at the call site (style draw helpers accept `DtSliderParam` separately from the slim config),
+    - [x] and maintains Pydantic usage only where it adds validation value.
+  - [x] Update `config/style_config.py` to use the flatter configuration for existing style charts without changing behavior.
     - [x] Style bar+line+signal charts (ERP, credit expansion, style focus, Shibor, index turnover, housing investment) use `StyleBarLineChartConfig` plus `draw_style_bar_line_chart_with_highlighted_signal` with behavior verified by tests.
     - [x] Style bar-only relative-momentum charts (value vs growth, big vs small) use `StyleBarChartConfig` plus `draw_style_bar_chart_with_highlighted_signal`, with `RELATIVE_MOMENTUM_*_STYLE_CHART_CONFIG` mirroring the existing bar parameters and additional tests asserting config equivalence.
 
-- [ ] Separate data preparation from rendering for style charts
-  - [ ] Extract pure data-preparation helpers for each major style component:
+- [x] Separate data preparation from rendering for style charts
+  - [x] Extract pure data-preparation helpers for each major style component:
     - [x] 价值成长比价与相对动量
     - [x] 市场情绪（换手率）
     - [x] 期限利差与期现利差
@@ -50,13 +49,13 @@
   - [x] Update bar+line+signal charts to use the unified signal-generator, keeping current signal semantics intact.
   - [x] Remove or simplify the separate `generate_signal` and `draw_bar_line_chart_with_highlighted_predefined_signal` paths if they become redundant after unification.
 
-- [ ] Consolidate dataset schema definitions
+- [x] Consolidate dataset schema definitions
   - [x] Review `CANONICAL_COL_MAPPINGS`, `CSV_DTYPE_MAPPING`, `WIND_COLS`, and `DATA_COL_PARAM` for overlapping responsibilities.
   - [x] Define a single source of truth per dataset for:
     - canonical column names,
     - CSV column dtypes,
     - and any required aliases for charts.
-  - [ ] Update consumers in `data_preparation` and `visualization` to use these canonical definitions, keeping all existing Chinese labels.
+  - [x] Update consumers in `data_preparation` and `visualization` to use these canonical definitions, keeping all existing Chinese labels.
     - [x] Style-path consumers for EDB (via `DATA_COL_PARAM[param_cls.WindPortal.EDB]`) now reference the canonical CSV column names directly instead of SQL parser aliases.
     - [x] Style-path consumers for CN_BOND_YIELD (via `YIELD_CURVE_COL_PARAM`) are wired to the canonical CSV column names while preserving Chinese labels used in charts.
     - [x] Index-price consumers for style and strategy-index pages read `A_IDX_PRICE` via `fetch_index_data_from_local` using `INDEX_PRICE_SCHEMA` plus `param_cls.WindIdxColParam`, with tests locking the date/code/name/close column mapping to the canonical schema.
@@ -66,7 +65,7 @@
   - [x] Remove legacy chart helpers or comments (e.g., old `draw_test` paths) in line with the `visualization` spec’s “Remove dead chart code” requirement.
   - [x] Keep small, high-signal comments where they clarify domain-specific behavior.
 
-- [ ] Validation
+- [x] Validation
   - [x] Add minimal tests or scripts that:
     - [x] exercise data-prep functions for key style components with fixture CSVs under `data/` (value-vs-growth, Shibor, index turnover, term spread, ERP/ERP_2, credit expansion, style focus, housing investment, big-small momentum),
     - [x] assert key invariants (e.g., presence of canonical columns, monotonic date indices, and signal values within the configured enum sets),
@@ -76,6 +75,6 @@
       - non-empty grouped-return frames that cover all configured strategy indices by name,
       - NAV wide frames with monotonic date indices and non-empty series for each index,
       - and symmetric excess-return correlation matrices with unit diagonal for the stg_idx heatmap.
-  - [ ] Manually run `streamlit run app.py` and verify:
+  - [x] Manually run `streamlit run app.py` and verify:
     - [x] all charts render without errors,
     - [x] chart values and signals visually match pre-change behavior for a fixed snapshot of CSV data.
