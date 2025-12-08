@@ -682,6 +682,19 @@ HOUSING_INVEST_CHART_PARAM = param_cls.BarLineWithSignalParam(
     isSignalAssigned=True,
 )
 
+HOUSING_INVEST_STYLE_CHART_CONFIG = param_cls.StyleBarLineChartConfig(
+    bar_axis_names=HOUSING_INVEST_CHART_PARAM.bar_param.axis_names,
+    bar_axis_types=HOUSING_INVEST_CHART_PARAM.bar_param.axis_types,
+    line_axis_names=HOUSING_INVEST_CHART_PARAM.line_param.axis_names,
+    line_axis_types=HOUSING_INVEST_CHART_PARAM.line_param.axis_types,
+    title=HOUSING_INVEST_CHART_PARAM.bar_param.title,
+    bar_y_axis_format=HOUSING_INVEST_CHART_PARAM.bar_param.y_axis_format,
+    line_y_axis_format=HOUSING_INVEST_CHART_PARAM.line_param.y_axis_format,
+    bar_color=None,
+    line_color=HOUSING_INVEST_CHART_PARAM.line_param.color,
+    line_stroke_dash=HOUSING_INVEST_CHART_PARAM.line_param.stroke_dash,
+)
+
 # NOTE 期现利差（大小盘）
 TERM_SPREAD_2_CHART_PARAM = param_cls.BarLineWithSignalParam(
     dt_slider_param=param_cls.DtSliderParam(

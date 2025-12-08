@@ -870,9 +870,16 @@ def generate_style_charts():
             default=style_config.HOUSING_INVEST_CONFIG['FALSE_SIGNAL'],
         )
 
-        draw_bar_line_chart_with_highlighted_signal(
+        draw_style_bar_line_chart_with_highlighted_signal(
             dt_indexed_df=wide_raw_housing_invest_df,
-            config=style_config.HOUSING_INVEST_CHART_PARAM,
+            style_chart_config=style_config.HOUSING_INVEST_STYLE_CHART_CONFIG,
+            dt_slider_param=style_config.HOUSING_INVEST_CHART_PARAM.dt_slider_param,
+            true_signal=style_config.HOUSING_INVEST_CONFIG['TRUE_SIGNAL'],
+            false_signal=style_config.HOUSING_INVEST_CONFIG['FALSE_SIGNAL'],
+            no_signal=None,
+            signal_order=style_config.HOUSING_INVEST_CHART_PARAM.bar_param.signal_order,
+            compared_cols=style_config.HOUSING_INVEST_CHART_PARAM.line_param.compared_cols,
+            is_converted_to_pct=style_config.HOUSING_INVEST_CHART_PARAM.isConvertedToPct,
         )
 
         # NOTE 期现利差

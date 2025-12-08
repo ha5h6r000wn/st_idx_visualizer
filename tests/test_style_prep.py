@@ -418,6 +418,67 @@ def test_index_turnover_style_draw_helper_smoke():
 
 
 @pytest.mark.style_prep
+def test_housing_invest_style_draw_helper_smoke():
+    """Smoke test for the style-specific housing investment draw helper."""
+    latest_date = "99991231"
+    long_edb_df = fetch_data_from_local(latest_date=latest_date, table_name="EDB")
+
+    wide_raw_edb_df = reshape_long_df_into_wide_form(
+        long_df=long_edb_df,
+        index_col=style_config.DATA_COL_PARAM[param_cls.WindPortal.EDB].dt_col,
+        name_col=style_config.DATA_COL_PARAM[param_cls.WindPortal.EDB].name_col,
+        value_col=style_config.DATA_COL_PARAM[param_cls.WindPortal.EDB].value_col,
+    )
+
+    housing_df = prepare_housing_invest_data(wide_raw_edb_df=wide_raw_edb_df)
+
+    housing_invest_conditions = [
+        housing_df[style_config.HOUSING_INVEST_CONFIG["YOY_COL"]]
+        >= housing_df[style_config.HOUSING_INVEST_CONFIG["PRE_YOY_COL"]],
+    ]
+    housing_invest_choices = [
+        style_config.HOUSING_INVEST_CONFIG["TRUE_SIGNAL"],
+    ]
+    housing_df = apply_signal_from_conditions(
+        df=housing_df,
+        signal_col=style_config.HOUSING_INVEST_CONFIG["SIGNAL_COL"],
+        conditions=housing_invest_conditions,
+        choices=housing_invest_choices,
+        default=style_config.HOUSING_INVEST_CONFIG["FALSE_SIGNAL"],
+    )
+
+    idx = housing_df.index
+    custom_dt = (idx[0], idx[-1])
+
+    def _fake_select_slider(*args, **kwargs):
+        return custom_dt
+
+    def _fake_altair_chart(*args, **kwargs):
+        return None
+
+    original_select_slider = data_visualizer.st.select_slider
+    original_altair_chart = data_visualizer.st.altair_chart
+    try:
+        data_visualizer.st.select_slider = _fake_select_slider  # type: ignore[assignment]
+        data_visualizer.st.altair_chart = _fake_altair_chart  # type: ignore[assignment]
+
+        data_visualizer.draw_style_bar_line_chart_with_highlighted_signal(
+            dt_indexed_df=housing_df,
+            style_chart_config=style_config.HOUSING_INVEST_STYLE_CHART_CONFIG,
+            dt_slider_param=style_config.HOUSING_INVEST_CHART_PARAM.dt_slider_param,
+            true_signal=style_config.HOUSING_INVEST_CONFIG["TRUE_SIGNAL"],
+            false_signal=style_config.HOUSING_INVEST_CONFIG["FALSE_SIGNAL"],
+            no_signal=None,
+            signal_order=style_config.HOUSING_INVEST_CHART_PARAM.bar_param.signal_order,
+            compared_cols=style_config.HOUSING_INVEST_CHART_PARAM.line_param.compared_cols,
+            is_converted_to_pct=style_config.HOUSING_INVEST_CHART_PARAM.isConvertedToPct,
+        )
+    finally:
+        data_visualizer.st.select_slider = original_select_slider  # type: ignore[assignment]
+        data_visualizer.st.altair_chart = original_altair_chart  # type: ignore[assignment]
+
+
+@pytest.mark.style_prep
 def test_prepare_bar_line_with_signal_data_respects_existing_signal_column():
     """prepare_bar_line_with_signal_data SHOULD NOT overwrite an existing signal column."""
     index = pd.date_range(start='2024-01-01', periods=5, freq='D').strftime('%Y%m%d')
@@ -984,6 +1045,22 @@ def test_prepare_housing_invest_and_credit_expansion_basic_invariants():
 
 
 @pytest.mark.style_prep
+def test_housing_invest_style_chart_config_matches_bar_line_param():
+    """Ensure the slim style chart config for housing investment matches the existing bar+line config."""
+    hi_chart_param = style_config.HOUSING_INVEST_CHART_PARAM
+    hi_style_config = style_config.HOUSING_INVEST_STYLE_CHART_CONFIG
+
+    assert hi_style_config.bar_axis_names == hi_chart_param.bar_param.axis_names
+    assert hi_style_config.bar_axis_types == hi_chart_param.bar_param.axis_types
+    assert hi_style_config.line_axis_names == hi_chart_param.line_param.axis_names
+    assert hi_style_config.line_axis_types == hi_chart_param.line_param.axis_types
+    assert hi_style_config.title == hi_chart_param.bar_param.title
+    assert hi_style_config.bar_y_axis_format == hi_chart_param.bar_param.y_axis_format
+    assert hi_style_config.line_y_axis_format == hi_chart_param.line_param.y_axis_format
+    assert hi_style_config.line_stroke_dash == hi_chart_param.line_param.stroke_dash
+
+
+@pytest.mark.style_prep
 def test_credit_expansion_bar_line_pipeline_basic_invariants():
     """End-to-end invariants for credit expansion data prep + bar+line+signal helper."""
     latest_date = "99991231"
@@ -1262,5 +1339,78 @@ def test_index_turnover_bar_line_pipeline_basic_invariants():
     expected = {
         param_cls.TradeSignal.LONG_GROWTH.value,
         param_cls.TradeSignal.LONG_VALUE.value,
+    }
+    assert signal_values.issubset(expected)
+
+
+@pytest.mark.style_prep
+def test_housing_invest_bar_line_pipeline_basic_invariants():
+    """End-to-end invariants for housing investment data prep + bar+line+signal helper."""
+    latest_date = "99991231"
+    long_edb_df = fetch_data_from_local(latest_date=latest_date, table_name="EDB")
+
+    wide_raw_edb_df = reshape_long_df_into_wide_form(
+        long_df=long_edb_df,
+        index_col=style_config.DATA_COL_PARAM[param_cls.WindPortal.EDB].dt_col,
+        name_col=style_config.DATA_COL_PARAM[param_cls.WindPortal.EDB].name_col,
+        value_col=style_config.DATA_COL_PARAM[param_cls.WindPortal.EDB].value_col,
+    )
+
+    housing_df = prepare_housing_invest_data(wide_raw_edb_df=wide_raw_edb_df)
+
+    housing_invest_conditions = [
+        housing_df[style_config.HOUSING_INVEST_CONFIG["YOY_COL"]]
+        >= housing_df[style_config.HOUSING_INVEST_CONFIG["PRE_YOY_COL"]],
+    ]
+    housing_invest_choices = [
+        style_config.HOUSING_INVEST_CONFIG["TRUE_SIGNAL"],
+    ]
+    housing_df = apply_signal_from_conditions(
+        df=housing_df,
+        signal_col=style_config.HOUSING_INVEST_CONFIG["SIGNAL_COL"],
+        conditions=housing_invest_conditions,
+        choices=housing_invest_choices,
+        default=style_config.HOUSING_INVEST_CONFIG["FALSE_SIGNAL"],
+    )
+
+    idx = housing_df.index
+    custom_dt = (idx[0], idx[-1])
+
+    result = data_visualizer.prepare_bar_line_with_signal_data(
+        dt_indexed_df=housing_df,
+        config=style_config.HOUSING_INVEST_CHART_PARAM,
+        custom_dt=custom_dt,
+    )
+
+    assert not result.empty
+
+    # TRADE_DT column should exist and be monotonically increasing.
+    dt_col = style_config.DATA_COL_PARAM[style_config.HOUSING_INVEST_CONFIG["WIND_TABLE"]].dt_col
+    assert dt_col in result.columns
+    assert result[dt_col].is_monotonic_increasing
+
+    # Bar axis columns must exist.
+    bar_axis_names = style_config.HOUSING_INVEST_CHART_PARAM.bar_param.axis_names
+    for col in bar_axis_names.values():
+        assert col in result.columns
+
+    # Line X/LEGEND axis columns must exist.
+    line_axis_names = style_config.HOUSING_INVEST_CHART_PARAM.line_param.axis_names
+    for col in (line_axis_names["X"], line_axis_names["LEGEND"]):
+        assert col in result.columns
+
+    # Housing investment core columns must still be present after helper processing.
+    yoy_col = style_config.HOUSING_INVEST_CONFIG["YOY_COL"]
+    pre_yoy_col = style_config.HOUSING_INVEST_CONFIG["PRE_YOY_COL"]
+    for col in (yoy_col, pre_yoy_col):
+        assert col in result.columns
+
+    # Signal column and its value set should remain valid.
+    signal_col = style_config.HOUSING_INVEST_CONFIG["SIGNAL_COL"]
+    assert signal_col in result.columns
+    signal_values = set(result[signal_col].dropna().unique().tolist())
+    expected = {
+        style_config.HOUSING_INVEST_CONFIG["TRUE_SIGNAL"],
+        style_config.HOUSING_INVEST_CONFIG["FALSE_SIGNAL"],
     }
     assert signal_values.issubset(expected)
