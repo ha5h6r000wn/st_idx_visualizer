@@ -70,10 +70,13 @@ for key in DATA_CONFIG_KEYS:
     )
 
 DATA_COL_PARAM = {
+    # NOTE: EDB columns now rely directly on the canonical CSV schema
+    # (`ECONOMIC_DATA_SCHEMA`) rather than SQL parser aliases. This keeps
+    # Chinese column labels unchanged while reducing coupling to query text.
     param_cls.WindPortal.EDB: param_cls.WindAIndexValueColParam(
-        dt_col=DATA_CONFIG[param_cls.WindPortal.EDB]['WIND_COL_ALIAS']['TDATE'],
-        name_col=DATA_CONFIG[param_cls.WindPortal.EDB]['WIND_COL_ALIAS']['F3_4112'],
-        value_col=DATA_CONFIG[param_cls.WindPortal.EDB]['WIND_COL_ALIAS']['INDICATOR_NUM'],
+        dt_col='交易日期',
+        name_col='指标名称',
+        value_col='指标数值',
     ),
     param_cls.WindPortal.A_IDX_VAL: param_cls.WindAIndexValueColParam(
         dt_col=DATA_CONFIG[param_cls.WindPortal.A_IDX_VAL]['WIND_COL_ALIAS']['TRADE_DT'],
@@ -190,11 +193,13 @@ TERM_SPREAD_CONFIG.update(
     }
 )
 
+# NOTE: CN_BOND_YIELD columns use the canonical CSV schema rather than
+# SQL parser aliases. Column labels remain in Chinese to match the CSVs.
 YIELD_CURVE_COL_PARAM = param_cls.WindYieldCurveColParam(
-    dt_col=TERM_SPREAD_CONFIG['WIND_COL_ALIAS']['TRADE_DT'],
-    name_col=TERM_SPREAD_CONFIG['WIND_COL_ALIAS']['B_ANAL_CURVENAME'],
-    term_col=TERM_SPREAD_CONFIG['WIND_COL_ALIAS']['B_ANAL_CURVETERM'],
-    ytm_col=TERM_SPREAD_CONFIG['WIND_COL_ALIAS']['B_ANAL_YIELD'],
+    dt_col='交易日期',
+    name_col='曲线名称',
+    term_col='交易期限',
+    ytm_col='到期收益率',
 )
 
 TERM_SPREAD_CHART_PARAM = param_cls.BarLineWithSignalParam(

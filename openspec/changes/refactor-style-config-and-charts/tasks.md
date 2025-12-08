@@ -55,6 +55,8 @@
     - CSV column dtypes,
     - and any required aliases for charts.
   - [ ] Update consumers in `data_preparation` and `visualization` to use these canonical definitions, keeping all existing Chinese labels.
+    - [x] Style-path consumers for EDB (via `DATA_COL_PARAM[param_cls.WindPortal.EDB]`) now reference the canonical CSV column names directly instead of SQL parser aliases.
+    - [x] Style-path consumers for CN_BOND_YIELD (via `YIELD_CURVE_COL_PARAM`) are wired to the canonical CSV column names while preserving Chinese labels used in charts.
 
 - [x] Remove dead or commented-out chart code
   - [x] Identify large commented blocks in `config/style_config.py` and `visualization/style.py` that are no longer relevant.
@@ -66,6 +68,7 @@
     - [x] exercise data-prep functions for key style components with fixture CSVs under `data/` (value-vs-growth, Shibor, index turnover, term spread, ERP/ERP_2, credit expansion, style focus, housing investment, big-small momentum),
     - [x] assert key invariants (e.g., presence of canonical columns, monotonic date indices, and signal values within the configured enum sets),
     - [x] cover `prepare_bar_line_with_signal_data` and `DtSliderParam`-driven window selection to ensure chart helpers respect precomputed signals and slider defaults.
+    - [x] validate that `fetch_data_from_local` respects the canonical dataset schemas for `CN_BOND_YIELD`, `A_IDX_VAL`, `EDB`, and `SHIBOR_PRICES` via `tests/test_data_fetcher_schema.py`.
   - [ ] Manually run `streamlit run app.py` and verify:
     - [x] all charts render without errors,
     - [x] chart values and signals visually match pre-change behavior for a fixed snapshot of CSV data.
