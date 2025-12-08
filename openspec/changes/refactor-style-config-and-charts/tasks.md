@@ -24,6 +24,8 @@
     - [ ] decouples slider configuration from chart configuration,
     - [ ] and maintains Pydantic usage only where it adds validation value.
   - [ ] Update `config/style_config.py` to use the flatter configuration for existing style charts without changing behavior.
+    - [x] Style bar+line+signal charts (ERP, credit expansion, style focus, Shibor, index turnover, housing investment) use `StyleBarLineChartConfig` plus `draw_style_bar_line_chart_with_highlighted_signal` with behavior verified by tests.
+    - [x] Style bar-only relative-momentum charts (value vs growth, big vs small) use `StyleBarChartConfig` plus `draw_style_bar_chart_with_highlighted_signal`, with `RELATIVE_MOMENTUM_*_STYLE_CHART_CONFIG` mirroring the existing bar parameters and additional tests asserting config equivalence.
 
 - [ ] Separate data preparation from rendering for style charts
   - [ ] Extract pure data-preparation helpers for each major style component:

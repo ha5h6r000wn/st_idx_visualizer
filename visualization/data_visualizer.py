@@ -517,3 +517,57 @@ def draw_bar_line_chart_with_highlighted_predefined_signal(dt_indexed_df, config
         selected_df[config.line_param.axis_names['LEGEND']] = config.line_param.axis_names['Y']
 
     _render_bar_line_chart_with_highlighted_signal(selected_df, config, draw_line=config.line_param is not None)
+
+
+def build_bar_param_for_style_bar_chart(
+    style_config: param_cls.StyleBarChartConfig,
+    dt_slider_param: param_cls.DtSliderParam | None,
+    true_signal: str,
+    false_signal: str,
+    no_signal: str | None,
+    signal_order: list[str] | None = None,
+    is_converted_to_pct: bool = False,
+) -> param_cls.BarLineWithSignalParam:
+    """Build a BarLineWithSignalParam for bar-only style charts with precomputed signals."""
+    bar_param = param_cls.SignalBarParam(
+        axis_names=style_config.axis_names,
+        axis_types=style_config.axis_types,
+        title=style_config.title,
+        y_axis_format=style_config.y_axis_format,
+        true_signal=true_signal,
+        false_signal=false_signal,
+        no_signal=no_signal,
+        signal_order=signal_order,
+    )
+
+    return param_cls.BarLineWithSignalParam(
+        dt_slider_param=dt_slider_param,
+        bar_param=bar_param,
+        line_param=None,
+        isLineDrawn=False,
+        isConvertedToPct=is_converted_to_pct,
+        isSignalAssigned=True,
+    )
+
+
+def draw_style_bar_chart_with_highlighted_signal(
+    dt_indexed_df,
+    style_chart_config: param_cls.StyleBarChartConfig,
+    dt_slider_param: param_cls.DtSliderParam | None,
+    true_signal: str,
+    false_signal: str,
+    no_signal: str | None,
+    signal_order: list[str] | None = None,
+    is_converted_to_pct: bool = False,
+):
+    """Draw bar-only style chart with precomputed signals using a slim bar config."""
+    config = build_bar_param_for_style_bar_chart(
+        style_config=style_chart_config,
+        dt_slider_param=dt_slider_param,
+        true_signal=true_signal,
+        false_signal=false_signal,
+        no_signal=no_signal,
+        signal_order=signal_order,
+        is_converted_to_pct=is_converted_to_pct,
+    )
+    draw_bar_line_chart_with_highlighted_predefined_signal(dt_indexed_df=dt_indexed_df, config=config)

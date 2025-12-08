@@ -888,6 +888,36 @@ def test_prepare_value_growth_data_basic_invariants():
 
 
 @pytest.mark.style_prep
+def test_relative_momentum_value_growth_bar_only_config_matches_bar_param():
+    """Ensure the bar-only style config for value vs growth relative momentum matches the existing bar config."""
+    chart_param = style_config.RELATIVE_MOMENTUM_VALUE_GROWTH_CHART_PARAM
+    style_bar_config = getattr(style_config, "RELATIVE_MOMENTUM_VALUE_GROWTH_STYLE_CHART_CONFIG", None)
+
+    # This test will start failing loudly if we forget to wire the style
+    # config for the value/growth bar-only chart.
+    assert style_bar_config is not None
+
+    assert style_bar_config.axis_names == chart_param.bar_param.axis_names
+    assert style_bar_config.axis_types == chart_param.bar_param.axis_types
+    assert style_bar_config.title == chart_param.bar_param.title
+    assert style_bar_config.y_axis_format == chart_param.bar_param.y_axis_format
+
+
+@pytest.mark.style_prep
+def test_relative_momentum_big_small_bar_only_config_matches_bar_param():
+    """Ensure the bar-only style config for big vs small relative momentum matches the existing bar config."""
+    chart_param = style_config.RELATIVE_MOMENTUM_BIG_SMALL_CHART_PARAM
+    style_bar_config = getattr(style_config, "RELATIVE_MOMENTUM_BIG_SMALL_STYLE_CHART_CONFIG", None)
+
+    assert style_bar_config is not None
+
+    assert style_bar_config.axis_names == chart_param.bar_param.axis_names
+    assert style_bar_config.axis_types == chart_param.bar_param.axis_types
+    assert style_bar_config.title == chart_param.bar_param.title
+    assert style_bar_config.y_axis_format == chart_param.bar_param.y_axis_format
+
+
+@pytest.mark.style_prep
 def test_prepare_shibor_prices_data_basic_invariants():
     shibor_long_df = fetch_data_from_local(latest_date='99991231', table_name='SHIBOR_PRICES')
 

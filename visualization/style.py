@@ -21,7 +21,7 @@ from data_preparation.data_processor import (
     reshape_long_df_into_wide_form,
 )
 from utils import TradeDtType, get_avg_dt_count_via_dt_type, msg_printer
-from visualization.data_visualizer import draw_bar_line_chart_with_highlighted_predefined_signal, draw_bar_line_chart_with_highlighted_signal, draw_grouped_lines, draw_style_bar_line_chart_with_highlighted_signal
+from visualization.data_visualizer import draw_bar_line_chart_with_highlighted_predefined_signal, draw_bar_line_chart_with_highlighted_signal, draw_grouped_lines, draw_style_bar_chart_with_highlighted_signal, draw_style_bar_line_chart_with_highlighted_signal
 
 
 def prepare_value_growth_data(raw_wide_idx_df: pd.DataFrame, idx_name_df: pd.DataFrame):
@@ -620,9 +620,15 @@ def generate_style_charts():
         #     options=value_growth_df.index.tolist(),
         # )
 
-        draw_bar_line_chart_with_highlighted_predefined_signal(
+        draw_style_bar_chart_with_highlighted_signal(
             dt_indexed_df=value_growth_signal_df,
-            config=style_config.RELATIVE_MOMENTUM_VALUE_GROWTH_CHART_PARAM,
+            style_chart_config=style_config.RELATIVE_MOMENTUM_VALUE_GROWTH_STYLE_CHART_CONFIG,
+            dt_slider_param=style_config.RELATIVE_MOMENTUM_VALUE_GROWTH_CHART_PARAM.dt_slider_param,
+            true_signal=style_config.RELATIVE_MOMENTUM_VALUE_GROWTH_CONFIG['TRUE_SIGNAL'],
+            false_signal=style_config.RELATIVE_MOMENTUM_VALUE_GROWTH_CONFIG['FALSE_SIGNAL'],
+            no_signal=param_cls.TradeSignal.NO_SIGNAL.value,
+            signal_order=None,
+            is_converted_to_pct=style_config.RELATIVE_MOMENTUM_VALUE_GROWTH_CHART_PARAM.isConvertedToPct,
         )
 
         # NOTE 市场情绪
@@ -804,9 +810,15 @@ def generate_style_charts():
             big_small_line_config,
         )
 
-        draw_bar_line_chart_with_highlighted_predefined_signal(
+        draw_style_bar_chart_with_highlighted_signal(
             dt_indexed_df=big_small_signal_df,
-            config=style_config.RELATIVE_MOMENTUM_BIG_SMALL_CHART_PARAM,
+            style_chart_config=style_config.RELATIVE_MOMENTUM_BIG_SMALL_STYLE_CHART_CONFIG,
+            dt_slider_param=style_config.RELATIVE_MOMENTUM_BIG_SMALL_CHART_PARAM.dt_slider_param,
+            true_signal=style_config.RELATIVE_MOMENTUM_BIG_SMALL_CONFIG['TRUE_SIGNAL'],
+            false_signal=style_config.RELATIVE_MOMENTUM_BIG_SMALL_CONFIG['FALSE_SIGNAL'],
+            no_signal=param_cls.TradeSignal.NO_SIGNAL.value,
+            signal_order=style_config.RELATIVE_MOMENTUM_BIG_SMALL_CHART_PARAM.bar_param.signal_order,
+            is_converted_to_pct=style_config.RELATIVE_MOMENTUM_BIG_SMALL_CHART_PARAM.isConvertedToPct,
         )
 
         # NOTE 风格关注度

@@ -133,6 +133,16 @@ class LineParam(BaseChartParam):
     compared_cols: List[str] | None = None
 
 
+class StyleBarChartConfig(BaseModel):
+    """Slim chart config for style bar-only charts with precomputed signals."""
+
+    axis_names: Dict[str, str]
+    axis_types: Dict[str, str] = {'X': 'N', 'LEGEND': 'N', 'Y': 'Q'}
+    title: str | None = None
+    y_axis_format: str = '.3f'
+    color: str | None = None
+
+
 class StyleBarLineChartConfig(BaseModel):
     """Slim chart config for style bar+line+signal charts.
 

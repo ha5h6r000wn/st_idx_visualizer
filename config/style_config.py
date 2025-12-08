@@ -154,6 +154,13 @@ RELATIVE_MOMENTUM_VALUE_GROWTH_CHART_PARAM = param_cls.BarLineWithSignalParam(
     isSignalAssigned=True,
 )
 
+RELATIVE_MOMENTUM_VALUE_GROWTH_STYLE_CHART_CONFIG = param_cls.StyleBarChartConfig(
+    axis_names=RELATIVE_MOMENTUM_VALUE_GROWTH_CHART_PARAM.bar_param.axis_names,
+    axis_types=RELATIVE_MOMENTUM_VALUE_GROWTH_CHART_PARAM.bar_param.axis_types,
+    title=RELATIVE_MOMENTUM_VALUE_GROWTH_CHART_PARAM.bar_param.title,
+    y_axis_format=RELATIVE_MOMENTUM_VALUE_GROWTH_CHART_PARAM.bar_param.y_axis_format,
+)
+
 
 # NOTE 期限利差
 TERM_SPREAD_CONFIG = {
@@ -564,6 +571,13 @@ RELATIVE_MOMENTUM_BIG_SMALL_CHART_PARAM = param_cls.BarLineWithSignalParam(
     ),
     isConvertedToPct=False,
     isSignalAssigned=True,
+)
+
+RELATIVE_MOMENTUM_BIG_SMALL_STYLE_CHART_CONFIG = param_cls.StyleBarChartConfig(
+    axis_names=RELATIVE_MOMENTUM_BIG_SMALL_CHART_PARAM.bar_param.axis_names,
+    axis_types=RELATIVE_MOMENTUM_BIG_SMALL_CHART_PARAM.bar_param.axis_types,
+    title=RELATIVE_MOMENTUM_BIG_SMALL_CHART_PARAM.bar_param.title,
+    y_axis_format=RELATIVE_MOMENTUM_BIG_SMALL_CHART_PARAM.bar_param.y_axis_format,
 )
 
 # NOTE 货币周期：Shibor3M

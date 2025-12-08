@@ -90,6 +90,9 @@ The design goal is to make the style and strategy-index visualization paths bori
   - Remove `isLineDrawn`, `isConvertedToPct`, and `isSignalAssigned` flags from the core config in follow-up steps; these concerns are handled by:
     - dedicated data-prep helpers that always return the columns needed for the chart,
     - small wrapper functions for special cases (e.g., bar-only charts).
+  - For bar-only style charts with precomputed signals (relative-momentum charts), `config/param_cls.py` additionally defines `StyleBarChartConfig`, a slim Pydantic model that:
+    - carries only bar axis names/types, title, y-axis format, and optional color,
+    - and is used by `RELATIVE_MOMENTUM_VALUE_GROWTH_STYLE_CHART_CONFIG` and `RELATIVE_MOMENTUM_BIG_SMALL_STYLE_CHART_CONFIG` in `config/style_config.py` to mirror the existing bar settings without exposing line-related fields or behavior flags.
 
 ### 3. Data-prep vs rendering separation
 
@@ -124,6 +127,9 @@ The design goal is to make the style and strategy-index visualization paths bori
 - Introduce a style-specific draw helper that bridges slim configs to the existing helpers:
   - `build_bar_line_with_signal_param_for_style_chart` constructs a `BarLineWithSignalParam` from a `StyleBarLineChartConfig`, slider params, signal labels, and optional `compared_cols`,
   - `draw_style_bar_line_chart_with_highlighted_signal` uses this builder and then calls `draw_bar_line_chart_with_highlighted_signal`, ensuring style charts can migrate to slim configs without changing behavior.
+  - For bar-only style charts, `visualization/data_visualizer.py` provides:
+    - `StyleBarChartConfig`-aware builders (`build_bar_param_for_style_bar_chart`) that construct a `BarLineWithSignalParam` with no line layer, and
+    - `draw_style_bar_chart_with_highlighted_signal`, which uses the bar-only slim config plus slider params and signal labels to call the existing `draw_bar_line_chart_with_highlighted_predefined_signal` helper. The relative-momentum charts (value vs growth, big vs small) now use this path instead of wiring `BarLineWithSignalParam` directly in the style page.
 - As early adopters, the ERP, credit-expansion, style-focus, Shibor, index-turnover, and housing-investment style charts:
   - define `INDEX_ERP_STYLE_CHART_CONFIG`, `CREDIT_EXPANSION_STYLE_CHART_CONFIG`, `STYLE_FOCUS_STYLE_CHART_CONFIG`, `SHIBOR_PRICES_STYLE_CHART_CONFIG`, `INDEX_TURNOVER_STYLE_CHART_CONFIG`, and `HOUSING_INVEST_STYLE_CHART_CONFIG` using `StyleBarLineChartConfig`,
   - use `draw_style_bar_line_chart_with_highlighted_signal` in `visualization/style.generate_style_charts`,
