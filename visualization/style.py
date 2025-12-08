@@ -799,9 +799,16 @@ def generate_style_charts():
             long_big_small_idx_val_df=long_big_small_idx_val_df,
             big_small_df=big_small_signal_df,
         )
-        draw_bar_line_chart_with_highlighted_signal(
+        draw_style_bar_line_chart_with_highlighted_signal(
             dt_indexed_df=merged_style_focus_df,
-            config=style_config.STYLE_FOCUS_CHART_PARAM,
+            style_chart_config=style_config.STYLE_FOCUS_STYLE_CHART_CONFIG,
+            dt_slider_param=style_config.STYLE_FOCUS_CHART_PARAM.dt_slider_param,
+            true_signal=style_config.STYLE_FOCUS_CONFIG['TRUE_SIGNAL'],
+            false_signal=style_config.STYLE_FOCUS_CONFIG['FALSE_SIGNAL'],
+            no_signal=style_config.STYLE_FOCUS_CONFIG['NO_SIGNAL'],
+            signal_order=style_config.STYLE_FOCUS_CHART_PARAM.bar_param.signal_order,
+            compared_cols=style_config.STYLE_FOCUS_CHART_PARAM.line_param.compared_cols,
+            is_converted_to_pct=style_config.STYLE_FOCUS_CHART_PARAM.isConvertedToPct,
         )
 
         # NOTE 货币周期：Shibor3M

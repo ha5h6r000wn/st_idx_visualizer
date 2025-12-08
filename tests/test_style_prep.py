@@ -265,6 +265,58 @@ def test_credit_expansion_style_draw_helper_smoke():
 
 
 @pytest.mark.style_prep
+def test_style_focus_style_draw_helper_smoke():
+    """Smoke test for the style-specific style focus draw helper."""
+    raw_wide_idx_df, idx_name_df = _load_style_index_data()
+
+    # Build big/small momentum signals as in the style page.
+    _, _, big_small_signal_df = prepare_big_small_momentum_data(
+        raw_wide_idx_df=raw_wide_idx_df,
+        idx_name_df=idx_name_df,
+    )
+
+    latest_date = "99991231"
+    long_a_idx_val_df = fetch_data_from_local(latest_date=latest_date, table_name="A_IDX_VAL")
+    name_col = style_config.DATA_COL_PARAM[param_cls.WindPortal.A_IDX_VAL].name_col
+    long_big_small_idx_val_df = long_a_idx_val_df.query(f"{name_col} in ('沪深300', '中证1000')")
+
+    style_focus_df = prepare_style_focus_data(
+        long_big_small_idx_val_df=long_big_small_idx_val_df,
+        big_small_df=big_small_signal_df,
+    )
+
+    idx = style_focus_df.index
+    custom_dt = (idx[0], idx[-1])
+
+    def _fake_select_slider(*args, **kwargs):
+        return custom_dt
+
+    def _fake_altair_chart(*args, **kwargs):
+        return None
+
+    original_select_slider = data_visualizer.st.select_slider
+    original_altair_chart = data_visualizer.st.altair_chart
+    try:
+        data_visualizer.st.select_slider = _fake_select_slider  # type: ignore[assignment]
+        data_visualizer.st.altair_chart = _fake_altair_chart  # type: ignore[assignment]
+
+        data_visualizer.draw_style_bar_line_chart_with_highlighted_signal(
+            dt_indexed_df=style_focus_df,
+            style_chart_config=style_config.STYLE_FOCUS_STYLE_CHART_CONFIG,
+            dt_slider_param=style_config.STYLE_FOCUS_CHART_PARAM.dt_slider_param,
+            true_signal=style_config.STYLE_FOCUS_CONFIG["TRUE_SIGNAL"],
+            false_signal=style_config.STYLE_FOCUS_CONFIG["FALSE_SIGNAL"],
+            no_signal=style_config.STYLE_FOCUS_CONFIG["NO_SIGNAL"],
+            signal_order=style_config.STYLE_FOCUS_CHART_PARAM.bar_param.signal_order,
+            compared_cols=style_config.STYLE_FOCUS_CHART_PARAM.line_param.compared_cols,
+            is_converted_to_pct=style_config.STYLE_FOCUS_CHART_PARAM.isConvertedToPct,
+        )
+    finally:
+        data_visualizer.st.select_slider = original_select_slider  # type: ignore[assignment]
+        data_visualizer.st.altair_chart = original_altair_chart  # type: ignore[assignment]
+
+
+@pytest.mark.style_prep
 def test_prepare_bar_line_with_signal_data_respects_existing_signal_column():
     """prepare_bar_line_with_signal_data SHOULD NOT overwrite an existing signal column."""
     index = pd.date_range(start='2024-01-01', periods=5, freq='D').strftime('%Y%m%d')
@@ -707,6 +759,22 @@ def test_prepare_style_focus_data_basic_invariants():
 
 
 @pytest.mark.style_prep
+def test_style_focus_style_chart_config_matches_bar_line_param():
+    """Ensure the slim style chart config for style focus matches the existing bar+line config."""
+    sf_chart_param = style_config.STYLE_FOCUS_CHART_PARAM
+    sf_style_config = style_config.STYLE_FOCUS_STYLE_CHART_CONFIG
+
+    assert sf_style_config.bar_axis_names == sf_chart_param.bar_param.axis_names
+    assert sf_style_config.bar_axis_types == sf_chart_param.bar_param.axis_types
+    assert sf_style_config.line_axis_names == sf_chart_param.line_param.axis_names
+    assert sf_style_config.line_axis_types == sf_chart_param.line_param.axis_types
+    assert sf_style_config.title == sf_chart_param.bar_param.title
+    assert sf_style_config.bar_y_axis_format == sf_chart_param.bar_param.y_axis_format
+    assert sf_style_config.line_y_axis_format == sf_chart_param.line_param.y_axis_format
+    assert sf_style_config.line_stroke_dash == sf_chart_param.line_param.stroke_dash
+
+
+@pytest.mark.style_prep
 def test_prepare_housing_invest_and_credit_expansion_basic_invariants():
     latest_date = "99991231"
     long_edb_df = fetch_data_from_local(latest_date=latest_date, table_name="EDB")
@@ -868,5 +936,71 @@ def test_credit_expansion_bar_line_pipeline_basic_invariants():
     expected = {
         style_config.CREDIT_EXPANSION_CONFIG["TRUE_SIGNAL"],
         style_config.CREDIT_EXPANSION_CONFIG["FALSE_SIGNAL"],
+    }
+    assert signal_values.issubset(expected)
+
+
+@pytest.mark.style_prep
+def test_style_focus_bar_line_pipeline_basic_invariants():
+    """End-to-end invariants for style focus data prep + bar+line+signal helper."""
+    raw_wide_idx_df, idx_name_df = _load_style_index_data()
+
+    # Build big/small momentum signals as in the style page.
+    _, _, big_small_signal_df = prepare_big_small_momentum_data(
+        raw_wide_idx_df=raw_wide_idx_df,
+        idx_name_df=idx_name_df,
+    )
+
+    latest_date = "99991231"
+    long_a_idx_val_df = fetch_data_from_local(latest_date=latest_date, table_name="A_IDX_VAL")
+    name_col = style_config.DATA_COL_PARAM[param_cls.WindPortal.A_IDX_VAL].name_col
+    long_big_small_idx_val_df = long_a_idx_val_df.query(f"{name_col} in ('沪深300', '中证1000')")
+
+    style_focus_df = prepare_style_focus_data(
+        long_big_small_idx_val_df=long_big_small_idx_val_df,
+        big_small_df=big_small_signal_df,
+    )
+
+    idx = style_focus_df.index
+    custom_dt = (idx[0], idx[-1])
+
+    result = data_visualizer.prepare_bar_line_with_signal_data(
+        dt_indexed_df=style_focus_df,
+        config=style_config.STYLE_FOCUS_CHART_PARAM,
+        custom_dt=custom_dt,
+    )
+
+    assert not result.empty
+
+    # TRADE_DT column should exist and be monotonically increasing.
+    dt_col = style_config.DATA_COL_PARAM[style_config.STYLE_FOCUS_CONFIG["WIND_TABLE"]].dt_col
+    assert dt_col in result.columns
+    assert result[dt_col].is_monotonic_increasing
+
+    # Bar axis columns must exist.
+    bar_axis_names = style_config.STYLE_FOCUS_CHART_PARAM.bar_param.axis_names
+    for col in bar_axis_names.values():
+        assert col in result.columns
+
+    # Line X/LEGEND axis columns must exist.
+    line_axis_names = style_config.STYLE_FOCUS_CHART_PARAM.line_param.axis_names
+    for col in (line_axis_names["X"], line_axis_names["LEGEND"]):
+        assert col in result.columns
+
+    # Style focus core columns must still be present after helper processing.
+    focus_col = style_config.STYLE_FOCUS_CONFIG["STYLE_FOCUS_COL"]
+    ceil_col = style_config.STYLE_FOCUS_CONFIG["QUANTILE_CEILING_COL"]
+    floor_col = style_config.STYLE_FOCUS_CONFIG["QUANTILE_FLOOR_COL"]
+    for col in (focus_col, ceil_col, floor_col):
+        assert col in result.columns
+
+    # Signal column and its value set should remain valid.
+    signal_col = style_config.STYLE_FOCUS_CONFIG["SIGNAL_COL"]
+    assert signal_col in result.columns
+    signal_values = set(result[signal_col].dropna().unique().tolist())
+    expected = {
+        style_config.STYLE_FOCUS_CONFIG["TRUE_SIGNAL"],
+        style_config.STYLE_FOCUS_CONFIG["FALSE_SIGNAL"],
+        style_config.STYLE_FOCUS_CONFIG["NO_SIGNAL"],
     }
     assert signal_values.issubset(expected)

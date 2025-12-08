@@ -794,6 +794,19 @@ STYLE_FOCUS_CHART_PARAM = param_cls.BarLineWithSignalParam(
     isSignalAssigned=True,
 )
 
+STYLE_FOCUS_STYLE_CHART_CONFIG = param_cls.StyleBarLineChartConfig(
+    bar_axis_names=STYLE_FOCUS_CHART_PARAM.bar_param.axis_names,
+    bar_axis_types=STYLE_FOCUS_CHART_PARAM.bar_param.axis_types,
+    line_axis_names=STYLE_FOCUS_CHART_PARAM.line_param.axis_names,
+    line_axis_types=STYLE_FOCUS_CHART_PARAM.line_param.axis_types,
+    title=STYLE_FOCUS_CHART_PARAM.bar_param.title,
+    bar_y_axis_format=STYLE_FOCUS_CHART_PARAM.bar_param.y_axis_format,
+    line_y_axis_format=STYLE_FOCUS_CHART_PARAM.line_param.y_axis_format,
+    bar_color=None,
+    line_color=STYLE_FOCUS_CHART_PARAM.line_param.color,
+    line_stroke_dash=STYLE_FOCUS_CHART_PARAM.line_param.stroke_dash,
+)
+
 
 STYLE_CHART_AXIS_NAMES = {
     'VALUE_GROWTH_RATIO_MEAN': {
