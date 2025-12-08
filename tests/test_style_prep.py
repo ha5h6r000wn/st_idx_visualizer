@@ -364,6 +364,85 @@ def test_prepare_index_erp_data_basic_invariants():
 
 
 @pytest.mark.style_prep
+def test_index_erp_bar_line_pipeline_basic_invariants():
+    """End-to-end invariants for ERP data prep + bar+line+signal helper."""
+    latest_date = "99991231"
+
+    long_raw_cn_bond_yield_df = fetch_data_from_local(latest_date=latest_date, table_name="CN_BOND_YIELD")
+    _, _, wide_raw_cn_bond_yield_df = prepare_term_spread_data(long_raw_cn_bond_yield_df=long_raw_cn_bond_yield_df)
+
+    long_a_idx_val_df = fetch_data_from_local(latest_date=latest_date, table_name="A_IDX_VAL")
+    name_col = style_config.DATA_COL_PARAM[param_cls.WindPortal.A_IDX_VAL].name_col
+    long_wind_all_a_idx_val_df = long_a_idx_val_df.query(f"{name_col} == '万得全A'")
+
+    wide_erp_df, erp_conditions = prepare_index_erp_data(
+        long_wind_all_a_idx_val_df=long_wind_all_a_idx_val_df,
+        wide_raw_cn_bond_yield_df=wide_raw_cn_bond_yield_df,
+    )
+
+    # Apply the same signal assignment logic as generate_style_charts.
+    erp_choices = [
+        style_config.INDEX_ERP_CHART_PARAM.bar_param.true_signal,
+        style_config.INDEX_ERP_CHART_PARAM.bar_param.false_signal,
+    ]
+    wide_erp_df = apply_signal_from_conditions(
+        df=wide_erp_df,
+        signal_col=style_config.INDEX_ERP_CONFIG["SIGNAL_COL"],
+        conditions=erp_conditions,
+        choices=erp_choices,
+        default=style_config.INDEX_ERP_CHART_PARAM.bar_param.no_signal,
+    )
+
+    # Use full date range as custom window to avoid Streamlit slider state.
+    idx = wide_erp_df.index
+    custom_dt = (idx[0], idx[-1])
+
+    result = data_visualizer.prepare_bar_line_with_signal_data(
+        dt_indexed_df=wide_erp_df,
+        config=style_config.INDEX_ERP_CHART_PARAM,
+        custom_dt=custom_dt,
+    )
+
+    assert not result.empty
+
+    # TRADE_DT column should exist and be monotonically increasing.
+    dt_col = style_config.INDEX_ERP_COL_PARAM.dt_col
+    assert dt_col in result.columns
+    assert result[dt_col].is_monotonic_increasing
+
+    # Bar axis columns must exist.
+    bar_axis_names = style_config.INDEX_ERP_CHART_PARAM.bar_param.axis_names
+    for col in bar_axis_names.values():
+        assert col in result.columns
+
+    # Line X/LEGEND axis columns must exist. The Y axis is a semantic
+    # alias ("分位数") and does not correspond to a direct column on
+    # the wide frame.
+    line_axis_names = style_config.INDEX_ERP_CHART_PARAM.line_param.axis_names
+    for col in (line_axis_names['X'], line_axis_names['LEGEND']):
+        assert col in result.columns
+
+    # ERP core columns must still be present after helper processing.
+    erp_col = style_config.INDEX_ERP_CONFIG["ERP_COL"]
+    mean_col = "近一月均值"
+    ceil_col = style_config.INDEX_ERP_CONFIG["QUANTILE_CEILING_COL"]
+    floor_col = style_config.INDEX_ERP_CONFIG["QUANTILE_FLOOR_COL"]
+    for col in (erp_col, mean_col, ceil_col, floor_col):
+        assert col in result.columns
+
+    # Signal column and its value set should remain valid.
+    signal_col = style_config.INDEX_ERP_CONFIG["SIGNAL_COL"]
+    assert signal_col in result.columns
+    signal_values = set(result[signal_col].dropna().unique().tolist())
+    expected = {
+        style_config.INDEX_ERP_CONFIG["TRUE_SIGNAL"],
+        style_config.INDEX_ERP_CONFIG["FALSE_SIGNAL"],
+        style_config.INDEX_ERP_CONFIG["NO_SIGNAL"],
+    }
+    assert signal_values.issubset(expected)
+
+
+@pytest.mark.style_prep
 def test_prepare_big_small_momentum_data_basic_invariants():
     raw_wide_idx_df, idx_name_df = _load_style_index_data()
 
