@@ -69,6 +69,48 @@ def test_index_erp_style_chart_config_matches_bar_line_param():
 
 
 @pytest.mark.style_prep
+def test_index_erp_style_chart_builds_equivalent_bar_line_config():
+    """Ensure the builder reproduces the existing ERP bar+line config."""
+    erp_chart_param = style_config.INDEX_ERP_CHART_PARAM
+    erp_style_config = style_config.INDEX_ERP_STYLE_CHART_CONFIG
+
+    built_config = data_visualizer.build_bar_line_with_signal_param_for_style_chart(
+        style_config=erp_style_config,
+        dt_slider_param=erp_chart_param.dt_slider_param,
+        true_signal=style_config.INDEX_ERP_CONFIG["TRUE_SIGNAL"],
+        false_signal=style_config.INDEX_ERP_CONFIG["FALSE_SIGNAL"],
+        no_signal=style_config.INDEX_ERP_CONFIG["NO_SIGNAL"],
+        signal_order=erp_chart_param.bar_param.signal_order,
+        compared_cols=erp_chart_param.line_param.compared_cols,
+        is_converted_to_pct=erp_chart_param.isConvertedToPct,
+    )
+
+    # Bar param equivalence
+    assert built_config.bar_param.axis_names == erp_chart_param.bar_param.axis_names
+    assert built_config.bar_param.axis_types == erp_chart_param.bar_param.axis_types
+    assert built_config.bar_param.title == erp_chart_param.bar_param.title
+    assert built_config.bar_param.y_axis_format == erp_chart_param.bar_param.y_axis_format
+    assert built_config.bar_param.true_signal == erp_chart_param.bar_param.true_signal
+    assert built_config.bar_param.false_signal == erp_chart_param.bar_param.false_signal
+    assert built_config.bar_param.no_signal == erp_chart_param.bar_param.no_signal
+    assert built_config.bar_param.signal_order == erp_chart_param.bar_param.signal_order
+
+    # Line param equivalence
+    assert built_config.line_param.axis_names == erp_chart_param.line_param.axis_names
+    assert built_config.line_param.axis_types == erp_chart_param.line_param.axis_types
+    assert built_config.line_param.y_axis_format == erp_chart_param.line_param.y_axis_format
+    assert built_config.line_param.stroke_dash == erp_chart_param.line_param.stroke_dash
+    assert built_config.line_param.color == erp_chart_param.line_param.color
+    assert built_config.line_param.compared_cols == erp_chart_param.line_param.compared_cols
+
+    # Top-level flags
+    assert built_config.dt_slider_param == erp_chart_param.dt_slider_param
+    assert built_config.isLineDrawn == erp_chart_param.isLineDrawn
+    assert built_config.isConvertedToPct == erp_chart_param.isConvertedToPct
+    assert built_config.isSignalAssigned is True
+
+
+@pytest.mark.style_prep
 def test_prepare_bar_line_with_signal_data_respects_existing_signal_column():
     """prepare_bar_line_with_signal_data SHOULD NOT overwrite an existing signal column."""
     index = pd.date_range(start='2024-01-01', periods=5, freq='D').strftime('%Y%m%d')

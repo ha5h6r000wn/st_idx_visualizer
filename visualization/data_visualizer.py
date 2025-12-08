@@ -414,6 +414,53 @@ def _render_bar_line_chart_with_highlighted_signal(selected_df, config: param_cl
         )
 
 
+def build_bar_line_with_signal_param_for_style_chart(
+    style_config: param_cls.StyleBarLineChartConfig,
+    dt_slider_param: param_cls.DtSliderParam | None,
+    true_signal: str,
+    false_signal: str,
+    no_signal: str | None,
+    signal_order: list[str] | None,
+    compared_cols: list[str] | None = None,
+    is_converted_to_pct: bool = False,
+) -> param_cls.BarLineWithSignalParam:
+    """Build a BarLineWithSignalParam from a slim style chart config."""
+    bar_param = param_cls.SignalBarParam(
+        axis_names=style_config.bar_axis_names,
+        axis_types=style_config.bar_axis_types,
+        title=style_config.title,
+        y_axis_format=style_config.bar_y_axis_format,
+        true_signal=true_signal,
+        false_signal=false_signal,
+        no_signal=no_signal,
+        signal_order=signal_order,
+    )
+
+    line_param = None
+    is_line_drawn = False
+    if style_config.line_axis_names is not None:
+        line_axis_types = style_config.line_axis_types or style_config.bar_axis_types
+        line_y_axis_format = style_config.line_y_axis_format or style_config.bar_y_axis_format
+        line_param = param_cls.LineParam(
+            axis_names=style_config.line_axis_names,
+            axis_types=line_axis_types,
+            y_axis_format=line_y_axis_format,
+            stroke_dash=style_config.line_stroke_dash,
+            color=style_config.line_color,
+            compared_cols=compared_cols,
+        )
+        is_line_drawn = True
+
+    return param_cls.BarLineWithSignalParam(
+        dt_slider_param=dt_slider_param,
+        bar_param=bar_param,
+        line_param=line_param,
+        isLineDrawn=is_line_drawn,
+        isConvertedToPct=is_converted_to_pct,
+        isSignalAssigned=True,
+    )
+
+
 def draw_bar_line_chart_with_highlighted_signal(dt_indexed_df, config: param_cls.BarLineWithSignalParam):
     selected_df = prepare_bar_line_with_signal_data(dt_indexed_df, config)
     _render_bar_line_chart_with_highlighted_signal(selected_df, config, draw_line=config.isLineDrawn)
