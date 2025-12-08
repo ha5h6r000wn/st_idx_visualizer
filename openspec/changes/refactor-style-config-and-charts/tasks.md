@@ -16,9 +16,9 @@
     - [ ] Remove it in a separate, clearly documented step consistent with the `data-access` spec.
 
 - [ ] Simplify and clarify chart configuration models
-  - [ ] Audit `config/param_cls.py` usage to identify:
-    - unused or redundant fields and models,
-    - boolean flags (`isLineDrawn`, `isConvertedToPct`, `isSignalAssigned`) that drive complex branching in the visualizer.
+  - [x] Audit `config/param_cls.py` usage to identify:
+    - unused or redundant fields and models (none are currently completely unused, but several are tightly coupled via `BarLineWithSignalParam`),
+    - boolean flags (`isLineDrawn`, `isConvertedToPct`, `isSignalAssigned`) that drive complex branching in the visualizer and are now documented in the “Chart config and flag usage audit” section of `design.md`.
   - [ ] Introduce a flatter chart configuration for bar+line+signal charts that:
     - [ ] keeps only axis names/types, formats, stroke dash, and color (initial scaffolding via `StyleBarLineChartConfig` complete; ERP chart is wired through this path),
     - [ ] decouples slider configuration from chart configuration,

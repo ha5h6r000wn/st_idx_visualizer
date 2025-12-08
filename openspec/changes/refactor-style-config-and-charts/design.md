@@ -88,12 +88,53 @@ The design goal is to make the style and strategy-index visualization paths bori
   - In support of this, `config/param_cls.py` now defines `StyleBarLineChartConfig`, a slim Pydantic model that:
     - carries only axis names/types, title, per-series y-axis formats, colors, and stroke-dash,
     - and intentionally omits slider params and signal-behavior flags.
-  - Remove `isLineDrawn`, `isConvertedToPct`, and `isSignalAssigned` flags from the core config in follow-up steps; these concerns are handled by:
-    - dedicated data-prep helpers that always return the columns needed for the chart,
-    - small wrapper functions for special cases (e.g., bar-only charts).
   - For bar-only style charts with precomputed signals (relative-momentum charts), `config/param_cls.py` additionally defines `StyleBarChartConfig`, a slim Pydantic model that:
     - carries only bar axis names/types, title, y-axis format, and optional color,
     - and is used by `RELATIVE_MOMENTUM_VALUE_GROWTH_STYLE_CHART_CONFIG` and `RELATIVE_MOMENTUM_BIG_SMALL_STYLE_CHART_CONFIG` in `config/style_config.py` to mirror the existing bar settings without exposing line-related fields or behavior flags.
+
+### 2.1 Chart config and flag usage audit
+
+As of the current implementation, chart configuration models and boolean flags are used as follows:
+
+- Model usage
+  - `BaseBarParam` and `SignalBarParam`:
+    - `BaseBarParam` is used for grouped-return bars on the strategy-index page via `draw_grouped_bars` and for generic bar charts that do not have semantic signals.
+    - `SignalBarParam` is the hot path for all bar+signal style charts and for the bar leg of `BarLineWithSignalParam` in `data_visualizer`, and is always constructed with an explicit `true_signal`/`false_signal`/optional `no_signal`.
+  - `IdxLineParam`:
+    - Drives all “grouped line” charts (style relative-return lines, stg_idx NAV lines) through `draw_grouped_lines`.
+    - Its `data_col_param` defaults to `WindIdxColParam`, and tests assert that this default matches the canonical `A_IDX_PRICE` schema.
+  - `LineParam`:
+    - Used only as the line leg in bar+line charts (both legacy config and the slim style builders).
+    - `compared_cols` is only set for charts that display multiple baseline curves (index turnover, some TERM_SPREAD variants) and is otherwise `None`.
+  - `BarLineWithSignalParam`:
+    - Still used as the internal config for all bar+line+signal and bar-only-with-signal charts, but:
+      - style charts now build it exclusively via `build_bar_line_with_signal_param_for_style_chart` and `build_bar_param_for_style_bar_chart`,
+      - non-style callers (if any are added in future) would go through the same helper functions.
+  - `HeatmapParam`:
+    - Used only for the stg_idx excess-correlation heatmap via `draw_heatmap`.
+  - `StyleBarLineChartConfig` / `StyleBarChartConfig`:
+    - Used only on the style path and always converted to `BarLineWithSignalParam` at the visualizer boundary.
+
+- Flag usage (`BarLineWithSignalParam`)
+  - `isLineDrawn`:
+    - Controls whether `_render_bar_line_chart_with_highlighted_signal` is called with a line layer:
+      - `draw_bar_line_chart_with_highlighted_signal` passes `draw_line=config.isLineDrawn` directly.
+      - Tests in `tests/test_style_prep.py` (`test_draw_bar_line_chart_with_highlighted_signal_respects_isLineDrawn`) assert that setting `isLineDrawn=False` suppresses the line layer even when `line_param` is present.
+    - For style charts, the value is derived from the presence of `line_axis_names` in the slim config; relative-momentum bar-only style charts always set `isLineDrawn=False`.
+  - `isConvertedToPct`:
+    - Used only by `_apply_pct_scaling_if_needed` and `prepare_bar_line_with_signal_data` to:
+      - divide numeric columns by 100 when set to `True`, and
+      - update `bar_param.y_axis_format` and `line_param.y_axis_format` to percentage formats.
+    - Style charts that conceptually operate on percentages (e.g., term-spread bar+line, index turnover, Shibor, ERP/ERP_2) set this flag to `True` in their chart params; tests cover both the scaling behavior and the y-axis-format update.
+  - `isSignalAssigned`:
+    - Decides whether `prepare_bar_line_with_signal_data` should compute signals or respect an existing signal column:
+      - When `isSignalAssigned` is `True`, and the signal column exists, the helper treats it as authoritative and does not recompute signals.
+      - When `isSignalAssigned` is `False` and the signal column is absent, the helper uses `apply_signal_from_conditions`/`append_signal_column` to construct the signal column from bar/line relationships or quantile bands.
+    - For style charts:
+      - all “business signal” charts (index turnover, ERP/ERP_2, credit expansion, style focus, Shibor, housing investment) set `isSignalAssigned=True`, and signals are always precomputed in data-prep helpers or inline before calling the draw helper;
+      - band-style TERM_SPREAD variants still rely on `isSignalAssigned=False` and let the helper compute signals mechanically from thresholds/bands.
+
+No chart config fields are currently completely unused; the main complexity lies in the way `BarLineWithSignalParam` couples slider configuration, signal computation, and percentage scaling via the three flags above.
 
 ### 3. Data-prep vs rendering separation
 
