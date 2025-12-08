@@ -53,6 +53,22 @@ def _load_style_index_data() -> tuple[pd.DataFrame, pd.DataFrame]:
 
 
 @pytest.mark.style_prep
+def test_index_erp_style_chart_config_matches_bar_line_param():
+    """Ensure the slim style chart config for ERP matches the existing bar+line config."""
+    erp_chart_param = style_config.INDEX_ERP_CHART_PARAM
+    erp_style_config = style_config.INDEX_ERP_STYLE_CHART_CONFIG
+
+    assert erp_style_config.bar_axis_names == erp_chart_param.bar_param.axis_names
+    assert erp_style_config.bar_axis_types == erp_chart_param.bar_param.axis_types
+    assert erp_style_config.line_axis_names == erp_chart_param.line_param.axis_names
+    assert erp_style_config.line_axis_types == erp_chart_param.line_param.axis_types
+    assert erp_style_config.title == erp_chart_param.bar_param.title
+    assert erp_style_config.bar_y_axis_format == erp_chart_param.bar_param.y_axis_format
+    assert erp_style_config.line_y_axis_format == erp_chart_param.line_param.y_axis_format
+    assert erp_style_config.line_stroke_dash == erp_chart_param.line_param.stroke_dash
+
+
+@pytest.mark.style_prep
 def test_prepare_bar_line_with_signal_data_respects_existing_signal_column():
     """prepare_bar_line_with_signal_data SHOULD NOT overwrite an existing signal column."""
     index = pd.date_range(start='2024-01-01', periods=5, freq='D').strftime('%Y%m%d')

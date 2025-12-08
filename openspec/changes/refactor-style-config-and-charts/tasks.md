@@ -20,7 +20,7 @@
     - unused or redundant fields and models,
     - boolean flags (`isLineDrawn`, `isConvertedToPct`, `isSignalAssigned`) that drive complex branching in the visualizer.
   - [ ] Introduce a flatter chart configuration for bar+line+signal charts that:
-    - [ ] keeps only axis names/types, formats, stroke dash, and color,
+    - [ ] keeps only axis names/types, formats, stroke dash, and color (initial scaffolding via `StyleBarLineChartConfig` complete),
     - [ ] decouples slider configuration from chart configuration,
     - [ ] and maintains Pydantic usage only where it adds validation value.
   - [ ] Update `config/style_config.py` to use the flatter configuration for existing style charts without changing behavior.

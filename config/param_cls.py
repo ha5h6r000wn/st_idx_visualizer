@@ -136,13 +136,14 @@ class LineParam(BaseChartParam):
 class StyleBarLineChartConfig(BaseModel):
     """Slim chart config for style bar+line+signal charts.
 
-    This model is intentionally limited to visual-encoding concerns
-    (axis names/types, formats, colors, stroke dash) and does not
-    carry widget or signal-behavior flags.
+    This model is intentionally limited to visual-encoding concerns and
+    does not carry widget or signal-behavior flags.
     """
 
-    axis_names: Dict[str, str]
-    axis_types: Dict[str, str] = {'X': 'N', 'LEGEND': 'N', 'Y': 'Q'}
+    bar_axis_names: Dict[str, str]
+    bar_axis_types: Dict[str, str] = {'X': 'N', 'LEGEND': 'N', 'Y': 'Q'}
+    line_axis_names: Dict[str, str] | None = None
+    line_axis_types: Dict[str, str] | None = None
     title: str | None = None
     bar_y_axis_format: str = '.3f'
     line_y_axis_format: str | None = None
