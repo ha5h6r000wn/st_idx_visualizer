@@ -133,6 +133,24 @@ class LineParam(BaseChartParam):
     compared_cols: List[str] | None = None
 
 
+class StyleBarLineChartConfig(BaseModel):
+    """Slim chart config for style bar+line+signal charts.
+
+    This model is intentionally limited to visual-encoding concerns
+    (axis names/types, formats, colors, stroke dash) and does not
+    carry widget or signal-behavior flags.
+    """
+
+    axis_names: Dict[str, str]
+    axis_types: Dict[str, str] = {'X': 'N', 'LEGEND': 'N', 'Y': 'Q'}
+    title: str | None = None
+    bar_y_axis_format: str = '.3f'
+    line_y_axis_format: str | None = None
+    bar_color: str | None = None
+    line_color: str | None = None
+    line_stroke_dash: tuple = (5, 0)
+
+
 class BarLineWithSignalParam(BaseModel):
     dt_slider_param: DtSliderParam | None = None
     bar_param: BaseBarParam

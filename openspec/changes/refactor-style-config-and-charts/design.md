@@ -82,9 +82,11 @@ The design goal is to make the style and strategy-index visualization paths bori
   - For bar+line+signal charts, introduce a single flat config struct (still Pydantic-based if useful) with:
     - axis names and types for bar and line,
     - y-axis format for each series,
-    - color and stroke-dash settings,
-    - and legend placement.
-  - Remove `isLineDrawn`, `isConvertedToPct`, and `isSignalAssigned` flags from the core config; these concerns are handled by:
+    - color and stroke-dash settings.
+  - In support of this, `config/param_cls.py` now defines `StyleBarLineChartConfig`, a slim Pydantic model that:
+    - carries only axis names/types, title, per-series y-axis formats, colors, and stroke-dash,
+    - and intentionally omits slider params and signal-behavior flags.
+  - Remove `isLineDrawn`, `isConvertedToPct`, and `isSignalAssigned` flags from the core config in follow-up steps; these concerns are handled by:
     - dedicated data-prep helpers that always return the columns needed for the chart,
     - small wrapper functions for special cases (e.g., bar-only charts).
 
