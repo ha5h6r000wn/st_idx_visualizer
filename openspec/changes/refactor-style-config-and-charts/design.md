@@ -111,6 +111,9 @@ The design goal is to make the style and strategy-index visualization paths bori
 **Design decisions**
 
 - Keep the new style data-prep helpers as the canonical pattern going forward; do not re-introduce inline transformations in `generate_style_charts`.
+- Extract a thin, shared renderer for bar+line+signal charts:
+  - `draw_bar_line_chart_with_highlighted_signal` and `draw_bar_line_chart_with_highlighted_predefined_signal` both now delegate to a common `_render_bar_line_chart_with_highlighted_signal` helper that accepts an already-sliced/prepared frame and a `BarLineWithSignalParam`,
+  - the renderer only builds the Altair bar/line layers and calls `st.altair_chart`, leaving date-window selection and signal computation to the caller.
 - In a follow-up step, simplify `prepare_bar_line_with_signal_data` and the related helpers so that they:
   - no longer mutate config objects,
   - no longer depend on `DtSliderParam` for `custom_dt`,

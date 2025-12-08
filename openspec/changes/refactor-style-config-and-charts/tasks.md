@@ -64,7 +64,8 @@
 - [ ] Validation
   - [x] Add minimal tests or scripts that:
     - [x] exercise data-prep functions for key style components with fixture CSVs under `data/` (value-vs-growth, Shibor, index turnover, term spread, ERP/ERP_2, credit expansion, style focus, housing investment, big-small momentum),
-    - [x] assert key invariants (e.g., presence of canonical columns, monotonic date indices, and signal values within the configured enum sets).
+    - [x] assert key invariants (e.g., presence of canonical columns, monotonic date indices, and signal values within the configured enum sets),
+    - [x] cover `prepare_bar_line_with_signal_data` and `DtSliderParam`-driven window selection to ensure chart helpers respect precomputed signals and slider defaults.
   - [ ] Manually run `streamlit run app.py` and verify:
     - [ ] all charts render without errors,
     - [ ] chart values and signals visually match pre-change behavior for a fixed snapshot of CSV data.

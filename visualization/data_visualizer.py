@@ -396,17 +396,11 @@ def prepare_bar_line_with_signal_data(
     return selected_df
 
 
-def draw_bar_line_chart_with_highlighted_signal(dt_indexed_df, config: param_cls.BarLineWithSignalParam):
-    selected_df = prepare_bar_line_with_signal_data(dt_indexed_df, config)
-
-    # 创建条形图
+def _render_bar_line_chart_with_highlighted_signal(selected_df, config: param_cls.BarLineWithSignalParam, draw_line: bool):
     bar = add_altair_bar_with_highlighted_signal(selected_df, config.bar_param)
 
-    if config.isLineDrawn:
-        # 创建线图
+    if draw_line:
         line = add_altair_line_with_stroke_dash(selected_df, config.line_param)
-
-        # 显示图表
         st.altair_chart(
             (bar + line).resolve_scale(color='independent'),
             theme='streamlit',
@@ -420,9 +414,13 @@ def draw_bar_line_chart_with_highlighted_signal(dt_indexed_df, config: param_cls
         )
 
 
+def draw_bar_line_chart_with_highlighted_signal(dt_indexed_df, config: param_cls.BarLineWithSignalParam):
+    selected_df = prepare_bar_line_with_signal_data(dt_indexed_df, config)
+    _render_bar_line_chart_with_highlighted_signal(selected_df, config, draw_line=config.isLineDrawn)
+
+
 def draw_bar_line_chart_with_highlighted_predefined_signal(dt_indexed_df, config: param_cls.BarLineWithSignalParam):
     trade_dt = dt_indexed_df.index
-    # st.write(trade_dt[-1])
     if config.dt_slider_param is not None:
         custom_dt = get_custom_dt_with_slider(trade_dt=trade_dt, config=config.dt_slider_param)
         selected_df = dt_indexed_df.loc[custom_dt[0] : custom_dt[1]].reset_index()
@@ -435,25 +433,7 @@ def draw_bar_line_chart_with_highlighted_predefined_signal(dt_indexed_df, config
         if config.line_param is not None:
             config.line_param.y_axis_format = CHART_NUM_FORMAT['pct']
 
-    # st.write(selected_df)
-
-    # 创建条形图
-    bar = add_altair_bar_with_highlighted_signal(selected_df, config.bar_param)
-
     if config.line_param is not None:
         selected_df[config.line_param.axis_names['LEGEND']] = config.line_param.axis_names['Y']
-        # 创建线图
-        line = add_altair_line_with_stroke_dash(selected_df, config.line_param)
 
-        # 显示图表
-        st.altair_chart(
-            (bar + line).resolve_scale(color='independent'),
-            theme='streamlit',
-            use_container_width=True,
-        )
-    else:
-        st.altair_chart(
-            bar,
-            theme='streamlit',
-            use_container_width=True,
-        )
+    _render_bar_line_chart_with_highlighted_signal(selected_df, config, draw_line=config.line_param is not None)
