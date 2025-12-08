@@ -119,8 +119,8 @@ The design goal is to make the style and strategy-index visualization paths bori
 - Introduce a style-specific draw helper that bridges slim configs to the existing helpers:
   - `build_bar_line_with_signal_param_for_style_chart` constructs a `BarLineWithSignalParam` from a `StyleBarLineChartConfig`, slider params, signal labels, and optional `compared_cols`,
   - `draw_style_bar_line_chart_with_highlighted_signal` uses this builder and then calls `draw_bar_line_chart_with_highlighted_signal`, ensuring style charts can migrate to slim configs without changing behavior.
-- As early adopters, the ERP and credit-expansion style charts:
-  - define `INDEX_ERP_STYLE_CHART_CONFIG` and `CREDIT_EXPANSION_STYLE_CHART_CONFIG` using `StyleBarLineChartConfig`,
+- As early adopters, the ERP, credit-expansion, and style-focus/Shibor style charts:
+  - define `INDEX_ERP_STYLE_CHART_CONFIG`, `CREDIT_EXPANSION_STYLE_CHART_CONFIG`, `STYLE_FOCUS_STYLE_CHART_CONFIG`, and `SHIBOR_PRICES_STYLE_CHART_CONFIG` using `StyleBarLineChartConfig`,
   - use `draw_style_bar_line_chart_with_highlighted_signal` in `visualization/style.generate_style_charts`,
   - and are covered by additional tests that validate the end-to-end pipeline (data-prep → signal assignment → helper wiring) remains unchanged for the existing CSV snapshot.
 - In a follow-up step, simplify `prepare_bar_line_with_signal_data` and the related helpers so that they:

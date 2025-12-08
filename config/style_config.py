@@ -608,6 +608,19 @@ SHIBOR_PRICES_CHART_PARAM = param_cls.BarLineWithSignalParam(
     isSignalAssigned=True,
 )
 
+SHIBOR_PRICES_STYLE_CHART_CONFIG = param_cls.StyleBarLineChartConfig(
+    bar_axis_names=SHIBOR_PRICES_CHART_PARAM.bar_param.axis_names,
+    bar_axis_types=SHIBOR_PRICES_CHART_PARAM.bar_param.axis_types,
+    line_axis_names=SHIBOR_PRICES_CHART_PARAM.line_param.axis_names,
+    line_axis_types=SHIBOR_PRICES_CHART_PARAM.line_param.axis_types,
+    title=SHIBOR_PRICES_CHART_PARAM.bar_param.title,
+    bar_y_axis_format=SHIBOR_PRICES_CHART_PARAM.bar_param.y_axis_format,
+    line_y_axis_format=SHIBOR_PRICES_CHART_PARAM.line_param.y_axis_format,
+    bar_color=None,
+    line_color=SHIBOR_PRICES_CHART_PARAM.line_param.color,
+    line_stroke_dash=SHIBOR_PRICES_CHART_PARAM.line_param.stroke_dash,
+)
+
 
 # NOTE 经济增长: 房地产完成额累计同比
 HOUSING_INVEST_CONFIG = {

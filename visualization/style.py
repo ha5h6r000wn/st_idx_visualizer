@@ -832,8 +832,16 @@ def generate_style_charts():
             default=style_config.SHIBOR_PRICES_CONFIG['FALSE_SIGNAL'],
         )
 
-        draw_bar_line_chart_with_highlighted_signal(
-            dt_indexed_df=shibor_prices_df, config=style_config.SHIBOR_PRICES_CHART_PARAM
+        draw_style_bar_line_chart_with_highlighted_signal(
+            dt_indexed_df=shibor_prices_df,
+            style_chart_config=style_config.SHIBOR_PRICES_STYLE_CHART_CONFIG,
+            dt_slider_param=style_config.SHIBOR_PRICES_CHART_PARAM.dt_slider_param,
+            true_signal=style_config.SHIBOR_PRICES_CONFIG['TRUE_SIGNAL'],
+            false_signal=style_config.SHIBOR_PRICES_CONFIG['FALSE_SIGNAL'],
+            no_signal=None,
+            signal_order=style_config.SHIBOR_PRICES_CHART_PARAM.bar_param.signal_order,
+            compared_cols=style_config.SHIBOR_PRICES_CHART_PARAM.line_param.compared_cols,
+            is_converted_to_pct=style_config.SHIBOR_PRICES_CHART_PARAM.isConvertedToPct,
         )
 
         # NOTE 经济增长: 房地产完成额累计同比
