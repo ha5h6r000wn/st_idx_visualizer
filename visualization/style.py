@@ -733,9 +733,16 @@ def generate_style_charts():
             choices=credit_expansion_choices,
             default=style_config.CREDIT_EXPANSION_CONFIG['FALSE_SIGNAL'],
         )
-        draw_bar_line_chart_with_highlighted_signal(
+        draw_style_bar_line_chart_with_highlighted_signal(
             dt_indexed_df=credit_expansion_df,
-            config=style_config.CREDIT_EXPANSION_CHART_PARAM,
+            style_chart_config=style_config.CREDIT_EXPANSION_STYLE_CHART_CONFIG,
+            dt_slider_param=style_config.CREDIT_EXPANSION_CHART_PARAM.dt_slider_param,
+            true_signal=style_config.CREDIT_EXPANSION_CONFIG['TRUE_SIGNAL'],
+            false_signal=style_config.CREDIT_EXPANSION_CONFIG['FALSE_SIGNAL'],
+            no_signal=None,
+            signal_order=style_config.CREDIT_EXPANSION_CHART_PARAM.bar_param.signal_order,
+            compared_cols=style_config.CREDIT_EXPANSION_CHART_PARAM.line_param.compared_cols,
+            is_converted_to_pct=style_config.CREDIT_EXPANSION_CHART_PARAM.isConvertedToPct,
         )
 
     # 2. 大小盘研判框架

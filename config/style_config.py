@@ -472,6 +472,19 @@ CREDIT_EXPANSION_CHART_PARAM = param_cls.BarLineWithSignalParam(
     isSignalAssigned=True,
 )
 
+CREDIT_EXPANSION_STYLE_CHART_CONFIG = param_cls.StyleBarLineChartConfig(
+    bar_axis_names=CREDIT_EXPANSION_CHART_PARAM.bar_param.axis_names,
+    bar_axis_types=CREDIT_EXPANSION_CHART_PARAM.bar_param.axis_types,
+    line_axis_names=CREDIT_EXPANSION_CHART_PARAM.line_param.axis_names,
+    line_axis_types=CREDIT_EXPANSION_CHART_PARAM.line_param.axis_types,
+    title=CREDIT_EXPANSION_CHART_PARAM.bar_param.title,
+    bar_y_axis_format=CREDIT_EXPANSION_CHART_PARAM.bar_param.y_axis_format,
+    line_y_axis_format=CREDIT_EXPANSION_CHART_PARAM.line_param.y_axis_format,
+    bar_color=None,
+    line_color=CREDIT_EXPANSION_CHART_PARAM.line_param.color,
+    line_stroke_dash=CREDIT_EXPANSION_CHART_PARAM.line_param.stroke_dash,
+)
+
 
 ## NOTE 大小盘研判框架
 
