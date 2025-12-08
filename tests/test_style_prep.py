@@ -766,6 +766,121 @@ def test_prepare_term_spread_data_basic_invariants():
 
 
 @pytest.mark.style_prep
+def test_term_spread_style_chart_config_matches_bar_line_param():
+    """Ensure the slim style chart config for term spread matches the existing bar+line config."""
+    ts_chart_param = style_config.TERM_SPREAD_CHART_PARAM
+    ts_style_config = style_config.TERM_SPREAD_STYLE_CHART_CONFIG
+
+    assert ts_style_config.bar_axis_names == ts_chart_param.bar_param.axis_names
+    assert ts_style_config.bar_axis_types == ts_chart_param.bar_param.axis_types
+    assert ts_style_config.line_axis_names == ts_chart_param.line_param.axis_names
+    assert ts_style_config.line_axis_types == ts_chart_param.line_param.axis_types
+    assert ts_style_config.title == ts_chart_param.bar_param.title
+    assert ts_style_config.bar_y_axis_format == ts_chart_param.bar_param.y_axis_format
+    assert ts_style_config.line_y_axis_format == ts_chart_param.line_param.y_axis_format
+    assert ts_style_config.line_stroke_dash == ts_chart_param.line_param.stroke_dash
+
+
+@pytest.mark.style_prep
+def test_term_spread_bar_line_pipeline_basic_invariants():
+    """End-to-end invariants for term spread data prep + bar+line+signal helper."""
+    from data_preparation.data_fetcher import fetch_data_from_local as _fetch_table  # type: ignore
+
+    latest_date = "99991231"
+    long_raw_cn_bond_yield_df = _fetch_table(latest_date=latest_date, table_name="CN_BOND_YIELD")
+
+    term_spread_df, yield_curve_df, wide_raw_cn_bond_yield_df = prepare_term_spread_data(
+        long_raw_cn_bond_yield_df=long_raw_cn_bond_yield_df
+    )
+
+    idx = term_spread_df.index
+    custom_dt = (idx[0], idx[-1])
+
+    result = data_visualizer.prepare_bar_line_with_signal_data(
+        dt_indexed_df=term_spread_df,
+        config=style_config.TERM_SPREAD_CHART_PARAM,
+        custom_dt=custom_dt,
+    )
+
+    assert not result.empty
+
+    # TRADE_DT column should exist and be monotonically increasing.
+    dt_col = style_config.YIELD_CURVE_COL_PARAM.dt_col
+    assert dt_col in result.columns
+    assert result[dt_col].is_monotonic_increasing
+
+    # Bar axis columns must exist.
+    bar_axis_names = style_config.TERM_SPREAD_CHART_PARAM.bar_param.axis_names
+    for col in bar_axis_names.values():
+        assert col in result.columns
+
+    # Line X/LEGEND axis columns must exist.
+    line_axis_names = style_config.TERM_SPREAD_CHART_PARAM.line_param.axis_names
+    for col in (line_axis_names["X"], line_axis_names["LEGEND"]):
+        assert col in result.columns
+
+    # Term spread core columns must still be present after helper processing.
+    spread_col = style_config.TERM_SPREAD_CONFIG["TERM_SPREAD_COL"]
+    mean_col = style_config.TERM_SPREAD_CONFIG["MEAN_COL"]
+    for col in (spread_col, mean_col):
+        assert col in result.columns
+
+    # Signal column and its value set should remain valid.
+    signal_col = style_config.TERM_SPREAD_CONFIG["SIGNAL_COL"]
+    assert signal_col in result.columns
+    signal_values = set(result[signal_col].dropna().unique().tolist())
+    expected = {
+        style_config.TERM_SPREAD_CHART_PARAM.bar_param.true_signal,
+        style_config.TERM_SPREAD_CHART_PARAM.bar_param.false_signal,
+    }
+    assert signal_values.issubset(expected)
+
+
+@pytest.mark.style_prep
+def test_term_spread_style_draw_helper_smoke():
+    """Smoke test for the style-specific term spread draw helper."""
+    from data_preparation.data_fetcher import fetch_data_from_local as _fetch_table  # type: ignore
+
+    latest_date = "99991231"
+    long_raw_cn_bond_yield_df = _fetch_table(latest_date=latest_date, table_name="CN_BOND_YIELD")
+
+    term_spread_df, yield_curve_df, wide_raw_cn_bond_yield_df = prepare_term_spread_data(
+        long_raw_cn_bond_yield_df=long_raw_cn_bond_yield_df
+    )
+
+    idx = term_spread_df.index
+    custom_dt = (idx[0], idx[-1])
+
+    def _fake_select_slider(*args, **kwargs):
+        return custom_dt
+
+    def _fake_altair_chart(*args, **kwargs):
+        return None
+
+    original_select_slider = data_visualizer.st.select_slider
+    original_altair_chart = data_visualizer.st.altair_chart
+    try:
+        data_visualizer.st.select_slider = _fake_select_slider  # type: ignore[assignment]
+        data_visualizer.st.altair_chart = _fake_altair_chart  # type: ignore[assignment]
+
+        data_visualizer.draw_style_bar_line_chart_with_highlighted_signal(
+            dt_indexed_df=term_spread_df,
+            style_chart_config=style_config.TERM_SPREAD_STYLE_CHART_CONFIG,
+            dt_slider_param=style_config.TERM_SPREAD_CHART_PARAM.dt_slider_param,
+            true_signal=style_config.TERM_SPREAD_CHART_PARAM.bar_param.true_signal,
+            false_signal=style_config.TERM_SPREAD_CHART_PARAM.bar_param.false_signal,
+            no_signal=None,
+            signal_order=style_config.TERM_SPREAD_CHART_PARAM.bar_param.signal_order,
+            compared_cols=style_config.TERM_SPREAD_CHART_PARAM.line_param.compared_cols,
+            is_converted_to_pct=style_config.TERM_SPREAD_CHART_PARAM.isConvertedToPct,
+            is_signal_assigned=False,
+        )
+    finally:
+        data_visualizer.st.select_slider = original_select_slider  # type: ignore[assignment]
+        data_visualizer.st.altair_chart = original_altair_chart  # type: ignore[assignment]
+
+
+@pytest.mark.style_prep
 def test_prepare_index_erp_data_basic_invariants():
     # Reuse the same data wiring as generate_style_charts:
     # - CN_BOND_YIELD wide frame from prepare_term_spread_data

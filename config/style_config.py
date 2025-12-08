@@ -225,6 +225,19 @@ TERM_SPREAD_CHART_PARAM = param_cls.BarLineWithSignalParam(
     isConvertedToPct=True,
 )
 
+TERM_SPREAD_STYLE_CHART_CONFIG = param_cls.StyleBarLineChartConfig(
+    bar_axis_names=TERM_SPREAD_CHART_PARAM.bar_param.axis_names,
+    bar_axis_types=TERM_SPREAD_CHART_PARAM.bar_param.axis_types,
+    line_axis_names=TERM_SPREAD_CHART_PARAM.line_param.axis_names,
+    line_axis_types=TERM_SPREAD_CHART_PARAM.line_param.axis_types,
+    title=TERM_SPREAD_CHART_PARAM.bar_param.title,
+    bar_y_axis_format=TERM_SPREAD_CHART_PARAM.bar_param.y_axis_format,
+    line_y_axis_format=TERM_SPREAD_CHART_PARAM.line_param.y_axis_format,
+    bar_color=None,
+    line_color=TERM_SPREAD_CHART_PARAM.line_param.color,
+    line_stroke_dash=TERM_SPREAD_CHART_PARAM.line_param.stroke_dash,
+)
+
 # NOTE 换手率
 INDEX_TURNOVER_CONFIG = {
     'WIND_TABLE': param_cls.WindPortal.A_IDX_VAL,
@@ -722,6 +735,19 @@ TERM_SPREAD_2_CHART_PARAM = param_cls.BarLineWithSignalParam(
         color='red',
     ),
     isConvertedToPct=True,
+)
+
+TERM_SPREAD_2_STYLE_CHART_CONFIG = param_cls.StyleBarLineChartConfig(
+    bar_axis_names=TERM_SPREAD_2_CHART_PARAM.bar_param.axis_names,
+    bar_axis_types=TERM_SPREAD_2_CHART_PARAM.bar_param.axis_types,
+    line_axis_names=TERM_SPREAD_2_CHART_PARAM.line_param.axis_names,
+    line_axis_types=TERM_SPREAD_2_CHART_PARAM.line_param.axis_types,
+    title=TERM_SPREAD_2_CHART_PARAM.bar_param.title,
+    bar_y_axis_format=TERM_SPREAD_2_CHART_PARAM.bar_param.y_axis_format,
+    line_y_axis_format=TERM_SPREAD_2_CHART_PARAM.line_param.y_axis_format,
+    bar_color=None,
+    line_color=TERM_SPREAD_2_CHART_PARAM.line_param.color,
+    line_stroke_dash=TERM_SPREAD_2_CHART_PARAM.line_param.stroke_dash,
 )
 
 

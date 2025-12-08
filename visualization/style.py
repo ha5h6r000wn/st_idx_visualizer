@@ -648,8 +648,17 @@ def generate_style_charts():
             long_raw_cn_bond_yield_df=long_raw_df_collection['CN_BOND_YIELD'],
         )
 
-        draw_bar_line_chart_with_highlighted_signal(
-            dt_indexed_df=term_spread_df, config=style_config.TERM_SPREAD_CHART_PARAM
+        draw_style_bar_line_chart_with_highlighted_signal(
+            dt_indexed_df=term_spread_df,
+            style_chart_config=style_config.TERM_SPREAD_STYLE_CHART_CONFIG,
+            dt_slider_param=style_config.TERM_SPREAD_CHART_PARAM.dt_slider_param,
+            true_signal=style_config.TERM_SPREAD_CHART_PARAM.bar_param.true_signal,
+            false_signal=style_config.TERM_SPREAD_CHART_PARAM.bar_param.false_signal,
+            no_signal=None,
+            signal_order=style_config.TERM_SPREAD_CHART_PARAM.bar_param.signal_order,
+            compared_cols=style_config.TERM_SPREAD_CHART_PARAM.line_param.compared_cols,
+            is_converted_to_pct=style_config.TERM_SPREAD_CHART_PARAM.isConvertedToPct,
+            is_signal_assigned=False,
         )
 
         term_spread_line_config = param_cls.IdxLineParam(
@@ -884,8 +893,17 @@ def generate_style_charts():
 
         # NOTE 期现利差
 
-        draw_bar_line_chart_with_highlighted_signal(
-            dt_indexed_df=term_spread_df, config=style_config.TERM_SPREAD_2_CHART_PARAM
+        draw_style_bar_line_chart_with_highlighted_signal(
+            dt_indexed_df=term_spread_df,
+            style_chart_config=style_config.TERM_SPREAD_2_STYLE_CHART_CONFIG,
+            dt_slider_param=style_config.TERM_SPREAD_2_CHART_PARAM.dt_slider_param,
+            true_signal=style_config.TERM_SPREAD_2_CHART_PARAM.bar_param.true_signal,
+            false_signal=style_config.TERM_SPREAD_2_CHART_PARAM.bar_param.false_signal,
+            no_signal=None,
+            signal_order=style_config.TERM_SPREAD_2_CHART_PARAM.bar_param.signal_order,
+            compared_cols=style_config.TERM_SPREAD_2_CHART_PARAM.line_param.compared_cols,
+            is_converted_to_pct=style_config.TERM_SPREAD_2_CHART_PARAM.isConvertedToPct,
+            is_signal_assigned=False,
         )
 
         term_spread_2_line_config = param_cls.IdxLineParam(

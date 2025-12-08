@@ -423,6 +423,7 @@ def build_bar_line_with_signal_param_for_style_chart(
     signal_order: list[str] | None,
     compared_cols: list[str] | None = None,
     is_converted_to_pct: bool = False,
+    is_signal_assigned: bool = True,
 ) -> param_cls.BarLineWithSignalParam:
     """Build a BarLineWithSignalParam from a slim style chart config."""
     bar_param = param_cls.SignalBarParam(
@@ -457,7 +458,7 @@ def build_bar_line_with_signal_param_for_style_chart(
         line_param=line_param,
         isLineDrawn=is_line_drawn,
         isConvertedToPct=is_converted_to_pct,
-        isSignalAssigned=True,
+        isSignalAssigned=is_signal_assigned,
     )
 
 
@@ -471,6 +472,7 @@ def draw_style_bar_line_chart_with_highlighted_signal(
     signal_order: list[str] | None,
     compared_cols: list[str] | None = None,
     is_converted_to_pct: bool = False,
+    is_signal_assigned: bool = True,
 ):
     """Draw bar+line+signal chart for style blocks using a slim chart config."""
     config = build_bar_line_with_signal_param_for_style_chart(
@@ -482,6 +484,7 @@ def draw_style_bar_line_chart_with_highlighted_signal(
         signal_order=signal_order,
         compared_cols=compared_cols,
         is_converted_to_pct=is_converted_to_pct,
+        is_signal_assigned=is_signal_assigned,
     )
     draw_bar_line_chart_with_highlighted_signal(dt_indexed_df=dt_indexed_df, config=config)
 
