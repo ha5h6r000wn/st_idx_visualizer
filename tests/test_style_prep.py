@@ -728,6 +728,70 @@ def test_prepare_bar_line_with_signal_data_converts_to_pct_when_flag_set():
 
 
 @pytest.mark.style_prep
+def test_draw_bar_line_chart_with_highlighted_signal_respects_isLineDrawn():
+    """draw_bar_line_chart_with_highlighted_signal SHOULD honor isLineDrawn when line_param is present."""
+    index = pd.date_range(start='2024-01-01', periods=3, freq='D').strftime('%Y%m%d')
+    df = pd.DataFrame(
+        {
+            'TRADE_DT': index,
+            'value': [1.0, 2.0, 3.0],
+            'baseline': [0.5, 1.0, 1.5],
+            'signal': ['UP', 'DOWN', 'UP'],
+        }
+    ).set_index('TRADE_DT')
+
+    bar_param = param_cls.SignalBarParam(
+        axis_names={'X': 'TRADE_DT', 'Y': 'value', 'LEGEND': 'signal'},
+        title='test',
+        true_signal='UP',
+        false_signal='DOWN',
+        no_signal=None,
+        y_axis_format=config.CHART_NUM_FORMAT['float'],
+    )
+    line_param = param_cls.LineParam(
+        axis_names={'X': 'TRADE_DT', 'Y': 'baseline', 'LEGEND': 'line_legend'},
+        y_axis_format=config.CHART_NUM_FORMAT['float'],
+    )
+
+    base_config_kwargs = {
+        'dt_slider_param': None,
+        'bar_param': bar_param,
+        'line_param': line_param,
+        'isConvertedToPct': False,
+        'isSignalAssigned': True,
+    }
+
+    line_call_count = {'count': 0}
+
+    original_add_line = data_visualizer.add_altair_line_with_stroke_dash
+    original_altair_chart = data_visualizer.st.altair_chart
+
+    def _tracked_add_altair_line(df, cfg):
+        line_call_count['count'] += 1
+        return original_add_line(df, cfg)
+
+    def _fake_altair_chart(*args, **kwargs):
+        return None
+
+    try:
+        data_visualizer.add_altair_line_with_stroke_dash = _tracked_add_altair_line  # type: ignore[assignment]
+        data_visualizer.st.altair_chart = _fake_altair_chart  # type: ignore[assignment]
+
+        # When isLineDrawn is True and line_param is present, the line helper SHOULD be called.
+        config_draw_line = param_cls.BarLineWithSignalParam(isLineDrawn=True, **base_config_kwargs)
+        data_visualizer.draw_bar_line_chart_with_highlighted_signal(dt_indexed_df=df, config=config_draw_line)
+        assert line_call_count['count'] == 1
+
+        # When isLineDrawn is False (even with line_param present), the line helper SHOULD NOT be called.
+        config_bar_only = param_cls.BarLineWithSignalParam(isLineDrawn=False, **base_config_kwargs)
+        data_visualizer.draw_bar_line_chart_with_highlighted_signal(dt_indexed_df=df, config=config_bar_only)
+        assert line_call_count['count'] == 1
+    finally:
+        data_visualizer.add_altair_line_with_stroke_dash = original_add_line  # type: ignore[assignment]
+        data_visualizer.st.altair_chart = original_altair_chart  # type: ignore[assignment]
+
+
+@pytest.mark.style_prep
 def test_get_custom_dt_with_slider_and_prepare_bar_line_with_signal_data_respects_window():
     """Slider default window SHOULD match DtSliderParam offsets and be used by prepare_bar_line_with_signal_data."""
     index = pd.date_range(start='2024-01-01', periods=10, freq='D').strftime('%Y%m%d')
