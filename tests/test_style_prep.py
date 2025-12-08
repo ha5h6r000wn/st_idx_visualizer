@@ -111,6 +111,64 @@ def test_index_erp_style_chart_builds_equivalent_bar_line_config():
 
 
 @pytest.mark.style_prep
+def test_index_erp_2_style_chart_config_matches_bar_line_param():
+    """Ensure the slim style chart config for ERP_2 matches the existing bar+line config."""
+    erp_2_chart_param = style_config.INDEX_ERP_2_CHART_PARAM
+    erp_2_style_config = style_config.INDEX_ERP_2_STYLE_CHART_CONFIG
+
+    assert erp_2_style_config.bar_axis_names == erp_2_chart_param.bar_param.axis_names
+    assert erp_2_style_config.bar_axis_types == erp_2_chart_param.bar_param.axis_types
+    assert erp_2_style_config.line_axis_names == erp_2_chart_param.line_param.axis_names
+    assert erp_2_style_config.line_axis_types == erp_2_chart_param.line_param.axis_types
+    assert erp_2_style_config.title == erp_2_chart_param.bar_param.title
+    assert erp_2_style_config.bar_y_axis_format == erp_2_chart_param.bar_param.y_axis_format
+    assert erp_2_style_config.line_y_axis_format == erp_2_chart_param.line_param.y_axis_format
+    assert erp_2_style_config.line_stroke_dash == erp_2_chart_param.line_param.stroke_dash
+
+
+@pytest.mark.style_prep
+def test_index_erp_2_style_chart_builds_equivalent_bar_line_config():
+    """Ensure the builder reproduces the existing ERP_2 bar+line config."""
+    erp_2_chart_param = style_config.INDEX_ERP_2_CHART_PARAM
+    erp_2_style_config = style_config.INDEX_ERP_2_STYLE_CHART_CONFIG
+
+    built_config = data_visualizer.build_bar_line_with_signal_param_for_style_chart(
+        style_config=erp_2_style_config,
+        dt_slider_param=erp_2_chart_param.dt_slider_param,
+        true_signal=erp_2_chart_param.bar_param.true_signal,
+        false_signal=erp_2_chart_param.bar_param.false_signal,
+        no_signal=erp_2_chart_param.bar_param.no_signal,
+        signal_order=erp_2_chart_param.bar_param.signal_order,
+        compared_cols=erp_2_chart_param.line_param.compared_cols,
+        is_converted_to_pct=erp_2_chart_param.isConvertedToPct,
+    )
+
+    # Bar param equivalence
+    assert built_config.bar_param.axis_names == erp_2_chart_param.bar_param.axis_names
+    assert built_config.bar_param.axis_types == erp_2_chart_param.bar_param.axis_types
+    assert built_config.bar_param.title == erp_2_chart_param.bar_param.title
+    assert built_config.bar_param.y_axis_format == erp_2_chart_param.bar_param.y_axis_format
+    assert built_config.bar_param.true_signal == erp_2_chart_param.bar_param.true_signal
+    assert built_config.bar_param.false_signal == erp_2_chart_param.bar_param.false_signal
+    assert built_config.bar_param.no_signal == erp_2_chart_param.bar_param.no_signal
+    assert built_config.bar_param.signal_order == erp_2_chart_param.bar_param.signal_order
+
+    # Line param equivalence
+    assert built_config.line_param.axis_names == erp_2_chart_param.line_param.axis_names
+    assert built_config.line_param.axis_types == erp_2_chart_param.line_param.axis_types
+    assert built_config.line_param.y_axis_format == erp_2_chart_param.line_param.y_axis_format
+    assert built_config.line_param.stroke_dash == erp_2_chart_param.line_param.stroke_dash
+    assert built_config.line_param.color == erp_2_chart_param.line_param.color
+    assert built_config.line_param.compared_cols == erp_2_chart_param.line_param.compared_cols
+
+    # Top-level flags
+    assert built_config.dt_slider_param == erp_2_chart_param.dt_slider_param
+    assert built_config.isLineDrawn == erp_2_chart_param.isLineDrawn
+    assert built_config.isConvertedToPct == erp_2_chart_param.isConvertedToPct
+    assert built_config.isSignalAssigned is True
+
+
+@pytest.mark.style_prep
 def test_credit_expansion_style_chart_config_matches_bar_line_param():
     """Ensure the slim style chart config for credit expansion matches the existing bar+line config."""
     ce_chart_param = style_config.CREDIT_EXPANSION_CHART_PARAM
@@ -180,6 +238,66 @@ def test_index_erp_style_draw_helper_smoke():
             signal_order=style_config.INDEX_ERP_CHART_PARAM.bar_param.signal_order,
             compared_cols=style_config.INDEX_ERP_CHART_PARAM.line_param.compared_cols,
             is_converted_to_pct=style_config.INDEX_ERP_CHART_PARAM.isConvertedToPct,
+        )
+    finally:
+        data_visualizer.st.select_slider = original_select_slider  # type: ignore[assignment]
+        data_visualizer.st.altair_chart = original_altair_chart  # type: ignore[assignment]
+
+
+@pytest.mark.style_prep
+def test_index_erp_2_style_draw_helper_smoke():
+    """Smoke test for the style-specific ERP_2 draw helper."""
+    latest_date = "99991231"
+
+    long_raw_cn_bond_yield_df = fetch_data_from_local(latest_date=latest_date, table_name="CN_BOND_YIELD")
+    _, _, wide_raw_cn_bond_yield_df = prepare_term_spread_data(long_raw_cn_bond_yield_df=long_raw_cn_bond_yield_df)
+
+    long_a_idx_val_df = fetch_data_from_local(latest_date=latest_date, table_name="A_IDX_VAL")
+    name_col = style_config.DATA_COL_PARAM[param_cls.WindPortal.A_IDX_VAL].name_col
+    long_wind_all_a_idx_val_df = long_a_idx_val_df.query(f"{name_col} == '万得全A'")
+
+    wide_erp_df, erp_conditions = prepare_index_erp_data(
+        long_wind_all_a_idx_val_df=long_wind_all_a_idx_val_df,
+        wide_raw_cn_bond_yield_df=wide_raw_cn_bond_yield_df,
+    )
+
+    erp_2_choices = [
+        style_config.INDEX_ERP_2_CHART_PARAM.bar_param.true_signal,
+        style_config.INDEX_ERP_2_CHART_PARAM.bar_param.false_signal,
+    ]
+    wide_erp_2_df = apply_signal_from_conditions(
+        df=wide_erp_df,
+        signal_col=style_config.INDEX_ERP_CONFIG["SIGNAL_COL"],
+        conditions=erp_conditions,
+        choices=erp_2_choices,
+        default=style_config.INDEX_ERP_2_CHART_PARAM.bar_param.no_signal,
+    )
+
+    idx = wide_erp_2_df.index
+    custom_dt = (idx[0], idx[-1])
+
+    def _fake_select_slider(*args, **kwargs):
+        return custom_dt
+
+    def _fake_altair_chart(*args, **kwargs):
+        return None
+
+    original_select_slider = data_visualizer.st.select_slider
+    original_altair_chart = data_visualizer.st.altair_chart
+    try:
+        data_visualizer.st.select_slider = _fake_select_slider  # type: ignore[assignment]
+        data_visualizer.st.altair_chart = _fake_altair_chart  # type: ignore[assignment]
+
+        data_visualizer.draw_style_bar_line_chart_with_highlighted_signal(
+            dt_indexed_df=wide_erp_2_df,
+            style_chart_config=style_config.INDEX_ERP_2_STYLE_CHART_CONFIG,
+            dt_slider_param=style_config.INDEX_ERP_2_CHART_PARAM.dt_slider_param,
+            true_signal=style_config.INDEX_ERP_2_CHART_PARAM.bar_param.true_signal,
+            false_signal=style_config.INDEX_ERP_2_CHART_PARAM.bar_param.false_signal,
+            no_signal=style_config.INDEX_ERP_2_CHART_PARAM.bar_param.no_signal,
+            signal_order=style_config.INDEX_ERP_2_CHART_PARAM.bar_param.signal_order,
+            compared_cols=style_config.INDEX_ERP_2_CHART_PARAM.line_param.compared_cols,
+            is_converted_to_pct=style_config.INDEX_ERP_2_CHART_PARAM.isConvertedToPct,
         )
     finally:
         data_visualizer.st.select_slider = original_select_slider  # type: ignore[assignment]
@@ -995,6 +1113,83 @@ def test_index_erp_bar_line_pipeline_basic_invariants():
         style_config.INDEX_ERP_CONFIG["TRUE_SIGNAL"],
         style_config.INDEX_ERP_CONFIG["FALSE_SIGNAL"],
         style_config.INDEX_ERP_CONFIG["NO_SIGNAL"],
+    }
+    assert signal_values.issubset(expected)
+
+
+@pytest.mark.style_prep
+def test_index_erp_2_bar_line_pipeline_basic_invariants():
+    """End-to-end invariants for ERP_2 data prep + bar+line+signal helper."""
+    latest_date = "99991231"
+
+    long_raw_cn_bond_yield_df = fetch_data_from_local(latest_date=latest_date, table_name="CN_BOND_YIELD")
+    _, _, wide_raw_cn_bond_yield_df = prepare_term_spread_data(long_raw_cn_bond_yield_df=long_raw_cn_bond_yield_df)
+
+    long_a_idx_val_df = fetch_data_from_local(latest_date=latest_date, table_name="A_IDX_VAL")
+    name_col = style_config.DATA_COL_PARAM[param_cls.WindPortal.A_IDX_VAL].name_col
+    long_wind_all_a_idx_val_df = long_a_idx_val_df.query(f"{name_col} == '万得全A'")
+
+    wide_erp_df, erp_conditions = prepare_index_erp_data(
+        long_wind_all_a_idx_val_df=long_wind_all_a_idx_val_df,
+        wide_raw_cn_bond_yield_df=wide_raw_cn_bond_yield_df,
+    )
+
+    erp_2_choices = [
+        style_config.INDEX_ERP_2_CHART_PARAM.bar_param.true_signal,
+        style_config.INDEX_ERP_2_CHART_PARAM.bar_param.false_signal,
+    ]
+    wide_erp_2_df = apply_signal_from_conditions(
+        df=wide_erp_df,
+        signal_col=style_config.INDEX_ERP_CONFIG["SIGNAL_COL"],
+        conditions=erp_conditions,
+        choices=erp_2_choices,
+        default=style_config.INDEX_ERP_2_CHART_PARAM.bar_param.no_signal,
+    )
+
+    idx = wide_erp_2_df.index
+    custom_dt = (idx[0], idx[-1])
+
+    result = data_visualizer.prepare_bar_line_with_signal_data(
+        dt_indexed_df=wide_erp_2_df,
+        config=style_config.INDEX_ERP_2_CHART_PARAM,
+        custom_dt=custom_dt,
+    )
+
+    assert not result.empty
+
+    # TRADE_DT column should exist and be monotonically increasing.
+    dt_col = style_config.INDEX_ERP_COL_PARAM.dt_col
+    assert dt_col in result.columns
+    assert result[dt_col].is_monotonic_increasing
+
+    # Bar axis columns must exist.
+    bar_axis_names = style_config.INDEX_ERP_2_CHART_PARAM.bar_param.axis_names
+    for col in bar_axis_names.values():
+        assert col in result.columns
+
+    # Line X/LEGEND axis columns must exist. The Y axis is a semantic
+    # alias ("分位数") and does not correspond to a direct column on
+    # the wide frame.
+    line_axis_names = style_config.INDEX_ERP_2_CHART_PARAM.line_param.axis_names
+    for col in (line_axis_names["X"], line_axis_names["LEGEND"]):
+        assert col in result.columns
+
+    # ERP core columns must still be present after helper processing.
+    erp_col = style_config.INDEX_ERP_CONFIG["ERP_COL"]
+    mean_col = "近一月均值"
+    ceil_col = style_config.INDEX_ERP_CONFIG["QUANTILE_CEILING_COL"]
+    floor_col = style_config.INDEX_ERP_CONFIG["QUANTILE_FLOOR_COL"]
+    for col in (erp_col, mean_col, ceil_col, floor_col):
+        assert col in result.columns
+
+    # Signal column and its value set should remain valid.
+    signal_col = style_config.INDEX_ERP_CONFIG["SIGNAL_COL"]
+    assert signal_col in result.columns
+    signal_values = set(result[signal_col].dropna().unique().tolist())
+    expected = {
+        style_config.INDEX_ERP_2_CHART_PARAM.bar_param.true_signal,
+        style_config.INDEX_ERP_2_CHART_PARAM.bar_param.false_signal,
+        style_config.INDEX_ERP_2_CHART_PARAM.bar_param.no_signal,
     }
     assert signal_values.issubset(expected)
 

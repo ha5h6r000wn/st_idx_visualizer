@@ -951,9 +951,16 @@ def generate_style_charts():
             default=style_config.INDEX_ERP_2_CHART_PARAM.bar_param.no_signal,
         )
 
-        draw_bar_line_chart_with_highlighted_signal(
+        draw_style_bar_line_chart_with_highlighted_signal(
             dt_indexed_df=wide_erp_2_df,
-            config=style_config.INDEX_ERP_2_CHART_PARAM,
+            style_chart_config=style_config.INDEX_ERP_2_STYLE_CHART_CONFIG,
+            dt_slider_param=style_config.INDEX_ERP_2_CHART_PARAM.dt_slider_param,
+            true_signal=style_config.INDEX_ERP_2_CHART_PARAM.bar_param.true_signal,
+            false_signal=style_config.INDEX_ERP_2_CHART_PARAM.bar_param.false_signal,
+            no_signal=style_config.INDEX_ERP_2_CHART_PARAM.bar_param.no_signal,
+            signal_order=style_config.INDEX_ERP_2_CHART_PARAM.bar_param.signal_order,
+            compared_cols=style_config.INDEX_ERP_2_CHART_PARAM.line_param.compared_cols,
+            is_converted_to_pct=style_config.INDEX_ERP_2_CHART_PARAM.isConvertedToPct,
         )
 
         # TODO 对于通过个人api获取的数据和图，需要添加一个按钮，用于切换是否显示
