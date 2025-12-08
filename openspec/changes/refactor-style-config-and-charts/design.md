@@ -100,7 +100,7 @@ The design goal is to make the style and strategy-index visualization paths bori
     `prepare_housing_invest_data`.
 - `generate_style_charts` calls these helpers first and then passes their outputs into the existing chart helpers (`draw_grouped_lines`, `draw_bar_line_chart_with_highlighted_signal`, `draw_bar_line_chart_with_highlighted_predefined_signal`).
 - `visualization/data_visualizer.py` still has:
-  - `prepare_bar_line_with_signal_data` which depends on `DtSliderParam` and mutates config objects via `isConvertedToPct`,
+  - `prepare_bar_line_with_signal_data` which depends on `DtSliderParam` and delegates percentage scaling and y-axis-format updates to a shared `_apply_pct_scaling_if_needed` helper when `isConvertedToPct` is set,
   - parallel paths for `draw_bar_line_chart_with_highlighted_signal`, `draw_bar_line_chart_with_highlighted_predefined_signal`, and `generate_signal`.
 
 **Problems**
@@ -137,8 +137,8 @@ The design goal is to make the style and strategy-index visualization paths bori
   - `data_preparation/data_processor.apply_signal_from_conditions` implements the canonical “conditions → choices → default” mapping using `np.select`.
   - `append_signal_column` is a thin wrapper around this helper for band-style signals (target vs upper/lower bounds).
   - All style block signals (value vs growth, index turnover, credit expansion, style focus, big/small momentum, ERP and ERP_2, Shibor, and housing investment) are computed in `visualization/style.py` using `apply_signal_from_conditions`, and the corresponding chart configs set `isSignalAssigned=True`.
-  - `draw_bar_line_chart_with_highlighted_signal` is the default path for bar+line+signal charts with precomputed signals (index turnover, ERP, credit expansion, Shibor, housing investment, ERP_2, style focus). `prepare_bar_line_with_signal_data` now treats any existing signal column on the input frame as authoritative and only computes signals on-the-fly (via `apply_signal_from_conditions` and `append_signal_column`) when the signal column is absent (e.g., for term-spread variants that still rely on threshold/band-based signals).
-  - The legacy `generate_signal` helper in `visualization/data_visualizer.py` has been removed; `draw_bar_line_chart_with_highlighted_predefined_signal` is now only used for bar-only relative-momentum charts that do not have a line baseline.
+  - `draw_bar_line_chart_with_highlighted_signal` is the default path for bar+line+signal charts with precomputed signals (index turnover, ERP, credit expansion, Shibor, housing investment, ERP_2, style focus). `prepare_bar_line_with_signal_data` now treats any existing signal column on the input frame as authoritative and only computes signals on-the-fly (via `apply_signal_from_conditions` and `append_signal_column`) when the signal column is absent (e.g., for term-spread variants that still rely on threshold/band-based signals). Percentage scaling for these charts is centralized in `_apply_pct_scaling_if_needed`, which also updates the y-axis formats when `isConvertedToPct` is set.
+  - The legacy `generate_signal` helper in `visualization/data_visualizer.py` has been removed; `draw_bar_line_chart_with_highlighted_predefined_signal` is now only used for bar-only relative-momentum charts that do not have a line baseline and also relies on `_apply_pct_scaling_if_needed` for percentage scaling.
 
 **Problems**
 

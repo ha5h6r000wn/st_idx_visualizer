@@ -343,6 +343,18 @@ def add_altair_line_with_stroke_dash(df, config: param_cls.LineParam):
     )
 
 
+def _apply_pct_scaling_if_needed(selected_df, config: param_cls.BarLineWithSignalParam):
+    """Apply percentage scaling and y-axis format when isConvertedToPct is True."""
+    if not config.isConvertedToPct:
+        return selected_df
+
+    scaled_df = selected_df.apply(divide_by_100)
+    config.bar_param.y_axis_format = CHART_NUM_FORMAT['pct']
+    if config.line_param is not None:
+        config.line_param.y_axis_format = CHART_NUM_FORMAT['pct']
+    return scaled_df
+
+
 def prepare_bar_line_with_signal_data(
     dt_indexed_df, config: param_cls.BarLineWithSignalParam, custom_dt: tuple | None = None
 ):
@@ -388,10 +400,7 @@ def prepare_bar_line_with_signal_data(
             )
 
     selected_df[config.line_param.axis_names['LEGEND']] = config.line_param.axis_names['Y']
-    if config.isConvertedToPct:
-        selected_df = selected_df.apply(divide_by_100)
-        config.bar_param.y_axis_format = CHART_NUM_FORMAT['pct']
-        config.line_param.y_axis_format = CHART_NUM_FORMAT['pct']
+    selected_df = _apply_pct_scaling_if_needed(selected_df, config)
 
     return selected_df
 
@@ -502,11 +511,7 @@ def draw_bar_line_chart_with_highlighted_predefined_signal(dt_indexed_df, config
     else:
         selected_df = dt_indexed_df
 
-    if config.isConvertedToPct:
-        selected_df = selected_df.apply(divide_by_100)
-        config.bar_param.y_axis_format = CHART_NUM_FORMAT['pct']
-        if config.line_param is not None:
-            config.line_param.y_axis_format = CHART_NUM_FORMAT['pct']
+    selected_df = _apply_pct_scaling_if_needed(selected_df, config)
 
     if config.line_param is not None:
         selected_df[config.line_param.axis_names['LEGEND']] = config.line_param.axis_names['Y']

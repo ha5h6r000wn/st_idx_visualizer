@@ -680,6 +680,54 @@ def test_prepare_bar_line_with_signal_data_computes_signal_when_missing():
 
 
 @pytest.mark.style_prep
+def test_prepare_bar_line_with_signal_data_converts_to_pct_when_flag_set():
+    """prepare_bar_line_with_signal_data SHOULD divide numeric columns by 100 when isConvertedToPct is True."""
+    index = pd.date_range(start='2024-01-01', periods=3, freq='D').strftime('%Y%m%d')
+    df = pd.DataFrame(
+        {
+            'TRADE_DT': index,
+            'value': [1.0, 2.0, 3.0],
+            'baseline': [0.5, 1.0, 1.5],
+            'signal': ['UP', 'DOWN', 'UP'],
+        }
+    ).set_index('TRADE_DT')
+
+    bar_param = param_cls.SignalBarParam(
+        axis_names={'X': 'TRADE_DT', 'Y': 'value', 'LEGEND': 'signal'},
+        title='test',
+        true_signal='UP',
+        false_signal='DOWN',
+        no_signal=None,
+        y_axis_format=config.CHART_NUM_FORMAT['float'],
+    )
+    line_param = param_cls.LineParam(
+        axis_names={'X': 'TRADE_DT', 'Y': 'baseline', 'LEGEND': 'line_legend'},
+        y_axis_format=config.CHART_NUM_FORMAT['float'],
+    )
+    chart_config = param_cls.BarLineWithSignalParam(
+        dt_slider_param=None,
+        bar_param=bar_param,
+        line_param=line_param,
+        isLineDrawn=True,
+        isConvertedToPct=True,
+        isSignalAssigned=True,
+    )
+
+    result = data_visualizer.prepare_bar_line_with_signal_data(dt_indexed_df=df, config=chart_config)
+
+    # TRADE_DT should remain unchanged (string index -> column).
+    assert result['TRADE_DT'].tolist() == list(index)
+
+    # Bar and line Y columns should be divided by 100.
+    assert result['value'].tolist() == [0.01, 0.02, 0.03]
+    assert result['baseline'].tolist() == [0.005, 0.01, 0.015]
+
+    # Axis formats should be updated to percentage format.
+    assert chart_config.bar_param.y_axis_format == config.CHART_NUM_FORMAT['pct']
+    assert chart_config.line_param.y_axis_format == config.CHART_NUM_FORMAT['pct']
+
+
+@pytest.mark.style_prep
 def test_get_custom_dt_with_slider_and_prepare_bar_line_with_signal_data_respects_window():
     """Slider default window SHOULD match DtSliderParam offsets and be used by prepare_bar_line_with_signal_data."""
     index = pd.date_range(start='2024-01-01', periods=10, freq='D').strftime('%Y%m%d')
