@@ -11,11 +11,11 @@ dependencies = [
     "pathlib>=1.0.1",
     "pydantic>=2.6.4",
     "ruff>=0.5.2",
-    "streamlit>=1.38.0",
+    "streamlit==1.48.0",
     "psycopg2-binary>=2.9.9",
     "jupyter>=1.1.1",
     "python-dotenv>=1.0.0",
-    "watchdog>=6.0.0",
+    "watchdog<=5.0.0",
     "sqlalchemy>=2.0.36",
     "pytest>=9.0.2",
 ]
