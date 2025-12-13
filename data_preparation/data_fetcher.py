@@ -118,8 +118,8 @@ def read_csv_data(table_name: str) -> pd.DataFrame:
     try:
         schema = DATASET_SCHEMAS.get(table_name)
         dtypes = schema['dtypes'] if schema and 'dtypes' in schema else config.CSV_DTYPE_MAPPING[table_name]
-        # Read CSV with specified data types
-        df = pd.read_csv(csv_path, dtype=dtypes)
+        # Read CSV as strings first, then coerce to the declared schema below.
+        df = pd.read_csv(csv_path, dtype=str)
 
         # Verify all required columns are present
         missing_cols = set(dtypes.keys()) - set(df.columns)
