@@ -10,6 +10,13 @@ from config import config, param_cls, style_config
 INDEX_PRICE_SCHEMA = {
     'table_name': 'A_IDX_PRICE',
     'date_col': 'TRADE_DT',
+    # Physical CSV headers are Chinese; normalize to legacy/raw Wind columns.
+    'physical_to_raw': {
+        '交易日期': 'TRADE_DT',
+        '证券代码': 'S_INFO_WINDCODE',
+        '证券简称': 'S_INFO_NAME',
+        '收盘价': 'S_DQ_CLOSE',
+    },
     'canonical_cols': {
         'trade_date': 'TRADE_DT',
         'wind_code': 'S_INFO_WINDCODE',
@@ -111,8 +118,8 @@ def read_csv_data(table_name: str) -> pd.DataFrame:
     try:
         schema = DATASET_SCHEMAS.get(table_name)
         dtypes = schema['dtypes'] if schema and 'dtypes' in schema else config.CSV_DTYPE_MAPPING[table_name]
-        # Read CSV with specified data types
-        df = pd.read_csv(csv_path, dtype=dtypes)
+        # Read CSV as strings first, then coerce to the declared schema below.
+        df = pd.read_csv(csv_path, dtype=str)
 
         # Verify all required columns are present
         missing_cols = set(dtypes.keys()) - set(df.columns)
@@ -134,6 +141,14 @@ def read_csv_data(table_name: str) -> pd.DataFrame:
                     df[col] = df[col].fillna('').astype(str)
             except Exception as e:
                 raise ValueError(f'Error converting column {col} to {dtype}: {str(e)}')
+
+        # Materialize legacy/raw Wind columns from Chinese physical headers
+        # when the schema declares a mapping.
+        physical_to_raw = schema.get('physical_to_raw') if schema else None
+        if physical_to_raw:
+            for physical_col, raw_col in physical_to_raw.items():
+                if physical_col in df.columns and raw_col not in df.columns:
+                    df[raw_col] = df[physical_col]
 
         return df
     except Exception as e:

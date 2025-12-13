@@ -30,11 +30,10 @@ WIND_COLS = {
     'close': 'S_DQ_CLOSE',
 }
 # NOTE:
-# `WIND_COLS` exists for legacy index/DB tooling and expresses the same raw
-# CSV column names as the canonical index-price schema. The CSV-backed
-# Streamlit path should treat `data_preparation.data_fetcher.INDEX_PRICE_SCHEMA`
-# (and related dataset schemas) as the single source of truth for column
-# names and dtypes.
+# `WIND_COLS` exists for legacy index/DB tooling and expresses the raw Wind
+# column names used by strategy/style consumers. When `index_prices.csv` uses
+# Chinese physical headers, the CSV loader materializes these raw Wind columns
+# from the physical columns to keep downstream code stable.
 ST_CACHE_TTL = 6 * 60 * 60
 START_DT = '20200101'
 WIND_DT_FORMAT = r'%Y%m%d'
@@ -110,10 +109,10 @@ STG_IDX_CHART_TITLES = {
 # CSV column data types configuration
 CSV_DTYPE_MAPPING = {
     'A_IDX_PRICE': {
-        'TRADE_DT': str,
-        'S_INFO_WINDCODE': str,
-        'S_INFO_NAME': str,
-        'S_DQ_CLOSE': float,
+        '交易日期': str,
+        '证券代码': str,
+        '证券简称': str,
+        '收盘价': float,
     },
     'CN_BOND_YIELD': {
         '交易日期': str,

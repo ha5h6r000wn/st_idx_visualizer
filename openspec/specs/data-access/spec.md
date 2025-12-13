@@ -22,8 +22,12 @@ The system SHALL normalize each dataset into a canonical schema immediately afte
 - **THEN** the returned DataFrame includes canonical columns (`trade_date`, `curve_name`, `curve_term`, `ytm`) and original Chinese columns, as defined by one shared schema object.
 
 #### Scenario: Index price normalization
-- **WHEN** index price data is loaded from CSV
-- **THEN** the returned DataFrame includes canonical columns (`trade_date`, `wind_code`, `wind_name`, `close`) and original Wind columns, with consistent dtypes based on the same schema definition.
+- **WHEN** index price data is loaded from CSV with Chinese physical headers (e.g., `交易日期`, `证券代码`, `证券简称`, `收盘价`)
+- **THEN** the returned DataFrame includes:
+  - the physical Chinese columns (and tolerates extra columns like `id`, `更新时间`),
+  - legacy/raw Wind columns (`TRADE_DT`, `S_INFO_WINDCODE`, `S_INFO_NAME`, `S_DQ_CLOSE`) for existing consumers,
+  - canonical English aliases (`trade_date`, `wind_code`, `wind_name`, `close`),
+  - and consistent dtypes based on the same schema definition.
 
 ### Requirement: Removal of unused database path
 The system SHALL remove unused database session code and configuration switches from the app runtime so that only the CSV data path remains active for the Streamlit app, while leaving any ETL-specific database models or helpers clearly isolated if they are still needed.

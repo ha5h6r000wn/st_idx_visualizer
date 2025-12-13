@@ -16,6 +16,7 @@ from data_preparation.data_fetcher import (  # noqa: E402
     INDEX_PRICE_SCHEMA,
     fetch_data_from_local,
     fetch_index_data_from_local,
+    read_csv_data,
 )
 from config import style_config  # noqa: E402
 
@@ -135,3 +136,33 @@ def test_fetch_index_data_from_local_respects_index_price_schema() -> None:
             assert pd.api.types.is_numeric_dtype(series), f"A_IDX_PRICE.{col} expected numeric dtype"
         elif expected_dtype is str:
             assert pd.api.types.is_string_dtype(series), f"A_IDX_PRICE.{col} expected string dtype"
+
+
+@pytest.mark.schema
+def test_read_csv_data_coerces_dirty_numeric_values(tmp_path, monkeypatch, capsys) -> None:
+    """read_csv_data MUST tolerate dirty numeric cells and coerce them to NaN."""
+    table_name = "A_IDX_VAL"
+    csv_name = "dirty_index_valuations.csv"
+    csv_path = tmp_path / csv_name
+
+    csv_path.write_text(
+        "id,交易日期,证券代码,证券简称,日换手率,市盈率,更新时间\n"
+        "1,20250101,000300.SH,沪深300,0.5087,12.5449,2025-03-24 11:19:33.910246\n"
+        "2,20250102,000300.SH,沪深300,--,null,2025-03-24 11:19:33.910246\n",
+        encoding="utf-8",
+    )
+
+    monkeypatch.setattr(config, "CSV_DATA_DIR", str(tmp_path))
+    monkeypatch.setitem(config.CSV_FILE_MAPPING, table_name, csv_name)
+
+    df = read_csv_data(table_name)
+    assert not df.empty
+    assert pd.api.types.is_numeric_dtype(df["日换手率"])
+    assert pd.api.types.is_numeric_dtype(df["市盈率"])
+    assert pd.isna(df.loc[1, "日换手率"])
+    assert pd.isna(df.loc[1, "市盈率"])
+
+    out = capsys.readouterr().out
+    assert "Warning:" in out
+    assert "column 日换手率" in out
+    assert "column 市盈率" in out
