@@ -219,7 +219,9 @@ def _calc_nav_metrics(nav: pd.Series, *, rf_annual: float, trading_days: int) ->
     }
 
 
-def _calc_nav_norm_and_excess_nav(strategy_nav: pd.Series, bench_nav: pd.Series) -> tuple[pd.Series, pd.Series, pd.Series]:
+def _calc_nav_norm_and_excess_nav(
+    strategy_nav: pd.Series, bench_nav: pd.Series
+) -> tuple[pd.Series, pd.Series, pd.Series]:
     aligned = pd.DataFrame({'strategy': strategy_nav, 'benchmark': bench_nav}).apply(pd.to_numeric, errors='coerce')
     aligned = aligned.dropna()
     if aligned.empty:
@@ -246,7 +248,7 @@ def _render_backtest_nav_chart(
 
     Expects raw_df to contain `交易日期` plus the provided strategy/benchmark NAV columns.
     """
-    st.subheader('股票池累计收益与超额')
+    st.subheader('累计收益与超额收益')
 
     if raw_df.empty:
         st.warning(f'未读取到回测净值数据：{BACKTEST_NAV_CSV_PATH}')
@@ -293,9 +295,7 @@ def _render_backtest_nav_chart(
     selected_df[strategy_label] = strategy_norm.sub(1)
     selected_df[bench_nav_col] = bench_norm.sub(1)
 
-    selected_df[BACKTEST_NAV_EXCESS_COL] = (
-        excess_nav.sub(1)
-    )
+    selected_df[BACKTEST_NAV_EXCESS_COL] = excess_nav.sub(1)
     is_pos = selected_df[BACKTEST_NAV_EXCESS_COL].ge(0)
     selected_df[BACKTEST_NAV_EXCESS_STATE_COL] = is_pos.map(
         {True: BACKTEST_NAV_EXCESS_POS, False: BACKTEST_NAV_EXCESS_NEG}
@@ -332,12 +332,14 @@ def _render_backtest_nav_chart(
         use_container_width=True,
     )
 
-    st.subheader('区间绩效')
+    st.subheader('绩效分析')
     trading_days = int(config.TRADE_DT_COUNT['一年'])
     metrics_by_asset = {
         strategy_nav_col: _calc_nav_metrics(strategy_norm, rf_annual=rf_annual, trading_days=trading_days),
         bench_nav_col: _calc_nav_metrics(bench_norm, rf_annual=rf_annual, trading_days=trading_days),
-        BACKTEST_NAV_PERF_TABLE_EXCESS_LABEL: _calc_nav_metrics(excess_nav, rf_annual=rf_annual, trading_days=trading_days),
+        BACKTEST_NAV_PERF_TABLE_EXCESS_LABEL: _calc_nav_metrics(
+            excess_nav, rf_annual=rf_annual, trading_days=trading_days
+        ),
     }
     metrics_df = pd.DataFrame.from_dict(metrics_by_asset, orient='index').rename(
         columns={
@@ -363,7 +365,7 @@ def _render_backtest_nav_chart(
 
 
 def _render_strategy_stock_pool(df: pd.DataFrame, strategy_name: str, trade_dates: list[str] | None = None) -> None:
-    st.subheader(f'{strategy_name}股票池')
+    st.subheader('季度股票池')
 
     strategy_cfg = financial_factors_config.STOCK_POOL_STRATEGIES[strategy_name]
     signal_col = strategy_cfg['signal_col']
@@ -433,13 +435,28 @@ def generate_financial_factors_stocks_charts():
     nav_df = fetch_data_from_local(latest_date='99991231', table_name=BACKTEST_NAV_TABLE_NAME)
 
     with tab1:
+        st.subheader('中性股息')
+        st.write(
+            '【核心思路】重点选择业绩趋势相对平稳，且具备较高且稳定分红的公司。组合在每个季报期（4.30、8.31、10.31）后选择股票并进行统一换仓。'
+        )
+        st.write('【组合特点】具备高分红、低波动属性。')
         _render_strategy_stock_pool(df=df, strategy_name='中性股息', trade_dates=trade_dates)
         _render_backtest_nav_chart(raw_df=nav_df, rf_annual=rf_annual, **BACKTEST_NAV_CHART_CONFIGS['中性股息'])
 
     with tab2:
+        st.subheader('细分龙头')
+        st.write(
+            '【核心思路】重点选择业绩趋势相对平稳的核心资产。组合在每个季报期（4.30、8.31、10.31）后选择股票并进行统一换仓。'
+        )
+        st.write('【组合特点】弹性稍逊景气组合，但稳定性相对较强。')
         _render_strategy_stock_pool(df=df, strategy_name='细分龙头', trade_dates=trade_dates)
         _render_backtest_nav_chart(raw_df=nav_df, rf_annual=rf_annual, **BACKTEST_NAV_CHART_CONFIGS['细分龙头'])
 
     with tab3:
+        st.subheader('景气成长')
+        st.write(
+            '【核心思路】重点选择业绩趋势严格改善的公司，一般绝对增速水平较高，但公司未必是行业的绝对龙头。组合在每个季报期（4.30、8.31、10.31）后选择股票并进行统一换仓。'
+        )
+        st.write('【组合特点】短期弹性与趋势性强但波动也较大。')
         _render_strategy_stock_pool(df=df, strategy_name='景气成长', trade_dates=trade_dates)
         _render_backtest_nav_chart(raw_df=nav_df, rf_annual=rf_annual, **BACKTEST_NAV_CHART_CONFIGS['景气成长'])
