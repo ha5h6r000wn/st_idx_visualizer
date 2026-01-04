@@ -135,7 +135,7 @@ def _get_backtest_nav_period_range(trade_dt: list[str], period: str) -> tuple[st
 
 
 def _render_dividend_neutral_backtest_nav_chart() -> None:
-    st.subheader('组合累计收益与超额')
+    st.subheader('股票池累计收益与超额')
 
     raw_df = fetch_data_from_local(latest_date='99991231', table_name=BACKTEST_NAV_TABLE_NAME)
     if raw_df.empty:
