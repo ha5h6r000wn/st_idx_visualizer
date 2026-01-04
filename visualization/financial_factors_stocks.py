@@ -436,27 +436,24 @@ def generate_financial_factors_stocks_charts():
 
     with tab1:
         st.subheader('中性股息')
-        st.write(
-            '【核心思路】重点选择业绩趋势相对平稳，且具备较高且稳定分红的公司。组合在每个季报期（4.30、8.31、10.31）后选择股票并进行统一换仓。'
-        )
+        st.write('【核心思路】重点选择业绩趋势相对平稳，且具备较高且稳定分红的公司。')
+        st.write('【调仓频率】在每个季报期（4.30、8.31、10.31）后选择股票并进行统一换仓。')
         st.write('【组合特点】具备高分红、低波动属性。')
         _render_strategy_stock_pool(df=df, strategy_name='中性股息', trade_dates=trade_dates)
         _render_backtest_nav_chart(raw_df=nav_df, rf_annual=rf_annual, **BACKTEST_NAV_CHART_CONFIGS['中性股息'])
 
     with tab2:
         st.subheader('细分龙头')
-        st.write(
-            '【核心思路】重点选择业绩趋势相对平稳的核心资产。组合在每个季报期（4.30、8.31、10.31）后选择股票并进行统一换仓。'
-        )
+        st.write('【核心思路】重点选择业绩趋势相对平稳的核心资产。')
+        st.write('【调仓频率】在每个季报期（4.30、8.31、10.31）后选择股票并进行统一换仓。')
         st.write('【组合特点】弹性稍逊景气组合，但稳定性相对较强。')
         _render_strategy_stock_pool(df=df, strategy_name='细分龙头', trade_dates=trade_dates)
         _render_backtest_nav_chart(raw_df=nav_df, rf_annual=rf_annual, **BACKTEST_NAV_CHART_CONFIGS['细分龙头'])
 
     with tab3:
         st.subheader('景气成长')
-        st.write(
-            '【核心思路】重点选择业绩趋势严格改善的公司，一般绝对增速水平较高，但公司未必是行业的绝对龙头。组合在每个季报期（4.30、8.31、10.31）后选择股票并进行统一换仓。'
-        )
+        st.write('【核心思路】重点选择业绩趋势严格改善的公司，一般绝对增速水平较高，但公司未必是行业的绝对龙头。')
+        st.write('【调仓频率】在每个季报期（4.30、8.31、10.31）后选择股票并进行统一换仓。')
         st.write('【组合特点】短期弹性与趋势性强但波动也较大。')
         _render_strategy_stock_pool(df=df, strategy_name='景气成长', trade_dates=trade_dates)
         _render_backtest_nav_chart(raw_df=nav_df, rf_annual=rf_annual, **BACKTEST_NAV_CHART_CONFIGS['景气成长'])
