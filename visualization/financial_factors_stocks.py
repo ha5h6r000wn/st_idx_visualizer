@@ -20,6 +20,9 @@ BACKTEST_NAV_DATE_COL = '交易日期'
 BACKTEST_NAV_STRATEGY_COL = '中性股息股票池'
 BACKTEST_NAV_STRATEGY_LABEL = '中性股息'
 BACKTEST_NAV_BENCH_COL = '中证红利全收益'
+BACKTEST_NAV_SEGMENT_LEADERS_COL = '细分龙头股票池'
+BACKTEST_NAV_CYCLICAL_GROWTH_COL = '景气成长股票池'
+BACKTEST_NAV_CSI300_COL = '沪深300'
 BACKTEST_NAV_PERIOD_OPTIONS = ['2025年', '近一年', '近半年', '2018年5月以来']
 BACKTEST_NAV_DEFAULT_PERIOD = '2025年'
 
@@ -27,6 +30,30 @@ BACKTEST_NAV_EXCESS_COL = '超额'
 BACKTEST_NAV_EXCESS_STATE_COL = '累计超额'
 BACKTEST_NAV_EXCESS_POS = '正超额'
 BACKTEST_NAV_EXCESS_NEG = '负超额'
+
+BACKTEST_NAV_CHART_CONFIGS = {
+    '中性股息': {
+        'strategy_nav_col': BACKTEST_NAV_STRATEGY_COL,
+        'strategy_label': BACKTEST_NAV_STRATEGY_LABEL,
+        'bench_nav_col': BACKTEST_NAV_BENCH_COL,
+        'title': '中性股息 vs 中证红利全收益：累计收益与累计超额',
+        'period_select_key': 'FINANCIAL_FACTORS_BACKTEST_NAV_PERIOD',
+    },
+    '细分龙头': {
+        'strategy_nav_col': BACKTEST_NAV_SEGMENT_LEADERS_COL,
+        'strategy_label': '细分龙头',
+        'bench_nav_col': BACKTEST_NAV_CSI300_COL,
+        'title': '细分龙头 vs 沪深300：累计收益与累计超额',
+        'period_select_key': 'FINANCIAL_FACTORS_BACKTEST_NAV_PERIOD_SEGMENT_LEADERS',
+    },
+    '景气成长': {
+        'strategy_nav_col': BACKTEST_NAV_CYCLICAL_GROWTH_COL,
+        'strategy_label': '景气成长',
+        'bench_nav_col': BACKTEST_NAV_CSI300_COL,
+        'title': '景气成长 vs 沪深300：累计收益与累计超额',
+        'period_select_key': 'FINANCIAL_FACTORS_BACKTEST_NAV_PERIOD_CYCLICAL_GROWTH',
+    },
+}
 
 
 def _wrap_header_label(label: str) -> str:
@@ -86,19 +113,27 @@ def _filter_stock_pool(df: pd.DataFrame, trade_date: str, signal_col: str) -> pd
     return df.loc[date_mask & signal_mask].copy()
 
 
-def _prepare_backtest_nav_chart_df(raw_df: pd.DataFrame) -> pd.DataFrame:
+def _prepare_backtest_nav_chart_df(
+    raw_df: pd.DataFrame,
+    *,
+    strategy_nav_col: str,
+    strategy_label: str,
+    bench_nav_col: str,
+) -> pd.DataFrame:
     """Prepare dt-indexed frame for raw NAV lines.
 
     Normalization and excess calculation are applied after the user selects
     a date window so they re-base on every slider change.
     """
-    df = raw_df[[BACKTEST_NAV_DATE_COL, BACKTEST_NAV_STRATEGY_COL, BACKTEST_NAV_BENCH_COL]].copy()
+    df = raw_df[[BACKTEST_NAV_DATE_COL, strategy_nav_col, bench_nav_col]].copy()
     df[BACKTEST_NAV_DATE_COL] = df[BACKTEST_NAV_DATE_COL].astype(str).str.strip()
+    df[strategy_nav_col] = pd.to_numeric(df[strategy_nav_col], errors='coerce')
+    df[bench_nav_col] = pd.to_numeric(df[bench_nav_col], errors='coerce')
 
     df = (
         df.sort_values(by=BACKTEST_NAV_DATE_COL, ascending=True)
         .drop_duplicates(subset=[BACKTEST_NAV_DATE_COL], keep='last')
-        .rename(columns={BACKTEST_NAV_STRATEGY_COL: BACKTEST_NAV_STRATEGY_LABEL})
+        .rename(columns={strategy_nav_col: strategy_label})
     )
 
     df = df.set_index(BACKTEST_NAV_DATE_COL, drop=True)
@@ -134,22 +169,44 @@ def _get_backtest_nav_period_range(trade_dt: list[str], period: str) -> tuple[st
     return trade_dt[0], latest_dt
 
 
-def _render_dividend_neutral_backtest_nav_chart() -> None:
+def _render_backtest_nav_chart(
+    *,
+    raw_df: pd.DataFrame,
+    strategy_nav_col: str,
+    strategy_label: str,
+    bench_nav_col: str,
+    title: str,
+    period_select_key: str,
+) -> None:
+    """Render a backtest NAV chart for one strategy vs one benchmark.
+
+    Expects raw_df to contain `交易日期` plus the provided strategy/benchmark NAV columns.
+    """
     st.subheader('股票池累计收益与超额')
 
-    raw_df = fetch_data_from_local(latest_date='99991231', table_name=BACKTEST_NAV_TABLE_NAME)
     if raw_df.empty:
         st.warning(f'未读取到回测净值数据：{BACKTEST_NAV_CSV_PATH}')
         return
 
-    dt_indexed_df = _prepare_backtest_nav_chart_df(raw_df=raw_df)
+    required_cols = {BACKTEST_NAV_DATE_COL, strategy_nav_col, bench_nav_col}
+    missing_cols = sorted(required_cols - set(raw_df.columns))
+    if missing_cols:
+        st.warning(f'回测净值数据缺少字段，已跳过绘图：{missing_cols}')
+        return
+
+    dt_indexed_df = _prepare_backtest_nav_chart_df(
+        raw_df=raw_df,
+        strategy_nav_col=strategy_nav_col,
+        strategy_label=strategy_label,
+        bench_nav_col=bench_nav_col,
+    )
     trade_dt = dt_indexed_df.index.tolist()
 
     selected_period = st.selectbox(
         '区间',
         options=BACKTEST_NAV_PERIOD_OPTIONS,
         index=BACKTEST_NAV_PERIOD_OPTIONS.index(BACKTEST_NAV_DEFAULT_PERIOD),
-        key='FINANCIAL_FACTORS_BACKTEST_NAV_PERIOD',
+        key=period_select_key,
     )
     custom_dt = _get_backtest_nav_period_range(trade_dt=trade_dt, period=selected_period)
     selected_df = dt_indexed_df.loc[custom_dt[0] : custom_dt[1]].reset_index()
@@ -157,11 +214,11 @@ def _render_dividend_neutral_backtest_nav_chart() -> None:
         st.info('当前区间无可用数据')
         return
 
-    for nav_col in (BACKTEST_NAV_STRATEGY_LABEL, BACKTEST_NAV_BENCH_COL):
+    for nav_col in (strategy_label, bench_nav_col):
         selected_df[nav_col] = selected_df[nav_col].div(selected_df[nav_col].iloc[0]).sub(1)
 
     selected_df[BACKTEST_NAV_EXCESS_COL] = (
-        selected_df[BACKTEST_NAV_STRATEGY_LABEL] - selected_df[BACKTEST_NAV_BENCH_COL]
+        selected_df[strategy_label] - selected_df[bench_nav_col]
     )
     is_pos = selected_df[BACKTEST_NAV_EXCESS_COL].ge(0)
     selected_df[BACKTEST_NAV_EXCESS_STATE_COL] = is_pos.map(
@@ -174,7 +231,7 @@ def _render_dividend_neutral_backtest_nav_chart() -> None:
             'Y': BACKTEST_NAV_EXCESS_COL,
             'LEGEND': BACKTEST_NAV_EXCESS_STATE_COL,
         },
-        title='中性股息 vs 中证红利全收益：累计收益与累计超额',
+        title=title,
         y_axis_format=config.CHART_NUM_FORMAT['pct'],
         true_signal=BACKTEST_NAV_EXCESS_POS,
         false_signal=BACKTEST_NAV_EXCESS_NEG,
@@ -188,7 +245,7 @@ def _render_dividend_neutral_backtest_nav_chart() -> None:
             'LEGEND': '投资标的',
         },
         y_axis_format=config.CHART_NUM_FORMAT['pct'],
-        compared_cols=[BACKTEST_NAV_STRATEGY_LABEL, BACKTEST_NAV_BENCH_COL],
+        compared_cols=[strategy_label, bench_nav_col],
     )
 
     bar = add_altair_bar_with_highlighted_signal(selected_df, bar_param)
@@ -259,12 +316,16 @@ def generate_financial_factors_stocks_charts():
         return
     trade_dates = _get_trade_dates_desc(df)
 
+    nav_df = fetch_data_from_local(latest_date='99991231', table_name=BACKTEST_NAV_TABLE_NAME)
+
     with tab1:
         _render_strategy_stock_pool(df=df, strategy_name='中性股息', trade_dates=trade_dates)
-        _render_dividend_neutral_backtest_nav_chart()
+        _render_backtest_nav_chart(raw_df=nav_df, **BACKTEST_NAV_CHART_CONFIGS['中性股息'])
 
     with tab2:
         _render_strategy_stock_pool(df=df, strategy_name='细分龙头', trade_dates=trade_dates)
+        _render_backtest_nav_chart(raw_df=nav_df, **BACKTEST_NAV_CHART_CONFIGS['细分龙头'])
 
     with tab3:
         _render_strategy_stock_pool(df=df, strategy_name='景气成长', trade_dates=trade_dates)
+        _render_backtest_nav_chart(raw_df=nav_df, **BACKTEST_NAV_CHART_CONFIGS['景气成长'])
