@@ -1,0 +1,115 @@
+FINANCIAL_FACTORS_STOCKS_TABLE_NAME = 'FINANCIAL_FACTORS_STOCKS'
+
+DATE_COL = '交易日期'
+CODE_COL = '证券代码'
+NAME_COL = '证券简称'
+
+
+INDUSTRY_NEUTRAL_DIVIDEND_DISPLAY_COLS = [
+    '证券代码',
+    '证券简称',
+    '申万一级行业',
+    '申万二级行业',
+    '股息率行业分位（近一年）',
+    '股息率行业分位（T-1年）',
+    '股息率行业分位（T-2年）',
+    '分红比例（T-1年）',
+    'ROE行业分位（近一年）',
+    # 'ROE行业分位（T-1年）',
+    # 'ROE行业分位（T-2年）',
+    'ROE环比（本期）',
+    'ROE环比（上期）',
+    '营收增速',
+    # '营收增速环比',
+    # '毛利率环比',
+    '扣非净利润增速',
+    '扣非净利润增速环比',
+    '归母净利润两年复合增速环比',
+    # '盈利持续性 G-ROE*(1-D)',
+    '单季归母净利润',
+    'PE（TTM）',
+    'PB十年历史分位',
+    '市值行业分位',
+    # '负债率',
+    '商誉总资产比',
+    # '经营现金流（TTM）',
+]
+
+INDUSTRY_LEADER_DISPLAY_COLS = [
+    '证券代码',
+    '证券简称',
+    '申万一级行业',
+    '申万二级行业',
+    # '股息率行业分位（近一年）',
+    # '股息率行业分位（T-1年）',
+    # '股息率行业分位（T-2年）',
+    # '分红比例（T-1年）',
+    'ROE行业分位（近一年）',
+    'ROE行业分位（T-1年）',
+    'ROE行业分位（T-2年）',
+    'ROE环比（本期）',
+    'ROE环比（上期）',
+    '营收增速',
+    '营收增速环比',
+    '毛利率环比',
+    '扣非净利润增速',
+    '扣非净利润增速环比',
+    '归母净利润两年复合增速环比',
+    '盈利持续性 G-ROE*(1-D)',
+    # '单季归母净利润',
+    'PE（TTM）',
+    # 'PB十年历史分位',
+    '市值行业分位',
+    '负债率',
+    '商誉总资产比',
+    '经营现金流（TTM）',
+]
+
+HIGH_MOMENTUM_GROWTH_DISPLAY_COLS = [
+    '证券代码',
+    '证券简称',
+    '申万一级行业',
+    '申万二级行业',
+    # '股息率行业分位（近一年）',
+    # '股息率行业分位（T-1年）',
+    # '股息率行业分位（T-2年）',
+    # '分红比例（T-1年）',
+    'ROE行业分位（近一年）',
+    # 'ROE行业分位（T-1年）',
+    # 'ROE行业分位（T-2年）',
+    'ROE环比（本期）',
+    'ROE环比（上期）',
+    '营收增速',
+    '营收增速环比',
+    '毛利率环比',
+    '扣非净利润增速',
+    '扣非净利润增速环比',
+    '归母净利润两年复合增速环比',
+    '盈利持续性 G-ROE*(1-D)',
+    # '单季归母净利润',
+    'PE（TTM）',
+    # 'PB十年历史分位',
+    '市值行业分位',
+    '负债率',
+    '商誉总资产比',
+    '经营现金流（TTM）',
+]
+
+
+STOCK_POOL_STRATEGIES = {
+    '中性股息': {
+        'signal_col': '中性股息策略',
+        'display_cols': INDUSTRY_NEUTRAL_DIVIDEND_DISPLAY_COLS,
+        'date_select_key': 'FINANCIAL_FACTORS_DATE_DIVIDEND_NEUTRAL',
+    },
+    '细分龙头': {
+        'signal_col': '细分龙头策略',
+        'display_cols': INDUSTRY_LEADER_DISPLAY_COLS,
+        'date_select_key': 'FINANCIAL_FACTORS_DATE_SEGMENT_LEADER',
+    },
+    '景气成长': {
+        'signal_col': '景气成长策略',
+        'display_cols': HIGH_MOMENTUM_GROWTH_DISPLAY_COLS,
+        'date_select_key': 'FINANCIAL_FACTORS_DATE_PROSPERITY_GROWTH',
+    },
+}

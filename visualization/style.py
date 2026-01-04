@@ -1,6 +1,5 @@
 from datetime import date
 
-import numpy as np
 import pandas as pd
 import streamlit as st
 
@@ -16,12 +15,16 @@ from data_preparation.data_processor import (
     append_rolling_quantile_column,
     append_rolling_sum_column,
     append_sum_column,
-    apply_signal_from_conditions,
     append_year_on_year_growth_column,
+    apply_signal_from_conditions,
     reshape_long_df_into_wide_form,
 )
 from utils import TradeDtType, get_avg_dt_count_via_dt_type, msg_printer
-from visualization.data_visualizer import draw_bar_line_chart_with_highlighted_predefined_signal, draw_bar_line_chart_with_highlighted_signal, draw_grouped_lines, draw_style_bar_chart_with_highlighted_signal, draw_style_bar_line_chart_with_highlighted_signal
+from visualization.data_visualizer import (
+    draw_grouped_lines,
+    draw_style_bar_chart_with_highlighted_signal,
+    draw_style_bar_line_chart_with_highlighted_signal,
+)
 
 
 def prepare_value_growth_data(raw_wide_idx_df: pd.DataFrame, idx_name_df: pd.DataFrame):
@@ -872,37 +875,6 @@ def generate_style_charts():
             is_converted_to_pct=style_config.SHIBOR_PRICES_CHART_PARAM.isConvertedToPct,
         )
 
-        # NOTE 经济增长: 房地产完成额累计同比
-
-        wide_raw_housing_invest_df = prepare_housing_invest_data(wide_raw_edb_df)
-
-        housing_invest_conditions = [
-            wide_raw_housing_invest_df[style_config.HOUSING_INVEST_CONFIG['YOY_COL']]
-            >= wide_raw_housing_invest_df[style_config.HOUSING_INVEST_CONFIG['PRE_YOY_COL']],
-        ]
-        housing_invest_choices = [
-            style_config.HOUSING_INVEST_CONFIG['TRUE_SIGNAL'],
-        ]
-        wide_raw_housing_invest_df = apply_signal_from_conditions(
-            df=wide_raw_housing_invest_df,
-            signal_col=style_config.HOUSING_INVEST_CONFIG['SIGNAL_COL'],
-            conditions=housing_invest_conditions,
-            choices=housing_invest_choices,
-            default=style_config.HOUSING_INVEST_CONFIG['FALSE_SIGNAL'],
-        )
-
-        draw_style_bar_line_chart_with_highlighted_signal(
-            dt_indexed_df=wide_raw_housing_invest_df,
-            style_chart_config=style_config.HOUSING_INVEST_STYLE_CHART_CONFIG,
-            dt_slider_param=style_config.HOUSING_INVEST_CHART_PARAM.dt_slider_param,
-            true_signal=style_config.HOUSING_INVEST_CONFIG['TRUE_SIGNAL'],
-            false_signal=style_config.HOUSING_INVEST_CONFIG['FALSE_SIGNAL'],
-            no_signal=None,
-            signal_order=style_config.HOUSING_INVEST_CHART_PARAM.bar_param.signal_order,
-            compared_cols=style_config.HOUSING_INVEST_CHART_PARAM.line_param.compared_cols,
-            is_converted_to_pct=style_config.HOUSING_INVEST_CHART_PARAM.isConvertedToPct,
-        )
-
         # NOTE 期现利差
 
         draw_style_bar_line_chart_with_highlighted_signal(
@@ -973,6 +945,37 @@ def generate_style_charts():
             signal_order=style_config.INDEX_ERP_2_CHART_PARAM.bar_param.signal_order,
             compared_cols=style_config.INDEX_ERP_2_CHART_PARAM.line_param.compared_cols,
             is_converted_to_pct=style_config.INDEX_ERP_2_CHART_PARAM.isConvertedToPct,
+        )
+
+        # NOTE 经济增长: 房地产完成额累计同比
+
+        wide_raw_housing_invest_df = prepare_housing_invest_data(wide_raw_edb_df)
+
+        housing_invest_conditions = [
+            wide_raw_housing_invest_df[style_config.HOUSING_INVEST_CONFIG['YOY_COL']]
+            >= wide_raw_housing_invest_df[style_config.HOUSING_INVEST_CONFIG['PRE_YOY_COL']],
+        ]
+        housing_invest_choices = [
+            style_config.HOUSING_INVEST_CONFIG['TRUE_SIGNAL'],
+        ]
+        wide_raw_housing_invest_df = apply_signal_from_conditions(
+            df=wide_raw_housing_invest_df,
+            signal_col=style_config.HOUSING_INVEST_CONFIG['SIGNAL_COL'],
+            conditions=housing_invest_conditions,
+            choices=housing_invest_choices,
+            default=style_config.HOUSING_INVEST_CONFIG['FALSE_SIGNAL'],
+        )
+
+        draw_style_bar_line_chart_with_highlighted_signal(
+            dt_indexed_df=wide_raw_housing_invest_df,
+            style_chart_config=style_config.HOUSING_INVEST_STYLE_CHART_CONFIG,
+            dt_slider_param=style_config.HOUSING_INVEST_CHART_PARAM.dt_slider_param,
+            true_signal=style_config.HOUSING_INVEST_CONFIG['TRUE_SIGNAL'],
+            false_signal=style_config.HOUSING_INVEST_CONFIG['FALSE_SIGNAL'],
+            no_signal=None,
+            signal_order=style_config.HOUSING_INVEST_CHART_PARAM.bar_param.signal_order,
+            compared_cols=style_config.HOUSING_INVEST_CHART_PARAM.line_param.compared_cols,
+            is_converted_to_pct=style_config.HOUSING_INVEST_CHART_PARAM.isConvertedToPct,
         )
 
         # TODO 对于通过个人api获取的数据和图，需要添加一个按钮，用于切换是否显示

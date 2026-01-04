@@ -36,3 +36,25 @@ The system SHALL remove unused database session code and configuration switches 
 - **WHEN** data fetching functions used by the Streamlit app are executed
 - **THEN** no database sessions are created, and no configuration flags for database selection remain in the visualization or data-preparation code paths; any remaining database helpers are clearly marked as ETL-only and unused by the UI.
 
+### Requirement: Financial factors stock-pool dataset via CSV DataSource
+The system SHALL expose the `financial_factors_stocks.csv` dataset via the CSV-backed `DataSource`, with a declared schema (required columns and dtypes) and deterministic date ordering.
+
+#### Scenario: Fetching stock-pool data for visualization
+- **WHEN** the visualization layer fetches financial-factors stock-pool data
+- **THEN** the returned DataFrame includes the required columns (including `交易日期` and the three strategy signal columns), uses the declared dtypes, and is ordered by `交易日期` descending.
+
+#### Scenario: Tolerating extra columns in CSV snapshots
+- **WHEN** the CSV contains extra columns beyond the declared schema
+- **THEN** the loader keeps them on the returned DataFrame (unless explicitly filtered by consumers), preserving forward compatibility.
+
+### Requirement: Financial factors backtest NAV dataset via CSV DataSource
+The system SHALL expose the `financial_factors_backtest_nav.csv` dataset via the CSV-backed `DataSource`, with a declared schema (required columns and dtypes) and deterministic date ordering.
+
+#### Scenario: Fetching backtest NAV data for visualization
+- **WHEN** the visualization layer fetches `FINANCIAL_FACTORS_BACKTEST_NAV` from the CSV data source
+- **THEN** the returned DataFrame includes the required columns (`交易日期`, `中性股息股票池`, `中证红利全收益`), uses the declared dtypes, and is ordered by `交易日期` descending.
+
+#### Scenario: Missing CSV does not break the UI
+- **WHEN** the CSV snapshot `financial_factors_backtest_nav.csv` is missing
+- **THEN** the data source returns an empty DataFrame and the visualization layer renders a warning instead of raising.
+

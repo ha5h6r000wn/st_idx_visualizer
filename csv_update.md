@@ -25,3 +25,12 @@ git checkout main
 git merge --no-ff dev    # 合并代码更新到main
 
 # FIXME 更新index_prices时出现了指数中文简称变化的情况，导致数据库内数据出现了不一致，如何修复？增加检测机制，触发数据重跑更新？
+
+---
+
+## App-facing CSV expectations
+
+- Include `data/csv/financial_factors_stocks.csv` when updating CSV snapshots for the Streamlit app.
+- Include `data/csv/financial_factors_backtest_nav.csv` when updating CSV snapshots for the Streamlit app.
+- Keep CSV headers stable (the app relies on exact column names such as `交易日期` and the strategy signal columns).
+- If headers or types change, update the corresponding CSV schema/dtype declarations and tests before merging.
