@@ -7,7 +7,6 @@ from utils import msg_printer
 from visualization.data_visualizer import (
     add_altair_bar_with_highlighted_signal,
     add_altair_line_with_stroke_dash,
-    get_custom_dt_with_slider,
 )
 
 # format:  str, "plain", "localized", "percent", "dollar", "euro", "yen", "accounting", "compact", "scientific", "engineering", or None
@@ -17,16 +16,17 @@ PERCENT_DISPLAY_FORMAT = '%.0f%%'
 
 BACKTEST_NAV_TABLE_NAME = 'FINANCIAL_FACTORS_BACKTEST_NAV'
 BACKTEST_NAV_CSV_PATH = 'data/csv/financial_factors_backtest_nav.csv'
-BACKTEST_NAV_DEFAULT_START_DT = '20180430'
 BACKTEST_NAV_DATE_COL = '交易日期'
 BACKTEST_NAV_STRATEGY_COL = '中性股息股票池'
 BACKTEST_NAV_STRATEGY_LABEL = '中性股息'
 BACKTEST_NAV_BENCH_COL = '中证红利全收益'
+BACKTEST_NAV_PERIOD_OPTIONS = ['2025年', '近一年', '近半年', '2018年5月以来']
+BACKTEST_NAV_DEFAULT_PERIOD = '2025年'
 
 BACKTEST_NAV_EXCESS_COL = '超额'
 BACKTEST_NAV_EXCESS_STATE_COL = '累计超额'
-BACKTEST_NAV_EXCESS_UP = '上涨'
-BACKTEST_NAV_EXCESS_DD = '回撤'
+BACKTEST_NAV_EXCESS_POS = '正超额'
+BACKTEST_NAV_EXCESS_NEG = '负超额'
 
 
 def _wrap_header_label(label: str) -> str:
@@ -105,6 +105,35 @@ def _prepare_backtest_nav_chart_df(raw_df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
+def _get_backtest_nav_period_range(trade_dt: list[str], period: str) -> tuple[str, str]:
+    if not trade_dt:
+        return '', ''
+
+    trade_dt = sorted(trade_dt)
+    latest_dt = trade_dt[-1]
+
+    if period == '近一年':
+        start_idx = max(0, len(trade_dt) - config.TRADE_DT_COUNT['一年'])
+        return trade_dt[start_idx], latest_dt
+
+    if period == '近半年':
+        start_idx = max(0, len(trade_dt) - config.TRADE_DT_COUNT['半年'])
+        return trade_dt[start_idx], latest_dt
+
+    if period == '2018年5月以来':
+        start_dt = '20180501'
+        eligible_dt = [dt for dt in trade_dt if dt >= start_dt]
+        return (eligible_dt[0], latest_dt) if eligible_dt else (trade_dt[0], latest_dt)
+
+    if period == '2025年':
+        year_start = '20250101'
+        year_end = '20251231'
+        eligible_dt = [dt for dt in trade_dt if year_start <= dt <= year_end]
+        return (eligible_dt[0], eligible_dt[-1]) if eligible_dt else (trade_dt[0], latest_dt)
+
+    return trade_dt[0], latest_dt
+
+
 def _render_dividend_neutral_backtest_nav_chart() -> None:
     st.subheader('回测累计收益与累计超额')
 
@@ -115,18 +144,14 @@ def _render_dividend_neutral_backtest_nav_chart() -> None:
 
     dt_indexed_df = _prepare_backtest_nav_chart_df(raw_df=raw_df)
     trade_dt = dt_indexed_df.index.tolist()
-    eligible_dt = [dt for dt in trade_dt if dt >= BACKTEST_NAV_DEFAULT_START_DT]
-    slider_start_dt = BACKTEST_NAV_DEFAULT_START_DT
-    if not eligible_dt:
-        eligible_dt = trade_dt
-        slider_start_dt = trade_dt[0]
 
-    dt_slider_param = param_cls.DtSliderParam(
-        start_dt=slider_start_dt,
-        default_start_offset=len(eligible_dt),
-        key='FINANCIAL_FACTORS_BACKTEST_NAV_SLIDER',
+    selected_period = st.selectbox(
+        '区间',
+        options=BACKTEST_NAV_PERIOD_OPTIONS,
+        index=BACKTEST_NAV_PERIOD_OPTIONS.index(BACKTEST_NAV_DEFAULT_PERIOD),
+        key='FINANCIAL_FACTORS_BACKTEST_NAV_PERIOD',
     )
-    custom_dt = get_custom_dt_with_slider(trade_dt=trade_dt, config=dt_slider_param)
+    custom_dt = _get_backtest_nav_period_range(trade_dt=trade_dt, period=selected_period)
     selected_df = dt_indexed_df.loc[custom_dt[0] : custom_dt[1]].reset_index()
     if selected_df.empty:
         st.info('当前区间无可用数据')
@@ -136,9 +161,8 @@ def _render_dividend_neutral_backtest_nav_chart() -> None:
         selected_df[nav_col] = selected_df[nav_col].div(selected_df[nav_col].iloc[0]).sub(1)
 
     selected_df[BACKTEST_NAV_EXCESS_COL] = selected_df[BACKTEST_NAV_STRATEGY_LABEL] - selected_df[BACKTEST_NAV_BENCH_COL]
-    is_up = selected_df[BACKTEST_NAV_EXCESS_COL].diff().ge(0)
-    is_up.iloc[0] = True
-    selected_df[BACKTEST_NAV_EXCESS_STATE_COL] = is_up.map({True: BACKTEST_NAV_EXCESS_UP, False: BACKTEST_NAV_EXCESS_DD})
+    is_pos = selected_df[BACKTEST_NAV_EXCESS_COL].ge(0)
+    selected_df[BACKTEST_NAV_EXCESS_STATE_COL] = is_pos.map({True: BACKTEST_NAV_EXCESS_POS, False: BACKTEST_NAV_EXCESS_NEG})
 
     bar_param = param_cls.SignalBarParam(
         axis_names={
@@ -148,10 +172,10 @@ def _render_dividend_neutral_backtest_nav_chart() -> None:
         },
         title='中性股息 vs 中证红利全收益：累计收益与累计超额',
         y_axis_format=config.CHART_NUM_FORMAT['pct'],
-        true_signal=BACKTEST_NAV_EXCESS_UP,
-        false_signal=BACKTEST_NAV_EXCESS_DD,
+        true_signal=BACKTEST_NAV_EXCESS_POS,
+        false_signal=BACKTEST_NAV_EXCESS_NEG,
         no_signal=None,
-        signal_order=[BACKTEST_NAV_EXCESS_DD, BACKTEST_NAV_EXCESS_UP],
+        signal_order=[BACKTEST_NAV_EXCESS_NEG, BACKTEST_NAV_EXCESS_POS],
     )
     line_param = param_cls.LineParam(
         axis_names={
