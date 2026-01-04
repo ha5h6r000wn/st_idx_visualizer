@@ -135,7 +135,7 @@ def _get_backtest_nav_period_range(trade_dt: list[str], period: str) -> tuple[st
 
 
 def _render_dividend_neutral_backtest_nav_chart() -> None:
-    st.subheader('回测累计收益与累计超额')
+    st.subheader('组合累计收益与超额')
 
     raw_df = fetch_data_from_local(latest_date='99991231', table_name=BACKTEST_NAV_TABLE_NAME)
     if raw_df.empty:
@@ -160,9 +160,13 @@ def _render_dividend_neutral_backtest_nav_chart() -> None:
     for nav_col in (BACKTEST_NAV_STRATEGY_LABEL, BACKTEST_NAV_BENCH_COL):
         selected_df[nav_col] = selected_df[nav_col].div(selected_df[nav_col].iloc[0]).sub(1)
 
-    selected_df[BACKTEST_NAV_EXCESS_COL] = selected_df[BACKTEST_NAV_STRATEGY_LABEL] - selected_df[BACKTEST_NAV_BENCH_COL]
+    selected_df[BACKTEST_NAV_EXCESS_COL] = (
+        selected_df[BACKTEST_NAV_STRATEGY_LABEL] - selected_df[BACKTEST_NAV_BENCH_COL]
+    )
     is_pos = selected_df[BACKTEST_NAV_EXCESS_COL].ge(0)
-    selected_df[BACKTEST_NAV_EXCESS_STATE_COL] = is_pos.map({True: BACKTEST_NAV_EXCESS_POS, False: BACKTEST_NAV_EXCESS_NEG})
+    selected_df[BACKTEST_NAV_EXCESS_STATE_COL] = is_pos.map(
+        {True: BACKTEST_NAV_EXCESS_POS, False: BACKTEST_NAV_EXCESS_NEG}
+    )
 
     bar_param = param_cls.SignalBarParam(
         axis_names={
@@ -197,6 +201,8 @@ def _render_dividend_neutral_backtest_nav_chart() -> None:
 
 
 def _render_strategy_stock_pool(df: pd.DataFrame, strategy_name: str, trade_dates: list[str] | None = None) -> None:
+    st.subheader(f'{strategy_name}股票池')
+
     strategy_cfg = financial_factors_config.STOCK_POOL_STRATEGIES[strategy_name]
     signal_col = strategy_cfg['signal_col']
     display_cols = strategy_cfg['display_cols']
