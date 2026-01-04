@@ -31,5 +31,6 @@ git merge --no-ff dev    # 合并代码更新到main
 ## App-facing CSV expectations
 
 - Include `data/csv/financial_factors_stocks.csv` when updating CSV snapshots for the Streamlit app.
+- Include `data/csv/financial_factors_backtest_nav.csv` when updating CSV snapshots for the Streamlit app.
 - Keep CSV headers stable (the app relies on exact column names such as `交易日期` and the strategy signal columns).
 - If headers or types change, update the corresponding CSV schema/dtype declarations and tests before merging.

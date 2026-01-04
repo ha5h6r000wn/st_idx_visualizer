@@ -31,6 +31,7 @@ from config import style_config  # noqa: E402
         "A_IDX_VAL",
         "EDB",
         "SHIBOR_PRICES",
+        "FINANCIAL_FACTORS_BACKTEST_NAV",
     ],
 )
 def test_fetch_data_from_local_respects_dataset_schema(table_name: str) -> None:

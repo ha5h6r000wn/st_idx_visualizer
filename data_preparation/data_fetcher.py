@@ -88,6 +88,17 @@ FINANCIAL_FACTORS_STOCKS_SCHEMA = {
     'dtypes': config.CSV_DTYPE_MAPPING['FINANCIAL_FACTORS_STOCKS'],
 }
 
+FINANCIAL_FACTORS_BACKTEST_NAV_SCHEMA = {
+    'table_name': 'FINANCIAL_FACTORS_BACKTEST_NAV',
+    'date_col': '交易日期',
+    'canonical_cols': {
+        'trade_date': '交易日期',
+        'dividend_neutral_nav': '中性股息股票池',
+        'csi_dividend_total_return_nav': '中证红利全收益',
+    },
+    'dtypes': config.CSV_DTYPE_MAPPING['FINANCIAL_FACTORS_BACKTEST_NAV'],
+}
+
 
 CANONICAL_COL_MAPPINGS = {
     INDEX_PRICE_SCHEMA['table_name']: INDEX_PRICE_SCHEMA['canonical_cols'],
@@ -96,6 +107,7 @@ CANONICAL_COL_MAPPINGS = {
     ECONOMIC_DATA_SCHEMA['table_name']: ECONOMIC_DATA_SCHEMA['canonical_cols'],
     SHIBOR_PRICES_SCHEMA['table_name']: SHIBOR_PRICES_SCHEMA['canonical_cols'],
     FINANCIAL_FACTORS_STOCKS_SCHEMA['table_name']: FINANCIAL_FACTORS_STOCKS_SCHEMA['canonical_cols'],
+    FINANCIAL_FACTORS_BACKTEST_NAV_SCHEMA['table_name']: FINANCIAL_FACTORS_BACKTEST_NAV_SCHEMA['canonical_cols'],
 }
 
 
@@ -108,6 +120,7 @@ DATASET_SCHEMAS = {
         ECONOMIC_DATA_SCHEMA,
         SHIBOR_PRICES_SCHEMA,
         FINANCIAL_FACTORS_STOCKS_SCHEMA,
+        FINANCIAL_FACTORS_BACKTEST_NAV_SCHEMA,
     )
 }
 
