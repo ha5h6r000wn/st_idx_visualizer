@@ -13,8 +13,10 @@ from config import config, param_cls  # noqa: E402
 from data_preparation.data_fetcher import (  # noqa: E402
     CANONICAL_COL_MAPPINGS,
     DATASET_SCHEMAS,
+    FINANCIAL_FACTORS_STOCKS_SCHEMA,
     INDEX_PRICE_SCHEMA,
     fetch_data_from_local,
+    fetch_financial_factors_stocks_from_local,
     fetch_index_data_from_local,
     read_csv_data,
 )
@@ -166,3 +168,37 @@ def test_read_csv_data_coerces_dirty_numeric_values(tmp_path, monkeypatch, capsy
     assert "Warning:" in out
     assert "column 日换手率" in out
     assert "column 市盈率" in out
+
+
+@pytest.mark.schema
+def test_fetch_financial_factors_stocks_from_local_respects_schema() -> None:
+    """Financial-factors stock-pool loader MUST respect the declared dataset schema."""
+    latest_date = "99991231"
+
+    df = fetch_financial_factors_stocks_from_local(latest_date=latest_date)
+    assert isinstance(df, pd.DataFrame)
+
+    if df.empty:
+        return
+
+    schema = FINANCIAL_FACTORS_STOCKS_SCHEMA
+    dtypes = schema["dtypes"]
+
+    missing_cols = set(dtypes.keys()) - set(df.columns)
+    assert not missing_cols, f"Missing columns for {schema['table_name']}: {missing_cols}"
+
+    date_col = schema["date_col"]
+    assert date_col in df.columns
+    assert df[date_col].is_monotonic_decreasing
+
+    canonical_cols = CANONICAL_COL_MAPPINGS.get(schema["table_name"], {})
+    for canonical, source in canonical_cols.items():
+        assert source in df.columns
+        assert canonical in df.columns
+
+    for col, expected_dtype in dtypes.items():
+        series = df[col]
+        if expected_dtype is float:
+            assert pd.api.types.is_numeric_dtype(series), f"{schema['table_name']}.{col} expected numeric dtype"
+        elif expected_dtype is str:
+            assert pd.api.types.is_string_dtype(series), f"{schema['table_name']}.{col} expected string dtype"

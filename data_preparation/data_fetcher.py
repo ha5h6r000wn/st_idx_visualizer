@@ -77,6 +77,17 @@ SHIBOR_PRICES_SCHEMA = {
     'dtypes': config.CSV_DTYPE_MAPPING['SHIBOR_PRICES'],
 }
 
+FINANCIAL_FACTORS_STOCKS_SCHEMA = {
+    'table_name': 'FINANCIAL_FACTORS_STOCKS',
+    'date_col': '交易日期',
+    'canonical_cols': {
+        'trade_date': '交易日期',
+        'wind_code': '证券代码',
+        'wind_name': '证券简称',
+    },
+    'dtypes': config.CSV_DTYPE_MAPPING['FINANCIAL_FACTORS_STOCKS'],
+}
+
 
 CANONICAL_COL_MAPPINGS = {
     INDEX_PRICE_SCHEMA['table_name']: INDEX_PRICE_SCHEMA['canonical_cols'],
@@ -84,6 +95,7 @@ CANONICAL_COL_MAPPINGS = {
     INDEX_VALUATION_SCHEMA['table_name']: INDEX_VALUATION_SCHEMA['canonical_cols'],
     ECONOMIC_DATA_SCHEMA['table_name']: ECONOMIC_DATA_SCHEMA['canonical_cols'],
     SHIBOR_PRICES_SCHEMA['table_name']: SHIBOR_PRICES_SCHEMA['canonical_cols'],
+    FINANCIAL_FACTORS_STOCKS_SCHEMA['table_name']: FINANCIAL_FACTORS_STOCKS_SCHEMA['canonical_cols'],
 }
 
 
@@ -95,6 +107,7 @@ DATASET_SCHEMAS = {
         INDEX_VALUATION_SCHEMA,
         ECONOMIC_DATA_SCHEMA,
         SHIBOR_PRICES_SCHEMA,
+        FINANCIAL_FACTORS_STOCKS_SCHEMA,
     )
 }
 
@@ -172,6 +185,15 @@ class CSVDataSource:
             df = df.sort_values(by=date_col, ascending=False)
         return df
 
+    def fetch_financial_factors_stocks(self, latest_date: str) -> pd.DataFrame:
+        df = read_csv_data('FINANCIAL_FACTORS_STOCKS')
+        if not df.empty:
+            date_col = FINANCIAL_FACTORS_STOCKS_SCHEMA['date_col']
+            df = df[df[date_col] <= latest_date]
+            df = add_canonical_columns(df, 'FINANCIAL_FACTORS_STOCKS')
+            df = df.sort_values(by=date_col, ascending=False)
+        return df
+
     def fetch_table(self, latest_date: str, table_name: str) -> pd.DataFrame:
         df = read_csv_data(table_name)
         if df.empty:
@@ -182,8 +204,18 @@ class CSVDataSource:
             date_col = schema['date_col']
         else:
             date_col = '交易日期'
-        start_date = style_config.DATA_CONFIG[getattr(param_cls.WindPortal, table_name)]['DATA_START_DT']
-        df = df[(df[date_col] >= start_date) & (df[date_col] <= latest_date)]
+        start_date = None
+        try:
+            wind_portal = getattr(param_cls.WindPortal, table_name)
+        except AttributeError:
+            wind_portal = None
+        if wind_portal is not None and wind_portal in style_config.DATA_CONFIG:
+            start_date = style_config.DATA_CONFIG[wind_portal]['DATA_START_DT']
+
+        if start_date is not None:
+            df = df[(df[date_col] >= start_date) & (df[date_col] <= latest_date)]
+        else:
+            df = df[df[date_col] <= latest_date]
 
         if table_name == 'CN_BOND_YIELD':
             df = df[
@@ -227,6 +259,17 @@ def fetch_data_from_local(latest_date: str, table_name: str) -> pd.DataFrame:
     print(f' - Fetching data from CSV: {table_name}')
 
     df = get_data_source().fetch_table(latest_date=latest_date, table_name=table_name)
+
+    print(f' - [GEN] {time.time() - start_time:.2f}s')
+    return df
+
+
+def fetch_financial_factors_stocks_from_local(latest_date: str) -> pd.DataFrame:
+    start_time = time.time()
+    table_name = 'FINANCIAL_FACTORS_STOCKS'
+    print(f' - Fetching data from CSV: {table_name}')
+
+    df = get_data_source().fetch_financial_factors_stocks(latest_date=latest_date)
 
     print(f' - [GEN] {time.time() - start_time:.2f}s')
     return df

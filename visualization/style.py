@@ -1,6 +1,5 @@
 from datetime import date
 
-import numpy as np
 import pandas as pd
 import streamlit as st
 
@@ -16,12 +15,16 @@ from data_preparation.data_processor import (
     append_rolling_quantile_column,
     append_rolling_sum_column,
     append_sum_column,
-    apply_signal_from_conditions,
     append_year_on_year_growth_column,
+    apply_signal_from_conditions,
     reshape_long_df_into_wide_form,
 )
 from utils import TradeDtType, get_avg_dt_count_via_dt_type, msg_printer
-from visualization.data_visualizer import draw_bar_line_chart_with_highlighted_predefined_signal, draw_bar_line_chart_with_highlighted_signal, draw_grouped_lines, draw_style_bar_chart_with_highlighted_signal, draw_style_bar_line_chart_with_highlighted_signal
+from visualization.data_visualizer import (
+    draw_grouped_lines,
+    draw_style_bar_chart_with_highlighted_signal,
+    draw_style_bar_line_chart_with_highlighted_signal,
+)
 
 
 def prepare_value_growth_data(raw_wide_idx_df: pd.DataFrame, idx_name_df: pd.DataFrame):

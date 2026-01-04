@@ -14,7 +14,6 @@ uv.lock
 pyproject.toml
 .cz.toml
 .DS_Store
-*.csv
 .vscode/
 
 *.log

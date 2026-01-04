@@ -11,6 +11,7 @@ CSV_FILE_MAPPING = {
     'A_IDX_VAL': 'index_valuations.csv',
     'EDB': 'economic_data.csv',
     'SHIBOR_PRICES': 'shibor_prices.csv',
+    'FINANCIAL_FACTORS_STOCKS': 'financial_factors_stocks.csv',
 }
 
 
@@ -140,5 +141,16 @@ CSV_DTYPE_MAPPING = {
         '证券代码': str,
         '利率': float,
         '期限': str,
+    },
+    'FINANCIAL_FACTORS_STOCKS': {
+        '交易日期': str,
+        '证券代码': str,
+        '证券简称': str,
+        '申万一级行业': str,
+        '申万二级行业': str,
+        '申万三级行业': str,
+        '景气成长策略': float,
+        '细分龙头策略': float,
+        '中性股息策略': float,
     },
 }
