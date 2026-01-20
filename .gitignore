@@ -9,10 +9,6 @@ wheels/
 # Virtual environments
 .venv
 .env
-.python-version
-uv.lock
-pyproject.toml
-.cz.toml
 .DS_Store
 .vscode/
 
@@ -21,3 +17,4 @@ pyproject.toml
 .coverage
 /AGENTS.md
 /CLAUDE.md
+openspec/changes/
