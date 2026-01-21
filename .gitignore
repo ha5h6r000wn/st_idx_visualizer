@@ -18,3 +18,4 @@ wheels/
 /AGENTS.md
 /CLAUDE.md
 openspec/changes/
+uv.lock
