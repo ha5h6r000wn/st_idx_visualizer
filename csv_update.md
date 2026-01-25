@@ -1,9 +1,3 @@
-# Archived: CSV update notes
-
-This document is archived. The app-facing CSV contract is summarized in `README.md`.
-
----
-
 # 1. 保存dev分支的开发进度
 git stash save "WIP: feature development"  # WIP = Work In Progress
 
@@ -40,4 +34,3 @@ git merge --no-ff dev    # 合并代码更新到main
 - Include `data/csv/financial_factors_backtest_nav.csv` when updating CSV snapshots for the Streamlit app.
 - Keep CSV headers stable (the app relies on exact column names such as `交易日期` and the strategy signal columns).
 - If headers or types change, update the corresponding CSV schema/dtype declarations and tests before merging.
-

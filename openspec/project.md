@@ -8,7 +8,7 @@ Interactive Streamlit dashboard for Chinese equity research. Visualizes strategy
 - Streamlit + Altair for UI and charting
 - pandas/NumPy for data prep; pydantic for typed config objects
 - CSV-backed mode with data under `data/`
-- Tooling: ruff linting; `pyproject.toml` managed with `uv` and exported `requirements*.lock.txt` files for reproducible installs across mirrors
+- Tooling: ruff linting; `pyproject.toml` + `uv.lock` for packaging
 
 ## Project Conventions
 
@@ -26,10 +26,8 @@ Interactive Streamlit dashboard for Chinese equity research. Visualizes strategy
 - Data flow: fetch raw data → process to wide/long frames → render via Altair; chart configuration driven by parameter objects for consistent axes/legends
 
 ### Testing Strategy
-- Fast pytest checks exist and are intended to stay CSV-only (no DB/Wind calls):
-  - `python scripts/run_quick_checks.py`
-  - (equivalently) `pytest -m "style_prep or stg_idx_prep or schema" -vv tests`
-- Validate UI changes by running `streamlit run app.py` and exercising tabs/sliders to confirm data loads and charts render
+- No automated tests yet
+- Validate changes by running `streamlit run app.py` and exercising tabs/sliders to confirm data loads and charts render
 - Prefer using CSV fixtures under `data/` for development; avoid live DB/Wind calls unless credentials and access are available
 
 ### Git Workflow
