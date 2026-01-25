@@ -8,7 +8,7 @@ Interactive Streamlit dashboard for Chinese equity research. Visualizes strategy
 - Streamlit + Altair for UI and charting
 - pandas/NumPy for data prep; pydantic for typed config objects
 - CSV-backed mode with data under `data/`
-- Tooling: ruff linting; `pyproject.toml` managed with `uv` and exported `requirements*.lock.txt` files for reproducible installs across mirrors
+- Tooling: ruff linting; `pyproject.toml` managed with `uv` and exported `requirements*.txt` files for reproducible installs across environments
 
 ## Project Conventions
 

@@ -11,8 +11,8 @@ Prereqs:
 Commands:
 ```bash
 uv venv --python 3.12.12
-uv sync
-uv run streamlit run app.py
+uv pip sync requirements.txt
+.venv/bin/streamlit run app.py
 ```
 
 ## Data (CSV-only runtime)
@@ -35,8 +35,8 @@ CSV headers are part of the contract. Many columns are Chinese labels (e.g. `交
 ## Quick checks (fast pytest)
 
 ```bash
-uv sync --group dev
-uv run python scripts/run_quick_checks.py
+uv pip sync requirements-dev.txt
+.venv/bin/python scripts/run_quick_checks.py
 ```
 
 These checks are intended to stay CSV-only (no DB/Wind calls).
