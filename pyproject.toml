@@ -1,23 +1,25 @@
 [project]
 name = "st-idx-visualizer"
 version = "0.3.0"
-description = "Add your description here"
+description = "Streamlit dashboard for strategy index visualization and style diagnostics (CSV-backed)."
 readme = "README.md"
 requires-python = "==3.12.12"
 dependencies = [
     "pandas>=2.2.2",
     "openpyxl>=3.1.2",
-    "logging>=0.4.9.6",
-    "pathlib>=1.0.1",
     "pydantic>=2.6.4",
-    "ruff>=0.5.2",
     "streamlit==1.48.0",
     "psycopg2-binary>=2.9.9",
-    "jupyter>=1.1.1",
     "python-dotenv>=1.0.0",
     "watchdog<=5.0.0",
     "sqlalchemy>=2.0.36",
+]
+
+[dependency-groups]
+dev = [
+    "jupyter>=1.1.1",
     "pytest>=9.0.2",
+    "ruff>=0.5.2",
 ]
 
 [tool.pytest.ini_options]
