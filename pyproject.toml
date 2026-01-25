@@ -28,6 +28,3 @@ markers = [
     "schema: schema-level invariants for CSV-backed datasets",
     "stg_idx_prep: fast checks for strategy-index data-prep helpers",
 ]
-
-[tool.poetry]
-package-mode = false
