@@ -5,6 +5,8 @@ build/
 dist/
 wheels/
 *.egg-info
+.ruff_cache/
+.pytest_cache/
 
 # Virtual environments
 .venv
@@ -15,7 +17,16 @@ wheels/
 *.log
 .history
 .coverage
-/AGENTS.md
-/CLAUDE.md
+
+# Streamlit/service artifacts
+ops/logs/
+
+# --- Project-local customization (kept intentionally) ---
+AGENTS.md
+CLAUDE.md
 openspec/changes/
 *.lock
+*refactor*.md
+
+# uv (redundant with `*.lock`, but explicit is fine)
+uv.lock
