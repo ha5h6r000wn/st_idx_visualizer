@@ -2,18 +2,20 @@ stages:
   - lint
   - test
 
-default:
+# -----------------------------
+# 基础模板（不会被当作 job 执行）
+# -----------------------------
+.base_ci:
   image: python:3.12.12-slim
   variables:
-    # ---- Python / CI 基础 ----
     PYTHONDONTWRITEBYTECODE: "1"
     PYTHONUNBUFFERED: "1"
 
-    # ---- Tencent PyPI mirror (for uv/pip) ----
+    # Tencent PyPI mirror
     PIP_INDEX_URL: "https://mirrors.cloud.tencent.com/pypi/simple"
     PIP_TRUSTED_HOST: "mirrors.cloud.tencent.com"
 
-    # ---- uv cache ----
+    # uv cache
     UV_CACHE_DIR: "$CI_PROJECT_DIR/.cache/uv"
 
   cache:
@@ -26,16 +28,23 @@ default:
     - pip install -U pip
     - pip install uv
     - uv --version
-    # 安装 dev 依赖（以 requirements-dev.txt 为准）
     - uv pip install -r requirements-dev.txt
 
+# -----------------------------
+# Lint job
+# -----------------------------
 lint:
+  extends: .base_ci
   stage: lint
   script:
     - ruff --version
     - ruff check .
 
+# -----------------------------
+# Test job
+# -----------------------------
 test:
+  extends: .base_ci
   stage: test
   script:
     - python scripts/run_quick_checks.py
