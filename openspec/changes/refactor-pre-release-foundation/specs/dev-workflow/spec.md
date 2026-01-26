@@ -26,15 +26,6 @@ The repository SHALL track dependency exports in requirements format (`requireme
 - **THEN** they do not generate git diffs in tracked lock files during normal install flows
 - **AND** maintainers update tracked lock files deliberately as an explicit change.
 
-### Requirement: Minimal CI safety net
-The repository SHALL provide a GitLab CI pipeline that runs lint and fast tests on merge requests.
-
-#### Scenario: MR runs lint + fast tests
-- **WHEN** a merge request is opened
-- **THEN** CI runs `ruff check .`
-- **AND** runs `python scripts/run_quick_checks.py`
-- **AND** uses Python `3.12.12` to match `requires-python`.
-
 ### Requirement: Repository hygiene for pre-release
 The repository SHALL remove misleading or unused artifacts that imply unsupported workflows.
 

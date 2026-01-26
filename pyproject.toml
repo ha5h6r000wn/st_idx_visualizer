@@ -9,10 +9,8 @@ dependencies = [
     "openpyxl>=3.1.2",
     "pydantic>=2.6.4",
     "streamlit==1.48.0",
-    "psycopg2-binary>=2.9.9",
     "python-dotenv>=1.0.0",
     "watchdog<=5.0.0",
-    "sqlalchemy>=2.0.36",
 ]
 
 [dependency-groups]

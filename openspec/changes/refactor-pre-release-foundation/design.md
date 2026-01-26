@@ -12,7 +12,7 @@ Instead:
 - Treat `uv.lock` as local/ephemeral.
 - Track exports as:
   - `requirements.txt` (runtime-only; Streamlit Cloud-friendly)
-  - `requirements-dev.txt` (runtime + dev tooling; CI/contributors)
+  - `requirements-dev.txt` (runtime + dev tooling; contributors)
 
 ### Hash policy (open decision)
 We must pick one:
@@ -21,9 +21,5 @@ We must pick one:
 - **B: Without hashes** (more tolerant)
   - Accepts weaker integrity guarantees but avoids mirror hash mismatches.
 
-## CI baseline constraints
-- CI must run on Python `3.12.12` exactly (matches `requires-python`).
-- If the runner does not provide that patch version, publish a minimal internal image (Python `3.12.12` + `uv`) and use it in `.gitlab-ci.yml`.
-
 ## Backward-compatibility guardrail
-"Never break userspace": changes MUST NOT alter the Streamlit runtime behavior. These refactors are limited to docs, packaging, repo hygiene, and test/CI scaffolding.
+"Never break userspace": changes MUST NOT alter the Streamlit runtime behavior. These refactors are limited to docs, packaging, repo hygiene, and test scaffolding.

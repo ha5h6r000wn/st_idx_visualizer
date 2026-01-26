@@ -19,13 +19,7 @@
   - [x] `requirements-dev.txt` (runtime + dev)
 - [x] Document install flow:
   - [x] Runtime: `uv pip sync requirements.txt`
-  - [x] Dev/CI: `uv pip sync requirements-dev.txt`
-
-### Phase 2 (P1): GitLab CI baseline
-- [ ] Add `.gitlab-ci.yml` with two jobs:
-  - [ ] `lint`: install dev lock, run `ruff check .`
-  - [ ] `test`: install dev lock, run `python scripts/run_quick_checks.py`
-- [ ] Ensure CI uses Python `3.12.12` exactly (use a prebuilt runner image or publish a minimal internal image).
+  - [x] Dev: `uv pip sync requirements-dev.txt`
 
 ### Phase 3 (P2): Isolate or remove legacy DB/ETL artifacts
 - [ ] Mark legacy DB/ETL modules as non-runtime in docs.
