@@ -11,9 +11,7 @@
 - [x] Deprecate `csv_update.md` by moving it to `docs/archived/csv_update.md` after extracting any still-relevant “CSV contract” notes into `README.md`.
 
 ### Phase 1 (P0/P1): Replace `uv.lock` with requirements lock file(s)
-- [x] Decide lock hash policy:
-  - [x] A: With hashes (preferred; most reproducible)
-  - [ ] B: Without hashes (more tolerant across mirrors)
+- [x] Decide lock hash policy (A: with hashes).
 - [x] Add tracked export files:
   - [x] `requirements.txt` (runtime; used by Streamlit Cloud)
   - [x] `requirements-dev.txt` (runtime + dev)
@@ -22,16 +20,15 @@
   - [x] Dev: `uv pip sync requirements-dev.txt`
 
 ### Phase 3 (P2): Isolate or remove legacy DB/ETL artifacts
-- [ ] Mark legacy DB/ETL modules as non-runtime in docs.
-- [ ] Move DB dependencies behind an optional group/extra so CSV-only runtime installs do not pull DB libraries.
-- [ ] If unused, migrate or delete ETL-only modules and SQL templates:
-  - [ ] `data_preparation/data_access.py`
-  - [ ] `models.py`
-  - [ ] `sql_template/*`
-- [ ] Remove vendored third-party directories if they are unused by the runtime:
-  - [ ] `py_lets_be_rational/`
-  - [ ] `py_vollib/`
+- [x] Remove DB dependencies from runtime installs (`sqlalchemy`, `psycopg2-binary`).
+- [x] Delete unused DB/ETL-only modules:
+  - [x] `data_preparation/data_access.py`
+  - [x] `models.py`
+- [x] Defer `sql_template/*` removal to Phase 4 (currently referenced by the runtime).
+- [x] Remove vendored third-party directories if they are unused by the runtime:
+  - [x] `py_lets_be_rational/` (not tracked in git)
+  - [x] `py_vollib/` (not tracked in git)
 
 ### Validation
 - [x] `python scripts/run_quick_checks.py`
-- [ ] `streamlit run app.py` (manual smoke: load each tab; confirm CSV loads + charts render)
+- [x] `streamlit run app.py` (manual smoke: load each tab; confirm CSV loads + charts render)
