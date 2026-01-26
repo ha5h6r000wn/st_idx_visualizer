@@ -24,7 +24,6 @@ ops/logs/
 # --- Project-local customization (kept intentionally) ---
 AGENTS.md
 CLAUDE.md
-openspec/changes/
 *.lock
 *refactor*.md
 

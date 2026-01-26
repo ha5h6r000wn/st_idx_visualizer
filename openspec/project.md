@@ -8,7 +8,7 @@ Interactive Streamlit dashboard for Chinese equity research. Visualizes strategy
 - Streamlit + Altair for UI and charting
 - pandas/NumPy for data prep; pydantic for typed config objects
 - CSV-backed mode with data under `data/`
-- Tooling: ruff linting; `pyproject.toml` managed with `uv` and exported `requirements*.txt` files for reproducible installs across environments
+- Tooling: ruff linting; `pyproject.toml` managed with `uv` and exported `requirements.txt` / `requirements-dev.txt` for consistent installs across environments (no separate `*.lock` files are used)
 
 ## Project Conventions
 
@@ -30,7 +30,7 @@ Interactive Streamlit dashboard for Chinese equity research. Visualizes strategy
   - `python scripts/run_quick_checks.py`
   - (equivalently) `pytest -m "style_prep or stg_idx_prep or schema" -vv tests`
 - Validate UI changes by running `streamlit run app.py` and exercising tabs/sliders to confirm data loads and charts render
-- Prefer using CSV fixtures under `data/` for development; avoid live DB/Wind calls unless credentials and access are available
+- Prefer using CSV fixtures under `data/` for development; do not introduce DB/Wind calls into the Streamlit runtime or automated checks
 
 ### Git Workflow
 - Default branch `main`; develop in short-lived feature branches
@@ -43,10 +43,10 @@ Interactive Streamlit dashboard for Chinese equity research. Visualizes strategy
 - Slider defaults align with average Chinese trading days; chart titles/axes are primarily Chinese
 
 ## Important Constraints
-- Default to CSV data under `data/csv`; DB/Wind access requires valid credentials and should not be exercised in automated tests
+- Default to CSV data under `data/csv`; DB/Wind access is out of scope for this repository and MUST NOT be exercised in automated tests
 - Preserve existing chart labels/axis names; layout expects specific Chinese labels and column aliases
 - Use shared number formats from `config.CHART_NUM_FORMAT`; many calculations assume wide-form frames ordered per config constants
 
 ## External Dependencies
-- Wind data schemas via SQL templates in `sql_template/` (requires credentials to query)
+- CSV snapshot generation and any database management live in a separate repository; this repo consumes CSV outputs only
 - Streamlit runtime and Altair for visualization; pandas/NumPy for analytics; openpyxl for Excel ingestion when needed

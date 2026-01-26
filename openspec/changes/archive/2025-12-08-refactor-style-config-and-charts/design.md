@@ -1,0 +1,335 @@
+## Design Overview
+
+The design goal is to make the style and strategy-index visualization paths boringly simple: one clear data-prep function per chart type, one simple config object per chart, and a CSV-only data layer. We keep all current behavior while eliminating unnecessary branching and duplicated logic.
+
+### 1. Data-access and schema consolidation
+
+**Current state**
+
+- `data_preparation/data_fetcher.py` implements `CSVDataSource` with:
+  - `read_csv_data(table_name: str)` using `config.CSV_DTYPE_MAPPING`,
+  - `CANONICAL_COL_MAPPINGS` to add normalized English aliases,
+  - `fetch_index_data_from_local` and `fetch_data_from_local` wrappers.
+- `data_preparation/data_access.py` and `models.py` implement SQLAlchemy models and session-based fetchers that are not called by the Streamlit app.
+- `config.config`, `config.style_config`, `config.param_cls`, and `CANONICAL_COL_MAPPINGS` all carry fragments of schema knowledge.
+
+**Problems**
+
+- Multiple schema definitions risk drift and confusion; it is not obvious which one is canonical.
+- `CSVDataSource.fetch_table` has type-mismatched logic when detecting the date column for `A_IDX_PRICE`.
+- The presence of unused database session helpers makes the real data path less obvious and conflicts with the “CSV-only” intention expressed in the `data-access` spec.
+
+**Design decisions**
+
+- Canonical schema per dataset:
+  - Define one canonical schema object per dataset (index prices, bond yields, valuations, EDB, Shibor) that captures:
+    - canonical column names (English),
+    - underlying CSV column names (Chinese),
+    - and dtypes.
+  - Use this schema in:
+    - `read_csv_data` (for dtypes),
+    - `add_canonical_columns` (for aliases),
+    - and any data-prep functions that rely on specific columns.
+  - As of this change, `data_preparation/data_fetcher.py` defines canonical schema objects for all CSV-backed tables:
+    - `INDEX_PRICE_SCHEMA`, `CN_BOND_YIELD_SCHEMA`, `INDEX_VALUATION_SCHEMA`, `ECONOMIC_DATA_SCHEMA`, `SHIBOR_PRICES_SCHEMA`,
+    - exposes their canonical column mappings via `CANONICAL_COL_MAPPINGS`,
+    - centralizes the date-column selection logic for `CSVDataSource.fetch_table` via `DATASET_SCHEMAS`,
+    - and attaches the per-table dtype mappings (`dtypes`) to each schema while still sourcing them from `config.CSV_DTYPE_MAPPING` for compatibility.
+  - `read_csv_data` now prefers the `dtypes` declared on each schema (when present) and falls back to `config.CSV_DTYPE_MAPPING[table_name]` for any tables without an explicit schema.
+  - `WIND_COLS` in `config.config` is retained as a legacy/index-DB helper for index-price column aliases; it mirrors the raw CSV column names already captured by `INDEX_PRICE_SCHEMA` and is not treated as a separate schema.
+  - `DATA_COL_PARAM` in `config/style_config.py` continues to describe per-chart column roles (e.g., which CSV columns to use as X/Y/legend for EDB and A_IDX_VAL). These objects are consumers of the canonical CSV schemas rather than an alternative schema definition. For EDB, the column parameters now refer directly to the canonical CSV column names (`交易日期`, `指标名称`, `指标数值`) instead of going through SQL parser aliases.
+  - Bond-yield consumers in the style path (e.g., `YIELD_CURVE_COL_PARAM` for term-spread charts) are also wired directly to the canonical CSV column names (`交易日期`, `曲线名称`, `交易期限`, `到期收益率`) while keeping Chinese labels unchanged.
+  - Index-price consumers for the style and strategy-index pages rely on `param_cls.WindIdxColParam`, whose default column names (`TRADE_DT`, `S_INFO_WINDCODE`, `S_INFO_NAME`, `S_DQ_CLOSE`) are validated against `INDEX_PRICE_SCHEMA["canonical_cols"]` so that any code using this param automatically stays aligned with the canonical `A_IDX_PRICE` schema.
+- CSV-only path for the app:
+  - Keep `CSVDataSource` as the only data-access path used by `visualization/*`.
+  - Ensure `visualization/*` does not import `data_preparation/data_access` or use SQLAlchemy sessions.
+  - Treat `data_preparation/data_access.py` and `models.py` as ETL-only:
+    - either move them under an ETL namespace, or
+    - clearly document that they are not part of the Streamlit runtime.  
+    - For this change, we take the documentation path by adding explicit module-level docstrings in `data_preparation/data_access.py` and `models.py` stating that they are ETL-only and that the Streamlit app uses the CSV-based readers instead.
+- Correctness fix:
+  - Fix `fetch_table` to select the correct date column based on the same canonical schema used by `read_csv_data`, rather than comparing to Enum members directly.
+
+### 2. Chart configuration flattening
+
+**Current state**
+
+- `config/param_cls.py` defines:
+  - low-level column params (`BaseDataColParam`, `WindIdxColParam`, `WindYieldCurveColParam`, `WindAIndexValueColParam`),
+  - slider params (`DtSliderParam`, `SelectSliderParam`),
+  - chart params (`BaseBarParam`, `SignalBarParam`, `IdxLineParam`, `LineParam`, `BarLineWithSignalParam`, `HeatmapParam`).
+- `BarLineWithSignalParam` bundles:
+  - `dt_slider_param`,
+  - `bar_param`,
+  - `line_param`,
+  - and three flags (`isLineDrawn`, `isConvertedToPct`, `isSignalAssigned`).
+- `config/style_config.py` wires many of these together into large configuration dicts plus chart params for each style framework.
+
+**Problems**
+
+- Chart configuration objects are carrying widget concerns (`DtSliderParam`) and behavior flags that control branching in the visualizer.
+- The same chart type (bar+line+signal) can be driven by different combinations of:
+  - `BarLineWithSignalParam`,
+  - manual signal generation in `visualization/style.py`,
+  - and specialized helpers like `draw_bar_line_chart_with_highlighted_predefined_signal`.
+- Adding a new chart currently requires touching multiple files and understanding the interaction of several layers of configuration.
+
+**Design decisions**
+
+- Separate responsibilities:
+  - **Data-prep configuration**: objects that tell data-prep helpers which columns to use and how to derive signals (e.g., which baseline windows or quantiles to compare).
+  - **Chart configuration**: a minimal object that only includes axis names/types, titles, formats, and visual encoding details.
+  - **Widget configuration**: slider/select-slider settings used only at the Streamlit boundary.
+- Flatten chart configuration:
+  - For bar+line+signal charts, introduce a single flat config struct (still Pydantic-based if useful) with:
+    - axis names and types for bar and line,
+    - y-axis format for each series,
+    - color and stroke-dash settings.
+  - In support of this, `config/param_cls.py` now defines `StyleBarLineChartConfig`, a slim Pydantic model that:
+    - carries only axis names/types, title, per-series y-axis formats, colors, and stroke-dash,
+    - and intentionally omits slider params and signal-behavior flags.
+  - For bar-only style charts with precomputed signals (relative-momentum charts), `config/param_cls.py` additionally defines `StyleBarChartConfig`, a slim Pydantic model that:
+    - carries only bar axis names/types, title, y-axis format, and optional color,
+    - and is used by `RELATIVE_MOMENTUM_VALUE_GROWTH_STYLE_CHART_CONFIG` and `RELATIVE_MOMENTUM_BIG_SMALL_STYLE_CHART_CONFIG` in `config/style_config.py` to mirror the existing bar settings without exposing line-related fields or behavior flags.
+
+### 2.1 Chart config and flag usage audit
+
+As of the current implementation, chart configuration models and boolean flags are used as follows:
+
+- Model usage
+  - `BaseBarParam` and `SignalBarParam`:
+    - `BaseBarParam` is used for grouped-return bars on the strategy-index page via `draw_grouped_bars` and for generic bar charts that do not have semantic signals.
+    - `SignalBarParam` is the hot path for all bar+signal style charts and for the bar leg of `BarLineWithSignalParam` in `data_visualizer`, and is always constructed with an explicit `true_signal`/`false_signal`/optional `no_signal`.
+  - `IdxLineParam`:
+    - Drives all “grouped line” charts (style relative-return lines, stg_idx NAV lines) through `draw_grouped_lines`.
+    - Its `data_col_param` defaults to `WindIdxColParam`, and tests assert that this default matches the canonical `A_IDX_PRICE` schema.
+  - `LineParam`:
+    - Used only as the line leg in bar+line charts (both legacy config and the slim style builders).
+    - `compared_cols` is only set for charts that display multiple baseline curves (index turnover, some TERM_SPREAD variants) and is otherwise `None`.
+  - `BarLineWithSignalParam`:
+    - Still used as the internal config for all bar+line+signal and bar-only-with-signal charts, but:
+      - style charts now build it exclusively via `build_bar_line_with_signal_param_for_style_chart` and `build_bar_param_for_style_bar_chart`,
+      - non-style callers (if any are added in future) would go through the same helper functions.
+  - `HeatmapParam`:
+    - Used only for the stg_idx excess-correlation heatmap via `draw_heatmap`.
+  - `StyleBarLineChartConfig` / `StyleBarChartConfig`:
+    - Used only on the style path and always converted to `BarLineWithSignalParam` at the visualizer boundary.
+
+- Flag usage (`BarLineWithSignalParam`)
+  - `isLineDrawn`:
+    - Controls whether `_render_bar_line_chart_with_highlighted_signal` is called with a line layer:
+      - `draw_bar_line_chart_with_highlighted_signal` passes `draw_line=config.isLineDrawn` directly.
+      - Tests in `tests/test_style_prep.py` (`test_draw_bar_line_chart_with_highlighted_signal_respects_isLineDrawn`) assert that setting `isLineDrawn=False` suppresses the line layer even when `line_param` is present.
+    - For style charts, the value is derived from the presence of `line_axis_names` in the slim config; relative-momentum bar-only style charts always set `isLineDrawn=False`.
+  - `isConvertedToPct`:
+    - Used only by `_apply_pct_scaling_if_needed` and `prepare_bar_line_with_signal_data` to:
+      - divide numeric columns by 100 when set to `True`, and
+      - update `bar_param.y_axis_format` and `line_param.y_axis_format` to percentage formats.
+    - Style charts that conceptually operate on percentages (e.g., term-spread bar+line, index turnover, Shibor, ERP/ERP_2) set this flag to `True` in their chart params; tests cover both the scaling behavior and the y-axis-format update.
+  - `isSignalAssigned`:
+    - Decides whether `prepare_bar_line_with_signal_data` should compute signals or respect an existing signal column:
+      - When `isSignalAssigned` is `True`, and the signal column exists, the helper treats it as authoritative and does not recompute signals.
+      - When `isSignalAssigned` is `False` and the signal column is absent, the helper uses `apply_signal_from_conditions`/`append_signal_column` to construct the signal column from bar/line relationships or quantile bands.
+    - For style charts:
+      - all “business signal” charts (index turnover, ERP/ERP_2, credit expansion, style focus, Shibor, housing investment) set `isSignalAssigned=True`, and signals are always precomputed in data-prep helpers or inline before calling the draw helper;
+      - band-style TERM_SPREAD variants still rely on `isSignalAssigned=False` and let the helper compute signals mechanically from thresholds/bands.
+
+No chart config fields are currently completely unused; the main complexity lies in the way `BarLineWithSignalParam` couples slider configuration, signal computation, and percentage scaling via the three flags above.
+
+### 3. Chart inventory
+
+The following tables summarize the current style and strategy-index chart paths, mapping each chart to its data sources, data-prep helpers, chart helpers, and configuration.
+
+**Style page**
+
+| Chart block                         | CSV tables                         | Data-prep helper(s)                                      | Chart helper(s)                                               | Config objects / types                                                                                                   |
+|-------------------------------------|------------------------------------|----------------------------------------------------------|----------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------|
+| Value vs Growth (ratio + returns)   | `A_IDX_PRICE`                      | `prepare_value_growth_data`                             | `draw_grouped_lines`, `draw_style_bar_chart_with_highlighted_signal` | Inline `IdxLineParam` (ratio/returns), `RELATIVE_MOMENTUM_VALUE_GROWTH_CHART_PARAM`, `RELATIVE_MOMENTUM_VALUE_GROWTH_STYLE_CHART_CONFIG` (`StyleBarChartConfig`) |
+| Index turnover (market sentiment)   | `A_IDX_VAL`                        | `prepare_index_turnover_data`                           | `draw_style_bar_line_chart_with_highlighted_signal`           | `INDEX_TURNOVER_CHART_PARAM` (`BarLineWithSignalParam`), `INDEX_TURNOVER_STYLE_CHART_CONFIG` (`StyleBarLineChartConfig`) |
+| Term spread (10Y–1Y)                | `CN_BOND_YIELD`                    | `prepare_term_spread_data`                              | `draw_style_bar_line_chart_with_highlighted_signal`, `draw_grouped_lines` | `TERM_SPREAD_CHART_PARAM`, `TERM_SPREAD_STYLE_CHART_CONFIG`, inline `IdxLineParam` for yield curves                     |
+| ERP (value vs bond yield)          | `A_IDX_VAL`, `CN_BOND_YIELD`      | `prepare_index_erp_data`                                | `draw_style_bar_line_chart_with_highlighted_signal`           | `INDEX_ERP_CHART_PARAM`, `INDEX_ERP_STYLE_CHART_CONFIG`, `INDEX_ERP_CONFIG`                                             |
+| Credit expansion                    | `EDB`                              | Inline prep over `wide_raw_edb_df`                      | `draw_style_bar_line_chart_with_highlighted_signal`           | `CREDIT_EXPANSION_CHART_PARAM`, `CREDIT_EXPANSION_STYLE_CHART_CONFIG`, `CREDIT_EXPANSION_CONFIG`                        |
+| Big vs Small (ratio + returns)      | `A_IDX_PRICE`                      | `prepare_big_small_momentum_data`                       | `draw_grouped_lines`, `draw_style_bar_chart_with_highlighted_signal` | Inline `IdxLineParam` (ratio/returns), `RELATIVE_MOMENTUM_BIG_SMALL_CHART_PARAM`, `RELATIVE_MOMENTUM_BIG_SMALL_STYLE_CHART_CONFIG` (`StyleBarChartConfig`)      |
+| Style focus                         | `A_IDX_VAL` (big/small valuations), `A_IDX_PRICE` (signals) | `prepare_style_focus_data`                               | `draw_style_bar_line_chart_with_highlighted_signal`           | `STYLE_FOCUS_CHART_PARAM`, `STYLE_FOCUS_STYLE_CHART_CONFIG`, `STYLE_FOCUS_CONFIG`                                       |
+| Shibor 3M                           | `SHIBOR_PRICES`                    | `prepare_shibor_prices_data`                            | `draw_style_bar_line_chart_with_highlighted_signal`           | `SHIBOR_PRICES_CHART_PARAM`, `SHIBOR_PRICES_STYLE_CHART_CONFIG`, `SHIBOR_PRICES_CONFIG`                                 |
+| Housing investment                  | `EDB`                              | `prepare_housing_invest_data`                           | `draw_style_bar_line_chart_with_highlighted_signal`           | `HOUSING_INVEST_CHART_PARAM`, `HOUSING_INVEST_STYLE_CHART_CONFIG`, `HOUSING_INVEST_CONFIG`                               |
+| Term spread 2 (期现利差)           | `CN_BOND_YIELD`                    | Reuses `prepare_term_spread_data` (shared `term_spread_df`) | `draw_style_bar_line_chart_with_highlighted_signal`, `draw_grouped_lines` | `TERM_SPREAD_2_CHART_PARAM`, `TERM_SPREAD_2_STYLE_CHART_CONFIG`, inline `IdxLineParam`                                   |
+| ERP 2 (big vs small ERP)           | `A_IDX_VAL`, `CN_BOND_YIELD`, `A_IDX_PRICE` (signals) | Reuses `prepare_index_erp_data`, combines with `big_small_signal_df` | `draw_style_bar_line_chart_with_highlighted_signal`           | `INDEX_ERP_2_CHART_PARAM`, `INDEX_ERP_2_STYLE_CHART_CONFIG`, `INDEX_ERP_CONFIG`, `INDEX_ERP_2_CONFIG`                   |
+
+**Strategy-index page**
+
+| Chart block                         | CSV tables     | Data-prep helper(s)                                             | Chart helper(s)                       | Config objects / types                                                                                     |
+|-------------------------------------|----------------|------------------------------------------------------------------|----------------------------------------|------------------------------------------------------------------------------------------------------------|
+| Grouped returns vs benchmark        | `A_IDX_PRICE`  | `prepare_stg_idx_grouped_return_df` (wraps `calculate_grouped_return`) | `draw_grouped_bars`                   | Inline `BaseBarParam` (`config.STG_IDX_CHART_AXIS_NAMES["RET_BAR"]`), `DtSliderParam`                      |
+| NAV lines for stg_idx + benchmark   | `A_IDX_PRICE`  | `prepare_stg_idx_nav_wide_df` (uses `reshape_long_df_into_wide_form` + `convert_price_ts_into_nav_ts`) | `draw_grouped_lines`                  | Inline `IdxLineParam` (`config.STG_IDX_CHART_AXIS_NAMES["NAV_LINE"]`), `DtSliderParam`                     |
+| Excess-return correlation heatmap   | `A_IDX_PRICE`  | `prepare_stg_idx_excess_corr_wide_df` (wide returns + excess vs benchmark + corr) | `draw_heatmap`                        | `HeatmapParam` (`config.STG_IDX_CHART_AXIS_NAMES["CORR_HEATMAP"]`, `config.STG_IDX_CHART_AXIS_TYPES`), `SelectSliderParam` |
+
+### 3. Data-prep vs rendering separation
+
+**Current state**
+
+- `visualization/style.py` now exposes pure data-prep helpers for all major style blocks:
+  - `prepare_value_growth_data`, `prepare_index_turnover_data`, `prepare_term_spread_data`,
+    `prepare_index_erp_data`, `prepare_style_focus_data`, `prepare_shibor_prices_data`,
+    `prepare_housing_invest_data`.
+- `generate_style_charts` calls these helpers first and then passes their outputs into the existing chart helpers (`draw_grouped_lines`, `draw_bar_line_chart_with_highlighted_signal`, `draw_bar_line_chart_with_highlighted_predefined_signal`).
+- `visualization/data_visualizer.py` still has:
+  - `prepare_bar_line_with_signal_data` which depends on `DtSliderParam` and delegates percentage scaling and y-axis-format updates to a shared `_apply_pct_scaling_if_needed` helper when `isConvertedToPct` is set,
+  - parallel paths for `draw_bar_line_chart_with_highlighted_signal`, `draw_bar_line_chart_with_highlighted_predefined_signal`, and `generate_signal`.
+
+**Problems**
+
+- For style charts, data-prep vs rendering is now cleanly separated, but:
+  - bar+line+signal helpers still rely on behavior flags (`isLineDrawn`, `isConvertedToPct`, `isSignalAssigned`),
+  - and signal computation is split between the new helpers, `np.select` blocks, and `append_signal_column`.
+- For strategy-index charts, data-prep is still inline inside `visualization/stg_idx.py` (acceptable for now, but not yet using the same helper pattern).
+  - For strategy-index charts, the main visualization entry point is still `visualization/stg_idx.generate_stg_idx_charts`, but the data-prep responsibilities have been split into small helpers that mirror the style-page pattern:
+    - `prepare_stg_idx_grouped_return_df` prepares the grouped-return frame for the bar chart given a pre-selected custom date window,
+    - `prepare_stg_idx_nav_wide_df` prepares NAV wide frames for strategy and benchmark indices from the long price series,
+    - and `prepare_stg_idx_excess_corr_wide_df` prepares the excess-return correlation matrix for the heatmap, given a custom start date and benchmark name.
+
+**Design decisions**
+
+- Keep the new style data-prep helpers as the canonical pattern going forward; do not re-introduce inline transformations in `generate_style_charts`.
+- Extract a thin, shared renderer for bar+line+signal charts:
+  - `draw_bar_line_chart_with_highlighted_signal` and `draw_bar_line_chart_with_highlighted_predefined_signal` both now delegate to a common `_render_bar_line_chart_with_highlighted_signal` helper that accepts an already-sliced/prepared frame and a `BarLineWithSignalParam`,
+  - the renderer only builds the Altair bar/line layers and calls `st.altair_chart`, leaving date-window selection and signal computation to the caller.
+- Introduce a style-specific draw helper that bridges slim configs to the existing helpers:
+  - `build_bar_line_with_signal_param_for_style_chart` constructs a `BarLineWithSignalParam` from a `StyleBarLineChartConfig`, slider params, signal labels, and optional `compared_cols`,
+  - `draw_style_bar_line_chart_with_highlighted_signal` uses this builder and then calls `draw_bar_line_chart_with_highlighted_signal`, ensuring style charts can migrate to slim configs without changing behavior.
+  - For bar-only style charts, `visualization/data_visualizer.py` provides:
+    - `StyleBarChartConfig`-aware builders (`build_bar_param_for_style_bar_chart`) that construct a `BarLineWithSignalParam` with no line layer, and
+    - `draw_style_bar_chart_with_highlighted_signal`, which uses the bar-only slim config plus slider params and signal labels to call the existing `draw_bar_line_chart_with_highlighted_predefined_signal` helper. The relative-momentum charts (value vs growth, big vs small) now use this path instead of wiring `BarLineWithSignalParam` directly in the style page.
+- As early adopters, the ERP, credit-expansion, style-focus, Shibor, index-turnover, and housing-investment style charts:
+  - define `INDEX_ERP_STYLE_CHART_CONFIG`, `CREDIT_EXPANSION_STYLE_CHART_CONFIG`, `STYLE_FOCUS_STYLE_CHART_CONFIG`, `SHIBOR_PRICES_STYLE_CHART_CONFIG`, `INDEX_TURNOVER_STYLE_CHART_CONFIG`, and `HOUSING_INVEST_STYLE_CHART_CONFIG` using `StyleBarLineChartConfig`,
+  - use `draw_style_bar_line_chart_with_highlighted_signal` in `visualization/style.generate_style_charts`,
+  - and are covered by additional tests that validate the end-to-end pipeline (data-prep → signal assignment → helper wiring) remains unchanged for the existing CSV snapshot.
+- In a follow-up step, simplify `prepare_bar_line_with_signal_data` and the related helpers so that they:
+  - no longer mutate config objects,
+  - no longer depend on `DtSliderParam` for `custom_dt`,
+  - and assume signals are already computed by data-prep helpers.
+- Consider extracting light-weight data-prep helpers for strategy-index charts in `visualization/stg_idx.py` once style-side refactors are complete and stable.
+
+### 4. Unified signal generation
+
+**Current state**
+
+- Signal mapping is now centralized:
+  - `data_preparation/data_processor.apply_signal_from_conditions` implements the canonical “conditions → choices → default” mapping using `np.select`.
+  - `append_signal_column` is a thin wrapper around this helper for band-style signals (target vs upper/lower bounds).
+  - All style block signals (value vs growth, index turnover, credit expansion, style focus, big/small momentum, ERP and ERP_2, Shibor, and housing investment) are computed in `visualization/style.py` using `apply_signal_from_conditions`, and the corresponding chart configs set `isSignalAssigned=True`.
+  - `draw_bar_line_chart_with_highlighted_signal` is the default path for bar+line+signal charts with precomputed signals (index turnover, ERP, credit expansion, Shibor, housing investment, ERP_2, style focus). `prepare_bar_line_with_signal_data` now treats any existing signal column on the input frame as authoritative and only computes signals on-the-fly (via `apply_signal_from_conditions` and `append_signal_column`) when the signal column is absent (e.g., for term-spread variants that still rely on threshold/band-based signals). Percentage scaling for these charts is centralized in `_apply_pct_scaling_if_needed`, which also updates the y-axis formats when `isConvertedToPct` is set.
+  - The legacy `generate_signal` helper in `visualization/data_visualizer.py` has been removed; `draw_bar_line_chart_with_highlighted_predefined_signal` is now only used for bar-only relative-momentum charts that do not have a line baseline and also relies on `_apply_pct_scaling_if_needed` for percentage scaling.
+
+**Problems**
+
+- The signal API is unified, but:
+  - some chart configs still carry `isSignalAssigned` flags whose behavior depends on the helper used,
+  - and precomputed-signal vs on-the-fly signal generation is still split between `draw_bar_line_chart_with_highlighted_signal` and `draw_bar_line_chart_with_highlighted_predefined_signal`.
+
+**Design decisions**
+
+- Keep `apply_signal_from_conditions` as the single mapping primitive for signal assignment.
+- Prefer precomputed signals in data-prep helpers where business logic is non-trivial (e.g., combining multiple excess-return conditions), and reserve band-style `append_signal_column` for simple threshold/band cases.
+- Treat `generate_signal`-style debug helpers as dead code and remove them rather than keeping parallel paths.
+
+### 5. Future work: signal handling and chart config
+
+The current change intentionally stops short of fully redesigning chart configuration and signal responsibilities. Follow-up work SHOULD:
+
+- Split configuration models so that:
+  - style charts with precomputed business signals use a dedicated, minimal config that does not expose `isSignalAssigned`, `no_signal`, or band-related fields, and
+  - generic bar+line+band charts retain a separate config that explicitly models threshold/band-based signal behavior.
+- Split helpers so that:
+  - one rendering helper assumes signals are already present on the frame and never mutates signal columns, and
+  - a separate helper is responsible for purely mechanical band-based signal computation, only used by charts that opt into that behavior.
+- Add guard rails and tests:
+  - for style charts, assert that the expected signal column is present on the frame before rendering,
+  - and add tests around style data-prep helpers to ensure they always produce the required signal columns for a fixed CSV snapshot.
+
+### 7. Validation strategy
+
+**Current state**
+
+- Manual validation:
+  - The style page has been repeatedly verified via `streamlit run app.py`, with side-by-side comparison of charts and signals before/after refactors.
+- Automated checks:
+  - `tests/test_style_prep.py` exercises:
+    - `prepare_value_growth_data` to verify:
+      - non-empty outputs for ratio/percentage-change/signal frames,
+      - monotonic trade-date indices,
+      - and that the `交易信号` column only contains the expected value/growth/neutral labels.
+    - `prepare_shibor_prices_data` to verify:
+      - non-empty output,
+      - monotonic trade-date index,
+      - and presence of the configured Shibor price and rolling-mean columns.
+    - `prepare_index_turnover_data` to verify:
+      - non-empty output,
+      - monotonic trade-date index,
+      - presence of the configured rolling-mean columns,
+      - and that the `交易信号` column only contains the expected turnover signals.
+    - `prepare_term_spread_data` to verify:
+      - non-empty outputs for term-spread and yield-curve frames,
+      - monotonic trade-date indices,
+      - and presence of the configured spread and rolling-mean columns.
+    - `prepare_index_erp_data` to verify:
+      - non-empty ERP frame with monotonic trade-date index,
+      - presence of ERP value, rolling mean, and quantile bands,
+      - and that the returned ERP conditions align with the ERP frame and are boolean.
+    - `prepare_big_small_momentum_data` to verify:
+      - non-empty ratio/percentage-change/signal frames,
+      - monotonic trade-date indices,
+      - and that the `交易信号` column only contains the expected big/small signals.
+    - `prepare_style_focus_data` to verify:
+      - non-empty output with monotonic trade-date index,
+      - presence of style-focus value and quantile columns,
+      - and that the style-focus signal column only contains the expected enum values.
+    - `prepare_housing_invest_data` and the inline credit-expansion prep to verify:
+      - non-empty outputs with monotonic trade-date indices,
+      - presence of the configured YoY and rolling-mean columns,
+      - and that credit-expansion signals stay within the configured enum set.
+  - `tests/test_data_fetcher_schema.py` adds schema-level invariants for the core CSV-backed tables (`A_IDX_PRICE`, `CN_BOND_YIELD`, `A_IDX_VAL`, `EDB`, `SHIBOR_PRICES`):
+    - `fetch_data_from_local` returns frames whose columns and dtypes respect the corresponding entries in `DATASET_SCHEMAS`,
+    - the per-table date column exists and the returned frames are sorted monotonically by that column,
+    - and canonical English aliases from `CANONICAL_COL_MAPPINGS` are present alongside the underlying Chinese columns.
+    - `fetch_index_data_from_local` returns `A_IDX_PRICE` frames whose columns/dtypes respect `INDEX_PRICE_SCHEMA` and whose canonical aliases are added via `CANONICAL_COL_MAPPINGS["A_IDX_PRICE"]`; additional tests assert that `param_cls.WindIdxColParam` defaults (date/code/name/close) stay in sync with `INDEX_PRICE_SCHEMA["canonical_cols"]`.
+  - `tests/test_style_prep.py` and `tests/test_stg_idx_prep.py` include additional invariants that tie the style and strategy-index index loaders to the canonical index-price schema by asserting that the `WindIdxColParam` columns they use are a strict subset of the raw CSV columns declared in `INDEX_PRICE_SCHEMA["canonical_cols"]`.
+  - `scripts/run_quick_checks.py` provides a single entry point for running the fast “prep” test subset via `python scripts/run_quick_checks.py`, which runs `pytest -m "style_prep or stg_idx_prep or schema" tests`.
+
+**Planned extensions**
+
+- Incrementally extend automated coverage to:
+  - index turnover (`prepare_index_turnover_data`),
+  - term spread (`prepare_term_spread_data`),
+  - ERP / ERP_2 (`prepare_index_erp_data`),
+  - credit expansion, style focus, and housing investment.
+  - strategy-index pages (`prepare_stg_idx_grouped_return_df`, `prepare_stg_idx_nav_wide_df`, `prepare_stg_idx_excess_corr_wide_df`) via invariants that assert non-empty frames, monotonic date indices, and well-formed correlation matrices.
+- For each helper, assert a minimal set of invariants:
+  - monotonic date index,
+  - presence of expected canonical columns and signal columns,
+  - and that signal values remain within the configured enum set.
+- Recommend wiring `scripts/run_quick_checks.py` into a Git pre-commit hook, for example:
+  - `.git/hooks/pre-commit`:
+    - `#!/usr/bin/env bash`
+    - `python scripts/run_quick_checks.py || exit 1`
+
+### 6. Dead code removal
+
+**Current state**
+
+- As of this change, `config/style_config.py` and `visualization/style.py` no longer contain large commented-out legacy chart helpers or alternate ERP conditions.
+- Domain-level NOTE comments are retained to document style frameworks and business intent, but debug-only `st.write` calls and the old `draw_test` path have been removed.
+
+**Problems**
+
+- Previously, commented-out code hid the real behavior and encouraged “just in case” branches instead of clean abstractions.
+
+**Design decisions**
+
+- Systematically remove:
+  - unused chart helpers,
+  - large commented-out sections,
+  - and debug-only `st.write` calls.
+- Keep only:
+  - high-signal comments documenting domain formulas or business rules,
+  - and TODOs with clear, actionable next steps.
