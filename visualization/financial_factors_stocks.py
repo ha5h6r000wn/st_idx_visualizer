@@ -24,8 +24,8 @@ BACKTEST_NAV_BENCH_COL = "中证红利全收益"
 BACKTEST_NAV_SEGMENT_LEADERS_COL = "细分龙头股票池"
 BACKTEST_NAV_CYCLICAL_GROWTH_COL = "景气成长股票池"
 BACKTEST_NAV_CSI300_COL = "沪深300"
-BACKTEST_NAV_PERIOD_OPTIONS = ["近一年", "2025年", "近半年", "2018年5月以来"]
-BACKTEST_NAV_DEFAULT_PERIOD = "近一年"
+BACKTEST_NAV_PERIOD_OPTIONS = ["近半年", "近一年", "2026年", "2025年", "2018年5月以来"]
+BACKTEST_NAV_DEFAULT_PERIOD = "近半年"
 
 BACKTEST_NAV_EXCESS_COL = "超额收益"
 BACKTEST_NAV_EXCESS_STATE_COL = "累计超额"
@@ -134,7 +134,8 @@ def _prepare_backtest_nav_chart_df(
     df[bench_nav_col] = pd.to_numeric(df[bench_nav_col], errors="coerce")
 
     df = (
-        df.sort_values(by=BACKTEST_NAV_DATE_COL, ascending=True)
+        df
+        .sort_values(by=BACKTEST_NAV_DATE_COL, ascending=True)
         .drop_duplicates(subset=[BACKTEST_NAV_DATE_COL], keep="last")
         .rename(columns={strategy_nav_col: strategy_label})
     )
@@ -149,6 +150,12 @@ def _get_backtest_nav_period_range(trade_dt: list[str], period: str) -> tuple[st
 
     trade_dt = sorted(trade_dt)
     latest_dt = trade_dt[-1]
+
+    if period == "2026年":
+        year_start = "20260101"
+        year_end = "20261231"
+        eligible_dt = [dt for dt in trade_dt if year_start <= dt <= year_end]
+        return (eligible_dt[0], eligible_dt[-1]) if eligible_dt else (trade_dt[0], latest_dt)
 
     if period == "近一年":
         start_idx = max(0, len(trade_dt) - config.TRADE_DT_COUNT["一年"])
@@ -297,9 +304,10 @@ def _render_backtest_nav_chart(
 
     selected_df[BACKTEST_NAV_EXCESS_COL] = excess_nav.sub(1)
     is_pos = selected_df[BACKTEST_NAV_EXCESS_COL].ge(0)
-    selected_df[BACKTEST_NAV_EXCESS_STATE_COL] = is_pos.map(
-        {True: BACKTEST_NAV_EXCESS_POS, False: BACKTEST_NAV_EXCESS_NEG}
-    )
+    selected_df[BACKTEST_NAV_EXCESS_STATE_COL] = is_pos.map({
+        True: BACKTEST_NAV_EXCESS_POS,
+        False: BACKTEST_NAV_EXCESS_NEG,
+    })
 
     bar_param = param_cls.SignalBarParam(
         axis_names={
