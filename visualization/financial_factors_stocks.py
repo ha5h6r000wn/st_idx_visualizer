@@ -152,7 +152,7 @@ def _get_backtest_nav_period_range(trade_dt: list[str], period: str) -> tuple[st
     latest_dt = trade_dt[-1]
 
     if period == "2026年":
-        year_start = "20260101"
+        year_start = "20251231"
         year_end = "20261231"
         eligible_dt = [dt for dt in trade_dt if year_start <= dt <= year_end]
         return (eligible_dt[0], eligible_dt[-1]) if eligible_dt else (trade_dt[0], latest_dt)
@@ -171,7 +171,7 @@ def _get_backtest_nav_period_range(trade_dt: list[str], period: str) -> tuple[st
         return (eligible_dt[0], latest_dt) if eligible_dt else (trade_dt[0], latest_dt)
 
     if period == "2025年":
-        year_start = "20250101"
+        year_start = "20241231"
         year_end = "20251231"
         eligible_dt = [dt for dt in trade_dt if year_start <= dt <= year_end]
         return (eligible_dt[0], eligible_dt[-1]) if eligible_dt else (trade_dt[0], latest_dt)
